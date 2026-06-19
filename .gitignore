@@ -6,6 +6,18 @@ dist/
 dist-ssr/
 build/
 
+# Backend (Spring Boot / Maven)
+backend/target/
+backend/.gradle/
+backend/build/
+data/
+*.mv.db
+*.trace.db
+
+# Frontend nested
+frontend/node_modules/
+frontend/dist/
+
 # TypeScript build artifacts (from `tsc -b`)
 *.tsbuildinfo
 vite.config.js
