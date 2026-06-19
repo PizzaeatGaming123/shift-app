@@ -6,6 +6,11 @@ dist/
 dist-ssr/
 build/
 
+# TypeScript build artifacts (from `tsc -b`)
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
+
 # Vite / dev
 *.local
 .vite/
