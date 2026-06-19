@@ -1,0 +1,81 @@
+:root {
+  --orange: #f57c00;
+  --orange-dark: #e65100;
+  --early: #ffb74d;     /* 早番 */
+  --late: #4a6fa5;      /* 遅番 */
+  --off: #bdbdbd;       /* 休み */
+  --low: #ef5350;       /* 不足 */
+  --ok: #66bb6a;        /* 適正 */
+  --over: #ffa726;      /* 過多 */
+  --line: #e0e0e0;
+  --bg: #fafafa;
+  --text: #333;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); }
+
+.app { max-width: 1000px; margin: 0 auto; padding: 0 12px 48px; }
+
+/* Header */
+.header {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 12px 4px; position: sticky; top: 0; background: var(--bg); z-index: 10;
+}
+.logo { font-size: 20px; font-weight: 800; color: var(--orange); }
+.header select {
+  padding: 8px 10px; font-size: 16px; border: 1px solid var(--line); border-radius: 8px;
+}
+.role-toggle { margin-left: auto; display: flex; gap: 4px; }
+.role-toggle button {
+  padding: 8px 14px; font-size: 15px; border: 1px solid var(--orange);
+  background: #fff; color: var(--orange); border-radius: 999px; cursor: pointer;
+}
+.role-toggle button.active { background: var(--orange); color: #fff; }
+
+/* Month nav */
+.month-nav { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 8px 0 16px; }
+.month-nav button { font-size: 18px; padding: 4px 14px; border: 1px solid var(--line); background: #fff; border-radius: 8px; cursor: pointer; }
+.month-title { font-size: 18px; font-weight: 700; min-width: 140px; text-align: center; }
+
+/* Tabs */
+.tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+.tabs button { flex: 1; padding: 10px; font-size: 15px; border: 1px solid var(--line); background: #fff; border-radius: 8px; cursor: pointer; }
+.tabs button.active { background: var(--orange); color: #fff; border-color: var(--orange); }
+
+/* Calendar grid */
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-head { text-align: center; font-size: 12px; color: #888; padding: 4px 0; }
+.cal-cell { min-height: 64px; border: 1px solid var(--line); border-radius: 8px; padding: 4px; background: #fff; cursor: pointer; }
+.cal-cell .day-num { font-size: 12px; color: #888; }
+.cal-cell.empty { border: none; background: transparent; cursor: default; }
+
+/* Slot chips */
+.chip { display: inline-block; font-size: 11px; padding: 2px 6px; border-radius: 6px; color: #fff; margin: 1px; }
+.chip.early { background: var(--early); color: #663c00; }
+.chip.late { background: var(--late); }
+.chip.off { background: var(--off); }
+
+/* Request picker */
+.picker { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+.picker button { padding: 10px 16px; font-size: 16px; border-radius: 10px; border: 2px solid var(--line); background: #fff; cursor: pointer; }
+.picker button.sel-early { border-color: var(--early); background: var(--early); color: #663c00; }
+.picker button.sel-late { border-color: var(--late); background: var(--late); color: #fff; }
+.picker button.sel-off { border-color: var(--off); background: var(--off); color: #fff; }
+
+/* Manager matrix */
+.matrix-wrap { overflow-x: auto; }
+.matrix { border-collapse: collapse; font-size: 13px; }
+.matrix th, .matrix td { border: 1px solid var(--line); padding: 4px 6px; text-align: center; min-width: 34px; }
+.matrix th.staff-name, .matrix td.staff-name { text-align: left; white-space: nowrap; position: sticky; left: 0; background: #fff; }
+.matrix .count.low { background: var(--low); color: #fff; }
+.matrix .count.ok { background: var(--ok); color: #fff; }
+.matrix .count.over { background: var(--over); color: #fff; }
+.cell-btn { cursor: pointer; user-select: none; }
+.cell-btn.assigned { outline: 2px solid var(--orange); outline-offset: -2px; font-weight: 700; }
+
+@media (max-width: 600px) {
+  .logo { font-size: 18px; }
+  .cal-cell { min-height: 52px; }
+}
