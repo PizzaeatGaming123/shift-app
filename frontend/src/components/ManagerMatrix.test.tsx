@@ -20,7 +20,12 @@ describe('ManagerMatrix', () => {
   beforeEach(() => { vi.restoreAllMocks(); mockApi(); });
 
   it('集計行（総労働時間・人件費）とスタッフ行を表示する', async () => {
-    render(<AppProvider><ManagerMatrix year={2026} month={7} /></AppProvider>);
+    const visible = { early: true, mid: true, late: true, off: true };
+    render(
+      <AppProvider>
+        <ManagerMatrix year={2026} month={7} view="月" visibleSlots={visible} setVisibleSlots={() => {}} />
+      </AppProvider>,
+    );
     await waitFor(() => expect(screen.getByText('山田（店長）')).toBeInTheDocument());
     expect(screen.getByText(/総労働時間/)).toBeInTheDocument();
     expect(screen.getByText(/人件費\(目安\)/)).toBeInTheDocument();

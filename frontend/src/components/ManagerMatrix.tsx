@@ -1,16 +1,26 @@
 import { useState } from 'react';
 import { useApp } from '../store/AppContext';
-import { getMonthDates } from '../lib/date';
+import { getMonthDates, sliceByView } from '../lib/date';
 import { getDayRequest } from '../store/requests';
 import { isAssigned, countAssigned, fulfillmentLevel } from '../store/assignments';
 import { dailyWorkHours, dailyLaborCost, staffMonthlyHours } from '../store/labor';
 import { WORK_SLOTS, SLOT_LABELS, SLOT_TIMES, MAX_STAFF_PER_SLOT, DAILY_SALES_TARGET } from '../constants';
-import type { DayRequestValue, WorkSlot } from '../types';
+import type { DayRequestValue, WorkSlot, RequestSlot, SlotVisibility } from '../types';
 
 interface ManagerMatrixProps {
   year: number;
   month: number;
+  view: string;
+  visibleSlots: SlotVisibility;
+  setVisibleSlots: (v: SlotVisibility) => void;
 }
+
+const FILTER_SLOTS: { slot: RequestSlot; label: string }[] = [
+  { slot: 'early', label: '早番' },
+  { slot: 'mid', label: '中番' },
+  { slot: 'late', label: '遅番' },
+  { slot: 'off', label: '休み' },
+];
 
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
 
@@ -34,11 +44,11 @@ function yen(n: number): string {
   return `¥${n.toLocaleString('ja-JP')}`;
 }
 
-export function ManagerMatrix({ year, month }: ManagerMatrixProps) {
+export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots }: ManagerMatrixProps) {
   const { staff, requests, assignments, dayNotes, storeNotes, toggleAssignment, setStoreNote } = useApp();
   const [showRequests, setShowRequests] = useState(true);
   const [showMemos, setShowMemos] = useState(true);
-  const dates = getMonthDates(year, month);
+  const dates = sliceByView(getMonthDates(year, month), view);
 
   if (staff.length === 0) {
     return <section className="empty"><p>この店舗のスタッフがいません。</p></section>;
@@ -57,10 +67,17 @@ export function ManagerMatrix({ year, month }: ManagerMatrixProps) {
           勤務メモを表示
         </label>
         <span className="cat-bulk">一括操作</span>
-        <span className="filter-chip early">早番</span>
-        <span className="filter-chip mid">中番</span>
-        <span className="filter-chip late">遅番</span>
-        <span className="filter-chip off">休み</span>
+        {FILTER_SLOTS.map(({ slot, label }) => (
+          <button
+            key={slot}
+            type="button"
+            className={`filter-chip ${slot} ${visibleSlots[slot] ? '' : 'is-off'}`}
+            aria-pressed={visibleSlots[slot]}
+            onClick={() => setVisibleSlots({ ...visibleSlots, [slot]: !visibleSlots[slot] })}
+          >
+            {label}
+          </button>
+        ))}
         <button type="button" className="tb-btn sm">シフト設定</button>
       </div>
 
@@ -169,7 +186,7 @@ export function ManagerMatrix({ year, month }: ManagerMatrixProps) {
                     };
                     return (
                       <td key={date} className={`shift-cell ${dowClass(date)}`}>
-                        {showRequests && req !== 'none' && (
+                        {showRequests && req !== 'none' && visibleSlots[req] && (
                           <span
                             className={`chip ${REQUEST_CLASS[req]} ${assigned ? 'assigned' : ''} ${targetSlot ? 'clickable' : ''}`}
                             role={targetSlot ? 'button' : undefined}

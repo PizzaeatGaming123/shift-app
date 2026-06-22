@@ -9,6 +9,9 @@ export type DayRequestValue = 'none' | 'early' | 'mid' | 'late' | 'off';
 /** 1レコードの希望スロット（off を含む） */
 export type RequestSlot = WorkSlot | 'off';
 
+/** マトリクスで表示する区分のオン/オフ（シフトの種類フィルタ） */
+export type SlotVisibility = Record<RequestSlot, boolean>;
+
 export interface Store {
   id: string;
   name: string;
