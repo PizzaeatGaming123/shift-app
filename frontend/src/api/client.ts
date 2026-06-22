@@ -8,8 +8,10 @@ export interface Me {
 }
 export interface ApiStore { id: number; name: string; }
 export interface ApiStaff { id: number; name: string; employmentType: string; role: string; }
-export interface ApiRequest { staffId: number; date: string; slot: 'early' | 'late' | 'off'; }
-export interface ApiAssignment { date: string; slot: 'early' | 'late'; staffId: number; }
+export interface ApiRequest { staffId: number; date: string; slot: 'early' | 'mid' | 'late' | 'off'; }
+export interface ApiAssignment { date: string; slot: 'early' | 'mid' | 'late'; staffId: number; }
+export interface ApiDayNote { staffId: number; date: string; text: string; }
+export interface ApiStoreNote { date: string; text: string; }
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -64,7 +66,7 @@ export const api = {
     return json<ApiAssignment[]>(await fetch(`/api/stores/${storeId}/assignments?month=${month}`, { credentials: 'include' }));
   },
 
-  async assign(storeId: number, date: string, slot: 'early' | 'late', staffId: number): Promise<void> {
+  async assign(storeId: number, date: string, slot: 'early' | 'mid' | 'late', staffId: number): Promise<void> {
     await fetch('/api/assignments', {
       method: 'POST',
       credentials: 'include',
@@ -73,12 +75,38 @@ export const api = {
     });
   },
 
-  async unassign(storeId: number, date: string, slot: 'early' | 'late', staffId: number): Promise<void> {
+  async unassign(storeId: number, date: string, slot: 'early' | 'mid' | 'late', staffId: number): Promise<void> {
     await fetch('/api/assignments', {
       method: 'DELETE',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ storeId, date, slot, staffId }),
+    });
+  },
+
+  async dayNotes(storeId: number, month: string): Promise<ApiDayNote[]> {
+    return json<ApiDayNote[]>(await fetch(`/api/stores/${storeId}/day-notes?month=${month}`, { credentials: 'include' }));
+  },
+
+  async setDayNote(date: string, text: string): Promise<void> {
+    await fetch('/api/day-notes', {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date, text }),
+    });
+  },
+
+  async storeNotes(storeId: number, month: string): Promise<ApiStoreNote[]> {
+    return json<ApiStoreNote[]>(await fetch(`/api/stores/${storeId}/store-notes?month=${month}`, { credentials: 'include' }));
+  },
+
+  async setStoreNote(storeId: number, date: string, text: string): Promise<void> {
+    await fetch(`/api/stores/${storeId}/store-notes`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date, text }),
     });
   },
 };
