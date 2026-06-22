@@ -3,7 +3,7 @@ import { useApp } from '../store/AppContext';
 import { Modal } from './ui/Modal';
 import { useToast } from './ui/Toast';
 import { getMonthDates } from '../lib/date';
-import { staffMonthlyHours } from '../store/labor';
+import { staffMonthlyHours, maxConsecutiveAssignedDays } from '../store/labor';
 import { buildScheduleCsv, downloadCsv } from '../lib/csv';
 
 type ModalKind = 'staff' | 'help' | 'account' | null;
@@ -61,18 +61,26 @@ export function TopNav() {
 
       <Modal open={modal === 'staff'} title="スタッフ一覧" onClose={() => setModal(null)}>
         <ul className="modal-list">
-          {staff.map((s) => (
-            <li key={s.id}>
-              <span className="staff-li-main">
-                <span className="staff-li-name">{s.name}<span className="muted-sm">（{s.employmentType}）</span></span>
-                <span className="staff-li-sub">
-                  {s.rank != null && <span className="rank-badge">ランク{s.rank}</span>}
-                  {s.skills.map((sk) => <span key={sk} className="skill-tag">{sk}</span>)}
+          {staff.map((s) => {
+            const consec = maxConsecutiveAssignedDays(assignments, s.id, dates);
+            const hours = staffMonthlyHours(assignments, s.id, dates);
+            const alerts: string[] = [];
+            if (consec >= 6) alerts.push(`連続${consec}日勤務`);
+            if (hours > 180) alerts.push('労働時間超過');
+            return (
+              <li key={s.id}>
+                <span className="staff-li-main">
+                  <span className="staff-li-name">{s.name}<span className="muted-sm">（{s.employmentType}）</span></span>
+                  <span className="staff-li-sub">
+                    {s.rank != null && <span className="rank-badge">ランク{s.rank}</span>}
+                    {s.skills.map((sk) => <span key={sk} className="skill-tag">{sk}</span>)}
+                    {alerts.map((a) => <span key={a} className="alert-tag">労務注意：{a}</span>)}
+                  </span>
                 </span>
-              </span>
-              <span className="staff-li-hours">{staffMonthlyHours(assignments, s.id, dates).toFixed(2)} h</span>
-            </li>
-          ))}
+                <span className="staff-li-hours">{hours.toFixed(2)} h</span>
+              </li>
+            );
+          })}
         </ul>
       </Modal>
 

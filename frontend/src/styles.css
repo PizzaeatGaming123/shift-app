@@ -1253,6 +1253,29 @@ button.cal-cell:active {
   padding: 1px 6px;
 }
 
+.alert-tag {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--low);
+  background: #fdeaea;
+  border: 1px solid #f3c6c6;
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+/* シフト設定モーダルの入力 */
+.settings-form { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.settings-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.settings-row input {
+  width: 84px;
+  padding: 7px 10px;
+  font-size: 15px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  text-align: right;
+}
+.settings-row input:focus { outline: none; border-color: var(--primary); }
+
 /* ---- login ---- */
 .login {
   min-height: 100dvh;
