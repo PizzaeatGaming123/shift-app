@@ -4,3 +4,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
+
+# テストではデモのシフト/メモを投入しない（コントローラの件数検証を壊さないため）
+app:
+  seed-demo-shifts: false

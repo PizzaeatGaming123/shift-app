@@ -21,7 +21,7 @@ public class RequestService {
         this.staffRepository = staffRepository;
     }
 
-    /** その日の希望をまるごと置き換える（none/early/late/both/off）。更新後の当日レコードを返す。 */
+    /** その日の希望をまるごと置き換える（none/early/mid/late/off）。更新後の当日レコードを返す。 */
     @Transactional
     public List<ShiftRequest> setDayRequest(String username, LocalDate date, String value) {
         Staff staff = staffRepository.findByUsername(username).orElseThrow();
@@ -30,11 +30,8 @@ public class RequestService {
         List<ShiftRequest> added = new ArrayList<>();
         switch (value) {
             case "early" -> added.add(new ShiftRequest(staff, date, RequestSlot.EARLY));
+            case "mid" -> added.add(new ShiftRequest(staff, date, RequestSlot.MID));
             case "late" -> added.add(new ShiftRequest(staff, date, RequestSlot.LATE));
-            case "both" -> {
-                added.add(new ShiftRequest(staff, date, RequestSlot.EARLY));
-                added.add(new ShiftRequest(staff, date, RequestSlot.LATE));
-            }
             case "off" -> added.add(new ShiftRequest(staff, date, RequestSlot.OFF));
             case "none" -> { /* 何も追加しない */ }
             default -> throw new IllegalArgumentException("Unknown value: " + value);
