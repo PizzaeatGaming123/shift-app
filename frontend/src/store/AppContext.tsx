@@ -28,6 +28,7 @@ interface AppContextValue {
   setStoreNote: (date: string, text: string) => Promise<void>;
   setRecruitment: (date: string, message: string) => Promise<void>;
   updateStaff: (id: string, rank: number | null, skills: string[]) => Promise<void>;
+  createStaff: (name: string, employmentType: string, role: string) => Promise<void>;
   bulkAssignRequested: (dates: string[]) => Promise<number>;
 }
 
@@ -159,6 +160,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await reloadStoreData();
   }, [reloadStoreData]);
 
+  const createStaff = useCallback(async (name: string, employmentType: string, role: string) => {
+    if (!storeId) return;
+    await api.createStaff(storeId, name, employmentType, role);
+    await reloadStoreData();
+  }, [storeId, reloadStoreData]);
+
   // 希望（早/中/遅）が出ていて未割り当てのセルを一括で割り当てる。割り当てた件数を返す。
   const bulkAssignRequested = useCallback(async (targetDates: string[]): Promise<number> => {
     if (!storeId) return 0;
@@ -180,9 +187,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AppContextValue>(() => ({
     me, loading, stores, staff, requests, assignments, dayNotes, storeNotes, recruitments, storeId, month,
-    setStoreId, setMonth, login, logout, setDayRequest, toggleAssignment, setDayNote, setStoreNote, setRecruitment, updateStaff, bulkAssignRequested,
+    setStoreId, setMonth, login, logout, setDayRequest, toggleAssignment, setDayNote, setStoreNote, setRecruitment, updateStaff, createStaff, bulkAssignRequested,
   }), [me, loading, stores, staff, requests, assignments, dayNotes, storeNotes, recruitments, storeId, month,
-       login, logout, setDayRequest, toggleAssignment, setDayNote, setStoreNote, setRecruitment, updateStaff, bulkAssignRequested]);
+       login, logout, setDayRequest, toggleAssignment, setDayNote, setStoreNote, setRecruitment, updateStaff, createStaff, bulkAssignRequested]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

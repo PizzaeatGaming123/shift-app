@@ -58,6 +58,15 @@ export const api = {
     });
   },
 
+  async createStaff(storeId: number, name: string, employmentType: string, role: string): Promise<void> {
+    await fetch(`/api/stores/${storeId}/staff`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, employmentType, role }),
+    });
+  },
+
   async requests(storeId: number, month: string): Promise<ApiRequest[]> {
     return json<ApiRequest[]>(await fetch(`/api/stores/${storeId}/requests?month=${month}`, { credentials: 'include' }));
   },

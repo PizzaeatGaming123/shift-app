@@ -385,14 +385,20 @@ button.cal-cell:active {
   font-size: 11px;
   font-weight: 700;
   padding: 3px 6px;
-  border-radius: 0;
+  border-radius: 3px;
   margin: 0 2px 1px 0;
   border: 1px solid transparent;
+  transition: box-shadow var(--t), transform var(--t);
 }
 
 .shift-cell .chip {
   width: 100%;
   margin: 0 0 2px 0;
+}
+
+.shift-cell .chip.clickable:hover {
+  box-shadow: 0 2px 6px rgba(15, 23, 42, .18);
+  transform: translateY(-1px);
 }
 
 .chip.early {
@@ -954,9 +960,15 @@ button.cal-cell:active {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 0 12px;
+  padding: 0 14px;
   height: 44px;
   color: #e8edf4;
+  border-right: 1px solid rgba(255, 255, 255, .1);
+  transition: background var(--t);
+}
+
+.topnav-menus .nav-dd:first-child > summary {
+  border-left: 1px solid rgba(255, 255, 255, .1);
 }
 
 .nav-dd > summary::-webkit-details-marker { display: none; }
@@ -1612,6 +1624,53 @@ button.cal-cell:active {
 @keyframes fade {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+/* ---- hover の細かな演出（ふわっと） ---- */
+.tb-btn,
+.tb-select,
+.tb-dd > summary,
+.seg2 button,
+.view-tabs button,
+.filter-chip,
+.topnav-icon,
+.cat-bulk-btn,
+.nav-menu-item,
+.chip-btn {
+  transition: background var(--t), color var(--t), border-color var(--t),
+    box-shadow var(--t), transform var(--t);
+}
+
+.tb-btn:hover,
+.tb-dd > summary:hover,
+.cat-bulk-btn:hover {
+  box-shadow: 0 2px 8px rgba(15, 23, 42, .12);
+  transform: translateY(-1px);
+}
+
+.tb-btn:active,
+.cat-bulk-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.topnav-icon:hover {
+  background: rgba(255, 255, 255, .14);
+  transform: translateY(-1px);
+}
+
+.filter-chip:hover {
+  box-shadow: 0 1px 4px rgba(15, 23, 42, .14);
+}
+
+.modal-x {
+  transition: color var(--t), transform var(--t);
+}
+.modal-x:hover { color: var(--text); transform: scale(1.1); }
+
+.view-tabs button:not(.active):hover,
+.seg2 button:not(.active):hover {
+  background: #f1f4f8;
 }
 
 /* ---- responsive ---- */

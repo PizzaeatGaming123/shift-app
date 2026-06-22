@@ -27,6 +27,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.DELETE, "/api/assignments").hasRole("MANAGER")
                 .requestMatchers(HttpMethod.PUT, "/api/stores/*/store-notes").hasRole("MANAGER")
                 .requestMatchers(HttpMethod.PUT, "/api/staff/*").hasRole("MANAGER")
+                .requestMatchers(HttpMethod.POST, "/api/stores/*/staff").hasRole("MANAGER")
                 .requestMatchers(HttpMethod.PUT, "/api/stores/*/recruitments").hasRole("MANAGER")
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll())

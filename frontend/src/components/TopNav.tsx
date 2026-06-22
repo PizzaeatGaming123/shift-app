@@ -10,12 +10,13 @@ import { buildScheduleCsv, downloadCsv } from '../lib/csv';
 import { WORK_SLOTS, SLOT_LABELS, SLOT_HOURS, HOURLY_WAGE, DAILY_SALES_TARGET } from '../constants';
 
 type ModalKind =
-  | null | 'staff' | 'rank' | 'skills' | 'sales' | 'cost' | 'sph'
+  | null | 'staff' | 'regStaff' | 'regAdmin' | 'rank' | 'skills' | 'sales' | 'cost' | 'sph'
   | 'laborStatus' | 'attendance' | 'hoursAlert' | 'stores' | 'dept' | 'perm'
   | 'import' | 'integ' | 'hours' | 'collect' | 'notify' | 'display' | 'help' | 'account';
 
 const TITLES: Record<Exclude<ModalKind, null>, string> = {
-  staff: 'スタッフ一覧', rank: 'ランク設定', skills: 'スキル設定', sales: '売上計画',
+  staff: 'スタッフ一覧', regStaff: 'スタッフ登録', regAdmin: '管理者登録',
+  rank: 'ランク設定', skills: 'スキル設定', sales: '売上計画',
   cost: '人件費', sph: '人時売上高', laborStatus: '労務状況', attendance: '勤怠',
   hoursAlert: '労働時間アラート', stores: '店舗管理', dept: '部門', perm: '権限設定',
   import: 'CSVインポート', integ: '連携設定', hours: '営業時間', collect: 'シフト回収設定',
@@ -34,10 +35,21 @@ function assignedDays(assignments: ReturnType<typeof useApp>['assignments'], sta
 }
 
 export function TopNav({ onHome }: { onHome?: () => void }) {
-  const { me, logout, stores, staff, assignments, storeId, month, updateStaff } = useApp();
+  const { me, logout, stores, staff, assignments, storeId, month, updateStaff, createStaff } = useApp();
   const { showToast } = useToast();
   const [modal, setModal] = useState<ModalKind>(null);
   const [importInfo, setImportInfo] = useState<{ count: number; sample: string[] } | null>(null);
+  const [regName, setRegName] = useState('');
+  const [regType, setRegType] = useState('パート');
+
+  async function submitRegister(role: 'STAFF' | 'MANAGER') {
+    const name = regName.trim();
+    if (!name) { showToast('氏名を入力してください'); return; }
+    await createStaff(name, regType, role);
+    showToast(`${role === 'MANAGER' ? '管理者' : 'スタッフ'}「${name}」を登録しました ✓`);
+    setRegName('');
+    setModal(null);
+  }
 
   const [salesTarget, setSalesTarget] = useSetting(`akiyume-sales:${storeId}`, DAILY_SALES_TARGET);
   const [positions, setPositions] = useSetting<string[]>(`akiyume-positions:${storeId}`, ['ホール', 'キッチン']);
@@ -73,7 +85,7 @@ export function TopNav({ onHome }: { onHome?: () => void }) {
 
   const MENUS: { label: string; items: { label: string; onClick: () => void }[] }[] = [
     { label: 'シフト', items: [{ label: '印刷', onClick: () => window.print() }, { label: 'CSVエクスポート', onClick: exportCsv }] },
-    { label: 'スタッフ', items: [{ label: 'スタッフ一覧', onClick: () => setModal('staff') }, { label: 'ランク設定', onClick: () => setModal('rank') }, { label: 'スキル設定', onClick: () => setModal('skills') }] },
+    { label: 'スタッフ', items: [{ label: 'スタッフ一覧', onClick: () => setModal('staff') }, { label: 'スタッフ登録', onClick: () => setModal('regStaff') }, { label: '管理者登録', onClick: () => setModal('regAdmin') }, { label: 'ランク設定', onClick: () => setModal('rank') }, { label: 'スキル設定', onClick: () => setModal('skills') }] },
     { label: '会計', items: [{ label: '売上計画', onClick: () => setModal('sales') }, { label: '人件費', onClick: () => setModal('cost') }, { label: '人時売上高', onClick: () => setModal('sph') }] },
     { label: '労務', items: [{ label: '労務状況', onClick: () => setModal('laborStatus') }, { label: '勤怠', onClick: () => setModal('attendance') }, { label: '労働時間アラート', onClick: () => setModal('hoursAlert') }] },
     { label: '組織', items: [{ label: '店舗管理', onClick: () => setModal('stores') }, { label: '部門', onClick: () => setModal('dept') }, { label: '権限設定', onClick: () => setModal('perm') }] },
@@ -130,6 +142,33 @@ export function TopNav({ onHome }: { onHome?: () => void }) {
               );
             })}
           </ul>
+        )}
+
+        {(modal === 'regStaff' || modal === 'regAdmin') && (
+          <div className="settings-form">
+            <p className="muted-sm">
+              {modal === 'regAdmin' ? '管理者（店長）を登録します。' : 'スタッフを登録します。'}
+              氏名と雇用形態を入力してください。初期パスワードは「password」です。
+            </p>
+            <label className="settings-row">
+              <span>氏名</span>
+              <input className="text-input" value={regName} placeholder="例：山田太郎" onChange={(e) => setRegName(e.target.value)} />
+            </label>
+            <label className="settings-row">
+              <span>雇用形態</span>
+              <select value={regType} onChange={(e) => setRegType(e.target.value)}>
+                <option value="正社員">正社員</option>
+                <option value="パート">パート</option>
+              </select>
+            </label>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => void submitRegister(modal === 'regAdmin' ? 'MANAGER' : 'STAFF')}
+            >
+              {modal === 'regAdmin' ? '管理者を登録' : 'スタッフを登録'}
+            </button>
+          </div>
         )}
 
         {modal === 'rank' && (
