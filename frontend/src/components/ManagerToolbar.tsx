@@ -5,6 +5,7 @@ import { useToast } from './ui/Toast';
 import { getMonthDates } from '../lib/date';
 import { dailyWorkHours, dailyLaborCost } from '../store/labor';
 import { countAssigned } from '../store/assignments';
+import { getDayRequest } from '../store/requests';
 import { WORK_SLOTS } from '../constants';
 import type { RequestSlot, SlotVisibility } from '../types';
 
@@ -36,9 +37,10 @@ function yen(n: number): string {
 export function ManagerToolbar({
   monthTitle, onPrev, onNext, onToday, tab, setTab, view, setView, visibleSlots, setVisibleSlots,
 }: Props) {
-  const { stores, storeId, setStoreId, month, assignments } = useApp();
+  const { stores, storeId, setStoreId, month, assignments, requests, staff } = useApp();
   const { showToast } = useToast();
   const [overviewOpen, setOverviewOpen] = useState(false);
+  const [alertOpen, setAlertOpen] = useState(false);
 
   const confirmKey = `akiyume-confirmed:${storeId}:${month}`;
   const [confirmed, setConfirmed] = useState(false);
@@ -54,6 +56,9 @@ export function ManagerToolbar({
   }
 
   const monthDates = getMonthDates(Number(month.slice(0, 4)), Number(month.slice(5, 7)));
+  const unsubmitted = staff.filter(
+    (s) => s.role === 'STAFF' && monthDates.every((d) => getDayRequest(requests, s.id, d) === 'none'),
+  );
   const totalHours = monthDates.reduce((s, d) => s + dailyWorkHours(assignments, d), 0);
   const totalCost = monthDates.reduce((s, d) => s + dailyLaborCost(assignments, d), 0);
   const totalShifts = monthDates.reduce(
@@ -80,6 +85,9 @@ export function ManagerToolbar({
         </details>
         <button type="button" className="tb-btn primary" onClick={confirmShift}>
           シフト確定<span className="tb-badge">{confirmed ? '確定済み' : '未確定あり'}</span>
+        </button>
+        <button type="button" className="tb-btn" onClick={() => setAlertOpen(true)}>
+          未収アラート{unsubmitted.length > 0 && <span className="tb-badge">{unsubmitted.length}件</span>}
         </button>
         <button type="button" className="tb-btn" onClick={() => window.print()}>印刷</button>
         <details className="tb-dd">
@@ -116,6 +124,21 @@ export function ManagerToolbar({
         <span className="tb-period">提出期間 〜前月末 23:59</span>
         <button type="button" className="tb-btn sm" onClick={() => setOverviewOpen(true)}>概要設定</button>
       </div>
+
+      <Modal open={alertOpen} title="未収アラート（希望未提出）" onClose={() => setAlertOpen(false)}>
+        {unsubmitted.length === 0
+          ? <p>未提出のスタッフはいません。</p>
+          : (
+            <ul className="modal-list">
+              {unsubmitted.map((s) => (
+                <li key={s.id}>
+                  <span className="staff-li-name">{s.name}<span className="muted-sm">（{s.employmentType}）</span></span>
+                  <span className="alert-tag">未提出</span>
+                </li>
+              ))}
+            </ul>
+          )}
+      </Modal>
 
       <Modal open={overviewOpen} title={`${monthTitle} の概要`} onClose={() => setOverviewOpen(false)}>
         <dl>

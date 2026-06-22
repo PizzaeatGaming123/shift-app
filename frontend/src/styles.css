@@ -760,6 +760,15 @@ button.cal-cell:active {
   background: #fffdf5;
 }
 
+/* 追加募集行 */
+.recruit-row td {
+  background: #fff7ef;
+}
+.recruit-cell.has-recruit {
+  background: #ffe9d4;
+}
+.recruit-input::placeholder { color: #d3bfa8; }
+
 .store-note-input {
   width: 100%;
   min-width: 90px;

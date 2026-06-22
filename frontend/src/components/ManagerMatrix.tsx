@@ -50,7 +50,7 @@ function yen(n: number): string {
 }
 
 export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots }: ManagerMatrixProps) {
-  const { staff, requests, assignments, dayNotes, storeNotes, storeId, toggleAssignment, setStoreNote } = useApp();
+  const { staff, requests, assignments, dayNotes, storeNotes, recruitments, storeId, toggleAssignment, setStoreNote, setRecruitment } = useApp();
   const [showRequests, setShowRequests] = useState(true);
   const [showMemos, setShowMemos] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -188,6 +188,29 @@ export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots
                       onBlur={(e) => {
                         const v = e.target.value.trim();
                         if (v !== current) void setStoreNote(date, v);
+                      }}
+                    />
+                  </td>
+                );
+              })}
+            </tr>
+            <tr className="recruit-row">
+              <td className="row-head sticky-col">追加募集</td>
+              {dates.map((date) => {
+                const rec = recruitments.find((r) => r.date === date);
+                const current = rec?.message ?? '';
+                return (
+                  <td key={date} className={`recruit-cell ${current ? 'has-recruit' : ''}`}>
+                    <input
+                      className="store-note-input recruit-input"
+                      defaultValue={current}
+                      key={`rec:${date}:${current}`}
+                      maxLength={200}
+                      placeholder="募集なし"
+                      aria-label={`${date} の追加募集`}
+                      onBlur={(e) => {
+                        const v = e.target.value.trim();
+                        if (v !== current) void setRecruitment(date, v);
                       }}
                     />
                   </td>

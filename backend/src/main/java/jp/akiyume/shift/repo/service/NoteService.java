@@ -1,10 +1,12 @@
 package jp.akiyume.shift.repo.service;
 
 import jp.akiyume.shift.domain.DayNote;
+import jp.akiyume.shift.domain.Recruitment;
 import jp.akiyume.shift.domain.Staff;
 import jp.akiyume.shift.domain.Store;
 import jp.akiyume.shift.domain.StoreNote;
 import jp.akiyume.shift.repo.DayNoteRepository;
+import jp.akiyume.shift.repo.RecruitmentRepository;
 import jp.akiyume.shift.repo.StaffRepository;
 import jp.akiyume.shift.repo.StoreNoteRepository;
 import jp.akiyume.shift.repo.StoreRepository;
@@ -20,13 +22,16 @@ public class NoteService {
 
     private final DayNoteRepository dayNoteRepository;
     private final StoreNoteRepository storeNoteRepository;
+    private final RecruitmentRepository recruitmentRepository;
     private final StaffRepository staffRepository;
     private final StoreRepository storeRepository;
 
     public NoteService(DayNoteRepository dayNoteRepository, StoreNoteRepository storeNoteRepository,
+                       RecruitmentRepository recruitmentRepository,
                        StaffRepository staffRepository, StoreRepository storeRepository) {
         this.dayNoteRepository = dayNoteRepository;
         this.storeNoteRepository = storeNoteRepository;
+        this.recruitmentRepository = recruitmentRepository;
         this.staffRepository = staffRepository;
         this.storeRepository = storeRepository;
     }
@@ -69,6 +74,27 @@ public class NoteService {
 
     public List<StoreNote> findStoreNotesByMonth(Long storeId, LocalDate from, LocalDate to) {
         return storeNoteRepository.findByStore_IdAndDateBetween(storeId, from, to);
+    }
+
+    /** 追加募集を upsert。空文字なら削除。更新後（または null）を返す。 */
+    @Transactional
+    public Recruitment setRecruitment(Long storeId, LocalDate date, String message) {
+        Optional<Recruitment> existing = recruitmentRepository.findByStore_IdAndDate(storeId, date);
+        if (isBlank(message)) {
+            existing.ifPresent(recruitmentRepository::delete);
+            return null;
+        }
+        String trimmed = trim(message);
+        Recruitment rec = existing.map(r -> { r.setMessage(trimmed); return r; })
+                .orElseGet(() -> {
+                    Store store = storeRepository.findById(storeId).orElseThrow();
+                    return new Recruitment(store, date, trimmed);
+                });
+        return recruitmentRepository.save(rec);
+    }
+
+    public List<Recruitment> findRecruitmentsByMonth(Long storeId, LocalDate from, LocalDate to) {
+        return recruitmentRepository.findByStore_IdAndDateBetween(storeId, from, to);
     }
 
     private static boolean isBlank(String s) {
