@@ -7,13 +7,17 @@ import { RequestEditor } from './components/RequestEditor';
 import { ManagerMatrix } from './components/ManagerMatrix';
 import { SharedView } from './components/SharedView';
 import { Skeleton } from './components/ui/Skeleton';
+import type { SlotVisibility } from './types';
 
 type Tab = 'main' | 'shared';
+
+const ALL_SLOTS_VISIBLE: SlotVisibility = { early: true, mid: true, late: true, off: true };
 
 export function App() {
   const { me, loading, month, setMonth } = useApp();
   const [tab, setTab] = useState<Tab>('main');
   const [view, setView] = useState('月');
+  const [visibleSlots, setVisibleSlots] = useState<SlotVisibility>(ALL_SLOTS_VISIBLE);
 
   if (loading) {
     return (
@@ -62,11 +66,13 @@ export function App() {
               setTab={setTab}
               view={view}
               setView={setView}
+              visibleSlots={visibleSlots}
+              setVisibleSlots={setVisibleSlots}
             />
             <main className="screen">
               {tab === 'shared'
                 ? <SharedView year={year} month={monthNum} />
-                : <ManagerMatrix year={year} month={monthNum} />}
+                : <ManagerMatrix year={year} month={monthNum} view={view} visibleSlots={visibleSlots} setVisibleSlots={setVisibleSlots} />}
             </main>
           </>
         ) : (

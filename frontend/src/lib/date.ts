@@ -22,6 +22,16 @@ export function firstWeekdayOfMonth(year: number, month: number): number {
   return new Date(year, month - 1, 1).getDay(); // 0=Sun ... 6=Sat
 }
 
+/** 表示単位（日/週/半月/月）に応じて月内の日付配列を絞る。デモ用に月初からの範囲で切り出す。 */
+export function sliceByView(dates: string[], view: string): string[] {
+  switch (view) {
+    case '日': return dates.slice(0, 1);
+    case '週': return dates.slice(0, 7);
+    case '半月': return dates.slice(0, 15);
+    default: return dates;
+  }
+}
+
 export function shiftMonth(
   year: number,
   month: number,
