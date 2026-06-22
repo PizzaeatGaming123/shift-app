@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { AppProvider } from '../store/AppContext';
+import { ToastProvider } from './ui/Toast';
 import { ManagerMatrix } from './ManagerMatrix';
 
 function mockApi() {
@@ -22,9 +23,11 @@ describe('ManagerMatrix', () => {
   it('集計行（総労働時間・人件費）とスタッフ行を表示する', async () => {
     const visible = { early: true, mid: true, late: true, off: true };
     render(
-      <AppProvider>
-        <ManagerMatrix year={2026} month={7} view="月" visibleSlots={visible} setVisibleSlots={() => {}} />
-      </AppProvider>,
+      <ToastProvider>
+        <AppProvider>
+          <ManagerMatrix year={2026} month={7} view="月" visibleSlots={visible} setVisibleSlots={() => {}} />
+        </AppProvider>
+      </ToastProvider>,
     );
     await waitFor(() => expect(screen.getByText('山田（店長）')).toBeInTheDocument());
     expect(screen.getByText(/総労働時間/)).toBeInTheDocument();
