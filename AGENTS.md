@@ -24,6 +24,7 @@
 cd frontend
 npx tsc --noEmit
 npm test
+npm run build
 ```
 
 - バックエンドの最終確認:
@@ -57,4 +58,3 @@ npm run dev
 ```
 
 ブラウザ: `http://localhost:5173`
-

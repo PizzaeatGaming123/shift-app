@@ -301,7 +301,7 @@ button.role-toggle {
 /* ---- calendar ---- */
 .cal-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 6px;
 }
 
@@ -323,6 +323,8 @@ button.role-toggle {
   font: inherit;
   text-align: left;
   width: 100%;
+  min-width: 0;
+  overflow: hidden;
   cursor: default;
   transition: border-color var(--t), box-shadow var(--t), transform var(--t);
 }
@@ -478,7 +480,9 @@ button.cal-cell:active {
 }
 
 .matrix-wrap {
-  overflow-x: auto;
+  max-height: calc(100dvh - 210px);
+  overflow: auto;
+  overscroll-behavior: contain;
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
   background: #fff;
@@ -569,15 +573,15 @@ button.cal-cell:active {
 }
 
 .count.low .count-num {
-  color: var(--low);
+  color: #b91c1c;
 }
 
 .count.ok .count-num {
-  color: var(--ok);
+  color: #047857;
 }
 
 .count.over .count-num {
-  color: var(--over);
+  color: #92400e;
 }
 
 .fill-bar {
@@ -619,6 +623,7 @@ button.cal-cell:active {
 .shared-names {
   color: var(--text);
   line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
 .empty,
@@ -829,7 +834,7 @@ button.cal-cell:active {
   border-radius: 999px;
   font-size: 14px;
   box-shadow: var(--sh-md);
-  animation: rise var(--t);
+  animation: toast-rise var(--t);
 }
 
 /* ---- skeleton / loading ---- */
@@ -863,6 +868,17 @@ button.cal-cell:active {
   }
 }
 
+@keyframes toast-rise {
+  from {
+    transform: translate(-50%, 12px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
 @keyframes modal-rise {
   from {
     transform: translate(-50%, calc(-50% + 12px));
@@ -891,6 +907,13 @@ button.cal-cell:active {
 
   .cal-cell {
     min-height: 58px;
+    padding: 4px;
+  }
+
+  .shared-slot .chip {
+    max-width: 100%;
+    padding-inline: 4px;
+    font-size: 10px;
   }
 
   .summary-num {
@@ -911,15 +934,18 @@ button.cal-cell:active {
 }
 
 @media (min-width: 641px) {
+  .sheet-backdrop {
+    display: none;
+  }
+
   .sheet {
-    left: 50%;
-    right: auto;
-    bottom: auto;
-    top: 50%;
-    transform: translate(-50%, -50%);
+    position: static;
+    transform: none;
     border-radius: var(--r-lg);
-    width: 460px;
-    animation-name: modal-rise;
+    width: 100%;
+    max-width: none;
+    margin-top: 14px;
+    animation-name: rise;
   }
 
   .sheet-handle {
