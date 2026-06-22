@@ -6,6 +6,7 @@ import { isAssigned } from '../store/assignments';
 import { dailyWorkHours, dailyLaborCost, staffMonthlyHours, dailyRankTotal, maxConsecutiveAssignedDays } from '../store/labor';
 import { SLOT_LABELS, DAILY_SALES_TARGET } from '../constants';
 import { Modal } from './ui/Modal';
+import { useToast } from './ui/Toast';
 import { useSetting } from '../lib/settings';
 import type { Assignment, DayRequestValue, WorkSlot, RequestSlot, SlotVisibility } from '../types';
 
@@ -71,7 +72,8 @@ function bandCoverage(assignments: Assignment[], date: string, slots: WorkSlot[]
 }
 
 export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots }: ManagerMatrixProps) {
-  const { staff, requests, assignments, dayNotes, storeNotes, recruitments, storeId, toggleAssignment, setStoreNote, setRecruitment } = useApp();
+  const { staff, requests, assignments, dayNotes, storeNotes, recruitments, storeId, toggleAssignment, setStoreNote, setRecruitment, bulkAssignRequested } = useApp();
+  const { showToast } = useToast();
   const [showRequests, setShowRequests] = useState(true);
   const [showMemos, setShowMemos] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -112,7 +114,16 @@ export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots
           <input type="checkbox" checked={showMemos} onChange={(e) => setShowMemos(e.target.checked)} />
           勤務メモを表示
         </label>
-        <span className="cat-bulk">一括操作</span>
+        <button
+          type="button"
+          className="tb-btn sm cat-bulk-btn"
+          onClick={async () => {
+            const n = await bulkAssignRequested(dates);
+            showToast(n > 0 ? `${n}件を一括割り当てしました ✓` : '割り当て対象がありません');
+          }}
+        >
+          一括操作
+        </button>
         {FILTER_SLOTS.map(({ slot, label }) => (
           <button
             key={slot}

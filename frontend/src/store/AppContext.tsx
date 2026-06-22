@@ -2,6 +2,8 @@ import {
   createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode,
 } from 'react';
 import { api, type Me, type ApiStore, type ApiStaff, type ApiRequest, type ApiAssignment, type ApiDayNote, type ApiStoreNote, type ApiRecruitment } from '../api/client';
+import { getDayRequest } from './requests';
+import { isAssigned } from './assignments';
 import type { ShiftRequest, Assignment, Staff, Store, DayRequestValue, DayNote, StoreNote, Recruitment, WorkSlot } from '../types';
 
 interface AppContextValue {
@@ -26,6 +28,7 @@ interface AppContextValue {
   setStoreNote: (date: string, text: string) => Promise<void>;
   setRecruitment: (date: string, message: string) => Promise<void>;
   updateStaff: (id: string, rank: number | null, skills: string[]) => Promise<void>;
+  bulkAssignRequested: (dates: string[]) => Promise<number>;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -156,11 +159,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await reloadStoreData();
   }, [reloadStoreData]);
 
+  // 希望（早/中/遅）が出ていて未割り当てのセルを一括で割り当てる。割り当てた件数を返す。
+  const bulkAssignRequested = useCallback(async (targetDates: string[]): Promise<number> => {
+    if (!storeId) return 0;
+    const tasks: Promise<void>[] = [];
+    for (const person of staff) {
+      for (const date of targetDates) {
+        const v = getDayRequest(requests, person.id, date);
+        if (v === 'off' || v === 'none') continue;
+        const slot = v as WorkSlot;
+        if (!isAssigned(assignments, date, slot, person.id)) {
+          tasks.push(api.assign(storeId, date, slot, Number(person.id)));
+        }
+      }
+    }
+    await Promise.all(tasks);
+    if (tasks.length > 0) await reloadStoreData();
+    return tasks.length;
+  }, [storeId, staff, requests, assignments, reloadStoreData]);
+
   const value = useMemo<AppContextValue>(() => ({
     me, loading, stores, staff, requests, assignments, dayNotes, storeNotes, recruitments, storeId, month,
-    setStoreId, setMonth, login, logout, setDayRequest, toggleAssignment, setDayNote, setStoreNote, setRecruitment, updateStaff,
+    setStoreId, setMonth, login, logout, setDayRequest, toggleAssignment, setDayNote, setStoreNote, setRecruitment, updateStaff, bulkAssignRequested,
   }), [me, loading, stores, staff, requests, assignments, dayNotes, storeNotes, recruitments, storeId, month,
-       login, logout, setDayRequest, toggleAssignment, setDayNote, setStoreNote, setRecruitment, updateStaff]);
+       login, logout, setDayRequest, toggleAssignment, setDayNote, setStoreNote, setRecruitment, updateStaff, bulkAssignRequested]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

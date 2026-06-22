@@ -396,27 +396,27 @@ button.cal-cell:active {
 }
 
 .chip.early {
-  background: var(--early-soft);
-  color: var(--early-text);
-  border-color: #f0c4d0;
+  background: #fde7ea;
+  color: #b3344a;
+  border-color: #eab2bd;
 }
 
 .chip.late {
-  background: var(--late-soft);
-  color: var(--late-text);
-  border-color: #b9d6f0;
+  background: #e7f0fb;
+  color: #245da0;
+  border-color: #aecdef;
 }
 
 .chip.mid {
-  background: var(--mid-soft);
-  color: var(--mid-text);
-  border-color: #bfe0c6;
+  background: #e8f5ec;
+  color: #2f7a42;
+  border-color: #b6dcc0;
 }
 
 .chip.off {
-  background: var(--off-soft);
-  color: var(--muted);
-  border-color: #d6dbe1;
+  background: #eef1f4;
+  color: #6b7785;
+  border-color: #d4d9df;
 }
 
 .chip.clickable {
@@ -428,11 +428,14 @@ button.cal-cell:active {
   transform: scale(.97);
 }
 
-/* 割り当て確定は枠線リングで表現（参照画像に合わせ淡い配色を維持） */
+/* 割り当て確定は枠線を太く・濃くして表現（参照画像に合わせ淡い配色を維持） */
 .chip.assigned {
-  box-shadow: inset 0 0 0 1.5px currentColor;
+  border-width: 2px;
   font-weight: 800;
 }
+.chip.assigned.early { border-color: #c23b50; }
+.chip.assigned.late { border-color: #1f5d9e; }
+.chip.assigned.mid { border-color: #2f7a42; }
 
 /* ---- request picker / sheet actions ---- */
 .picker {
@@ -879,7 +882,16 @@ button.cal-cell:active {
   font-weight: 800;
   margin-right: 14px;
   letter-spacing: .02em;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 0 6px;
+  height: 100%;
 }
+
+.topnav-brand:hover { background: rgba(255, 255, 255, .08); }
 
 .topnav-menus {
   display: flex;

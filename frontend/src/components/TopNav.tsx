@@ -27,7 +27,7 @@ function assignedDays(assignments: ReturnType<typeof useApp>['assignments'], sta
   return dates.filter((d) => WORK_SLOTS.some((s) => isAssigned(assignments, d, s, staffId))).length;
 }
 
-export function TopNav() {
+export function TopNav({ onHome }: { onHome?: () => void }) {
   const { me, logout, stores, staff, assignments, storeId, month, updateStaff } = useApp();
   const { showToast } = useToast();
   const [modal, setModal] = useState<ModalKind>(null);
@@ -76,10 +76,10 @@ export function TopNav() {
 
   return (
     <header className="topnav">
-      <span className="topnav-brand">暁夢シフト</span>
+      <button type="button" className="topnav-brand" onClick={() => onHome?.()}>暁夢シフト</button>
       <nav className="topnav-menus" aria-label="メインメニュー">
         {MENUS.map((m) => (
-          <details className="nav-dd" key={m.label}>
+          <details className="nav-dd" name="topnav" key={m.label}>
             <summary>{m.label}<span className="caret" aria-hidden="true" /></summary>
             <div className="nav-menu">
               {m.items.map((it) => (
@@ -92,7 +92,7 @@ export function TopNav() {
       <div className="topnav-right">
         <button type="button" className="topnav-icon" aria-label="ヘルプ" onClick={() => setModal('help')}>?</button>
         <button type="button" className="topnav-icon bell" aria-label="通知"><span className="bell-dot" /></button>
-        <details className="nav-dd user-dd">
+        <details className="nav-dd user-dd" name="topnav">
           <summary>{me?.name ?? ''} さん<span className="caret" aria-hidden="true" /></summary>
           <div className="nav-menu right">
             <button type="button" className="nav-menu-item" onClick={() => setModal('account')}>アカウント設定</button>

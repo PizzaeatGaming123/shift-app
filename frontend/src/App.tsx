@@ -51,9 +51,15 @@ export function App() {
   const isManager = me.role === 'MANAGER';
   const monthTitle = `${year}年 ${monthNum}月`;
 
+  function goHome() {
+    setTab('main');
+    setView('月');
+    goToday();
+  }
+
   return (
     <>
-      <TopNav />
+      <TopNav onHome={goHome} />
       <div className="app">
         {isManager ? (
           <>
