@@ -19,10 +19,12 @@ function mockApi() {
 describe('ManagerMatrix', () => {
   beforeEach(() => { vi.restoreAllMocks(); mockApi(); });
 
-  it('renders staff row and shift-count rows after data loads', async () => {
+  it('集計行（総労働時間・人件費）とスタッフ行を表示する', async () => {
     render(<AppProvider><ManagerMatrix year={2026} month={7} /></AppProvider>);
     await waitFor(() => expect(screen.getByText('山田（店長）')).toBeInTheDocument());
-    expect(screen.getByText('早番人数')).toBeInTheDocument();
-    expect(screen.getByText('遅番人数')).toBeInTheDocument();
+    expect(screen.getByText('総労働時間')).toBeInTheDocument();
+    expect(screen.getByText('人件費(目安)')).toBeInTheDocument();
+    expect(screen.getByText('早番')).toBeInTheDocument();
+    expect(screen.getByText('遅番')).toBeInTheDocument();
   });
 });
