@@ -32,7 +32,7 @@ export function Login() {
     <div className="login">
       <div className="login-card card">
         <div className="login-brand">
-          <div className="login-logo">🍜 暁夢シフト</div>
+          <div className="login-logo">暁夢シフト</div>
           <p className="login-tagline">みんなのシフト、ひとつに。</p>
         </div>
         <form onSubmit={submit} className="login-form">
