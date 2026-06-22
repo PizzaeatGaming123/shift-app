@@ -75,17 +75,27 @@ export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots
   const { staff, requests, assignments, dayNotes, storeNotes, recruitments, storeId, toggleAssignment, setStoreNote, setRecruitment, bulkAssignRequested } = useApp();
   const { showToast } = useToast();
   const [topFixed, setTopFixed] = useState(true);
-  const [large, setLarge] = useState(true);
   const [workersOnly, setWorkersOnly] = useState(false);
   const [showPattern, setShowPattern] = useState(false);
   const [showRequests, setShowRequests] = useState(true);
   const [showTasks, setShowTasks] = useState(true);
   const [showMemos, setShowMemos] = useState(true);
+  const [showSummary, setShowSummary] = useState(true);
+  const [sortMode, setSortMode] = useState<'default' | 'hours' | 'rank' | 'name'>('default');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [required, setRequired] = useState<RequiredByBand>(DEFAULT_REQUIRED);
   const dates = sliceByView(getMonthDates(year, month), view);
   const [salesTarget] = useSetting(`akiyume-sales:${storeId}`, DAILY_SALES_TARGET);
   const [hallMemos, setHallMemos] = useSetting<Record<string, string>>(`akiyume-hallmemo:${storeId}`, {});
+  const [fontSize] = useSetting<'small' | 'standard' | 'large'>(`akiyume-fontsize:${storeId}`, 'standard');
+
+  const SORT_LABEL: Record<typeof sortMode, string> = {
+    default: '', hours: '（時間順）', rank: '（ランク順）', name: '（氏名順）',
+  };
+  function cycleSort() {
+    const order: (typeof sortMode)[] = ['default', 'hours', 'rank', 'name'];
+    setSortMode(order[(order.indexOf(sortMode) + 1) % order.length]);
+  }
 
   const reqKey = `akiyume-required:${storeId}`;
   useEffect(() => {
@@ -108,9 +118,15 @@ export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots
   }
 
   const dateSet = new Set(dates);
-  const visibleStaff = workersOnly
+  const filteredStaff = workersOnly
     ? staff.filter((p) => assignments.some((a) => dateSet.has(a.date) && a.staffIds.includes(p.id)))
     : staff;
+  const visibleStaff = [...filteredStaff].sort((a, b) => {
+    if (sortMode === 'hours') return staffMonthlyHours(assignments, b.id, dates) - staffMonthlyHours(assignments, a.id, dates);
+    if (sortMode === 'rank') return (b.rank ?? 0) - (a.rank ?? 0);
+    if (sortMode === 'name') return a.name.localeCompare(b.name, 'ja');
+    return 0;
+  });
 
   return (
     <section className="matrix-section">
@@ -121,8 +137,8 @@ export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots
           上部固定
         </label>
         <label className="cat-check">
-          <input type="checkbox" checked={large} onChange={(e) => setLarge(e.target.checked)} />
-          縮小拡大
+          <input type="checkbox" checked={showSummary} onChange={(e) => setShowSummary(e.target.checked)} />
+          集計
         </label>
         <label className="cat-check">
           <input type="checkbox" checked={workersOnly} onChange={(e) => setWorkersOnly(e.target.checked)} />
@@ -169,10 +185,14 @@ export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots
       </div>
 
       <div className="matrix-wrap">
-        <table className={`matrix ${large ? 'is-large' : ''} ${topFixed ? 'top-fixed' : ''}`}>
+        <table className={`matrix size-${fontSize} ${topFixed ? 'top-fixed' : ''}`}>
           <thead>
             <tr>
-              <th className="row-head sticky-col">スタッフ並び替え</th>
+              <th className="row-head sticky-col sort-head">
+                <button type="button" className="sort-btn" onClick={cycleSort} title="クリックで並び順を切替">
+                  スタッフ並び替え<span className="sort-mode">{SORT_LABEL[sortMode]}</span>
+                </button>
+              </th>
               {dates.map((date) => (
                 <th key={date} className={`date-head ${dowClass(date)}`}>
                   <span className="d-num">{Number(date.slice(8, 10))}</span>
@@ -182,6 +202,8 @@ export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots
             </tr>
           </thead>
           <tbody>
+            {showSummary && (
+            <>
             <tr className="summary-row">
               <td className="row-head sticky-col">売上計画</td>
               {dates.map((date) => (
@@ -233,6 +255,8 @@ export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots
                 <td key={date} className="count">{dailyRankTotal(assignments, staff, date)}</td>
               ))}
             </tr>
+            </>
+            )}
             <tr className="store-note-row">
               <td className="row-head sticky-col">店舗メモ</td>
               {dates.map((date) => {

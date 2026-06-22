@@ -12,15 +12,21 @@ import { WORK_SLOTS, SLOT_LABELS, SLOT_HOURS, HOURLY_WAGE, DAILY_SALES_TARGET } 
 type ModalKind =
   | null | 'staff' | 'rank' | 'skills' | 'sales' | 'cost' | 'sph'
   | 'laborStatus' | 'attendance' | 'hoursAlert' | 'stores' | 'dept' | 'perm'
-  | 'import' | 'integ' | 'hours' | 'collect' | 'notify' | 'help' | 'account';
+  | 'import' | 'integ' | 'hours' | 'collect' | 'notify' | 'display' | 'help' | 'account';
 
 const TITLES: Record<Exclude<ModalKind, null>, string> = {
   staff: 'スタッフ一覧', rank: 'ランク設定', skills: 'スキル設定', sales: '売上計画',
   cost: '人件費', sph: '人時売上高', laborStatus: '労務状況', attendance: '勤怠',
   hoursAlert: '労働時間アラート', stores: '店舗管理', dept: '部門', perm: '権限設定',
   import: 'CSVインポート', integ: '連携設定', hours: '営業時間', collect: 'シフト回収設定',
-  notify: '通知設定', help: '使い方', account: 'アカウント設定',
+  notify: '通知設定', display: '表示設定', help: '使い方', account: 'アカウント設定',
 };
+
+const FONT_SIZES: { value: 'small' | 'standard' | 'large'; label: string }[] = [
+  { value: 'small', label: '小（コンパクト）' },
+  { value: 'standard', label: '標準' },
+  { value: 'large', label: '大（見やすい）' },
+];
 
 function yen(n: number): string { return `¥${n.toLocaleString('ja-JP')}`; }
 function assignedDays(assignments: ReturnType<typeof useApp>['assignments'], staffId: string, dates: string[]): number {
@@ -39,6 +45,7 @@ export function TopNav({ onHome }: { onHome?: () => void }) {
   const [collect, setCollect] = useSetting(`akiyume-collect:${storeId}`, { deadlineDay: 25, reminders: 2 });
   const [notify, setNotify] = useSetting(`akiyume-notify:${storeId}`, { onConfirm: true, onRecruit: true, onChange: false });
   const [integ, setInteg] = useSetting(`akiyume-integ:${storeId}`, { pos: false, attendance: false, payroll: false });
+  const [fontSize, setFontSize] = useSetting<'small' | 'standard' | 'large'>(`akiyume-fontsize:${storeId}`, 'standard');
   const [newDept, setNewDept] = useState('');
 
   const dates = getMonthDates(Number(month.slice(0, 4)), Number(month.slice(5, 7)));
@@ -71,7 +78,7 @@ export function TopNav({ onHome }: { onHome?: () => void }) {
     { label: '労務', items: [{ label: '労務状況', onClick: () => setModal('laborStatus') }, { label: '勤怠', onClick: () => setModal('attendance') }, { label: '労働時間アラート', onClick: () => setModal('hoursAlert') }] },
     { label: '組織', items: [{ label: '店舗管理', onClick: () => setModal('stores') }, { label: '部門', onClick: () => setModal('dept') }, { label: '権限設定', onClick: () => setModal('perm') }] },
     { label: 'データ管理', items: [{ label: 'CSVエクスポート', onClick: exportCsv }, { label: 'CSVインポート', onClick: () => setModal('import') }, { label: '連携設定', onClick: () => setModal('integ') }] },
-    { label: '設定', items: [{ label: '営業時間', onClick: () => setModal('hours') }, { label: 'シフト回収設定', onClick: () => setModal('collect') }, { label: '通知設定', onClick: () => setModal('notify') }] },
+    { label: '設定', items: [{ label: '表示設定', onClick: () => setModal('display') }, { label: '営業時間', onClick: () => setModal('hours') }, { label: 'シフト回収設定', onClick: () => setModal('collect') }, { label: '通知設定', onClick: () => setModal('notify') }] },
   ];
 
   return (
@@ -325,6 +332,18 @@ export function TopNav({ onHome }: { onHome?: () => void }) {
               <label key={key} className="menu-check">
                 <input type="checkbox" checked={notify[key]} onChange={(e) => setNotify({ ...notify, [key]: e.target.checked })} />
                 {label}
+              </label>
+            ))}
+          </div>
+        )}
+
+        {modal === 'display' && (
+          <div className="settings-form">
+            <p className="muted-sm">シフト一覧の文字サイズを変更します。シフトを見るだけのときは「小」が便利です。</p>
+            {FONT_SIZES.map((f) => (
+              <label key={f.value} className="menu-check">
+                <input type="radio" name="fontsize" checked={fontSize === f.value} onChange={() => setFontSize(f.value)} />
+                {f.label}
               </label>
             ))}
           </div>
