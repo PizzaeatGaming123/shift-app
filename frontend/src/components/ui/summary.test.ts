@@ -8,16 +8,16 @@ describe('summarizeRequests', () => {
   it('counts submitted slots for one staff member', () => {
     const requests: ShiftRequest[] = [
       { staffId: 'p1', date: '2026-07-01', slot: 'early' },
-      { staffId: 'p1', date: '2026-07-02', slot: 'early' },
-      { staffId: 'p1', date: '2026-07-02', slot: 'late' },
+      { staffId: 'p1', date: '2026-07-02', slot: 'mid' },
       { staffId: 'p2', date: '2026-07-01', slot: 'late' },
     ];
 
     expect(summarizeRequests(requests, 'p1', dates)).toEqual({
       total: 3,
       submitted: 2,
-      early: 2,
-      late: 1,
+      early: 1,
+      mid: 1,
+      late: 0,
       off: 0,
     });
   });
@@ -31,6 +31,7 @@ describe('summarizeRequests', () => {
       total: 3,
       submitted: 1,
       early: 0,
+      mid: 0,
       late: 0,
       off: 1,
     });

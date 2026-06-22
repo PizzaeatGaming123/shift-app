@@ -9,11 +9,9 @@ export function getDayRequest(
     .filter((r) => r.staffId === staffId && r.date === date)
     .map((r) => r.slot);
   if (slots.includes('off')) return 'off';
-  const hasEarly = slots.includes('early');
-  const hasLate = slots.includes('late');
-  if (hasEarly && hasLate) return 'both';
-  if (hasEarly) return 'early';
-  if (hasLate) return 'late';
+  if (slots.includes('early')) return 'early';
+  if (slots.includes('mid')) return 'mid';
+  if (slots.includes('late')) return 'late';
   return 'none';
 }
 
@@ -26,8 +24,9 @@ export function setDayRequest(
   // 対象 staff+date の既存レコードを除去してから付け直す（冪等）
   const others = requests.filter((r) => !(r.staffId === staffId && r.date === date));
   const added: ShiftRequest[] = [];
-  if (value === 'early' || value === 'both') added.push({ staffId, date, slot: 'early' });
-  if (value === 'late' || value === 'both') added.push({ staffId, date, slot: 'late' });
+  if (value === 'early') added.push({ staffId, date, slot: 'early' });
+  if (value === 'mid') added.push({ staffId, date, slot: 'mid' });
+  if (value === 'late') added.push({ staffId, date, slot: 'late' });
   if (value === 'off') added.push({ staffId, date, slot: 'off' });
   return [...others, ...added];
 }
