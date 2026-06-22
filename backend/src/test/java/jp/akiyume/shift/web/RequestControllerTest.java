@@ -20,16 +20,17 @@ class RequestControllerTest {
 
     @Test
     @WithMockUser(username = "nakashima-1")
-    void putRequest_both_thenGet_showsEarlyAndLate() throws Exception {
+    void putRequest_mid_thenGet_showsMid() throws Exception {
         mvc.perform(put("/api/requests")
                 .contentType("application/json")
-                .content("{\"date\":\"2026-07-01\",\"value\":\"both\"}"))
+                .content("{\"date\":\"2026-07-01\",\"value\":\"mid\"}"))
            .andExpect(status().isOk());
 
-        // 中島店(id=1) の7月希望に early/late が含まれる
+        // 中島店(id=1) の7月希望に中番が含まれる
         mvc.perform(get("/api/stores/1/requests?month=2026-07"))
            .andExpect(status().isOk())
-           .andExpect(jsonPath("$.length()").value(2));
+           .andExpect(jsonPath("$.length()").value(1))
+           .andExpect(jsonPath("$[0].slot").value("mid"));
     }
 
     @Test
