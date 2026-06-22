@@ -1,10 +1,10 @@
+import { useState } from 'react';
 import { useApp } from '../store/AppContext';
 import { getMonthDates } from '../lib/date';
 import { getDayRequest } from '../store/requests';
 import { isAssigned, countAssigned, fulfillmentLevel } from '../store/assignments';
 import { dailyWorkHours, dailyLaborCost, staffMonthlyHours } from '../store/labor';
 import { WORK_SLOTS, SLOT_LABELS, SLOT_TIMES, MAX_STAFF_PER_SLOT, DAILY_SALES_TARGET } from '../constants';
-import { Legend } from './ui/Legend';
 import type { DayRequestValue, WorkSlot } from '../types';
 
 interface ManagerMatrixProps {
@@ -36,6 +36,8 @@ function yen(n: number): string {
 
 export function ManagerMatrix({ year, month }: ManagerMatrixProps) {
   const { staff, requests, assignments, dayNotes, storeNotes, toggleAssignment, setStoreNote } = useApp();
+  const [showRequests, setShowRequests] = useState(true);
+  const [showMemos, setShowMemos] = useState(true);
   const dates = getMonthDates(year, month);
 
   if (staff.length === 0) {
@@ -44,26 +46,29 @@ export function ManagerMatrix({ year, month }: ManagerMatrixProps) {
 
   return (
     <section className="matrix-section">
-      <div className="matrix-toolbar">
-        <div className="view-tabs" role="tablist" aria-label="表示単位">
-          <button type="button" role="tab" aria-selected="false">日</button>
-          <button type="button" role="tab" aria-selected="false">週</button>
-          <button type="button" role="tab" aria-selected="false">半月</button>
-          <button type="button" role="tab" aria-selected="true" className="active">月</button>
-        </div>
-        <div className="toolbar-actions">
-          <span className="alert-badge" aria-label="未収アラート">未収アラート 1件</span>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => window.print()}>🖨 印刷</button>
-        </div>
+      <div className="cat-row">
+        <span className="cat-name">ホール</span>
+        <label className="cat-check">
+          <input type="checkbox" checked={showRequests} onChange={(e) => setShowRequests(e.target.checked)} />
+          希望シフトを表示
+        </label>
+        <label className="cat-check">
+          <input type="checkbox" checked={showMemos} onChange={(e) => setShowMemos(e.target.checked)} />
+          勤務メモを表示
+        </label>
+        <span className="cat-bulk">一括操作</span>
+        <span className="filter-chip early">早番</span>
+        <span className="filter-chip mid">中番</span>
+        <span className="filter-chip late">遅番</span>
+        <span className="filter-chip off">休み</span>
+        <button type="button" className="tb-btn sm">シフト設定</button>
       </div>
-
-      <Legend />
 
       <div className="matrix-wrap">
         <table className="matrix">
           <thead>
             <tr>
-              <th className="row-head sticky-col">スタッフ</th>
+              <th className="row-head sticky-col">スタッフ並び替え</th>
               {dates.map((date) => (
                 <th key={date} className={`date-head ${dowClass(date)}`}>
                   <span className="d-num">{Number(date.slice(8, 10))}</span>
@@ -74,19 +79,19 @@ export function ManagerMatrix({ year, month }: ManagerMatrixProps) {
           </thead>
           <tbody>
             <tr className="summary-row">
-              <td className="row-head sticky-col">💰 売上計画</td>
+              <td className="row-head sticky-col">売上計画</td>
               {dates.map((date) => (
                 <td key={date} className="summary-cell">{yen(DAILY_SALES_TARGET)}</td>
               ))}
             </tr>
             <tr className="summary-row">
-              <td className="row-head sticky-col">⏱ 総労働時間</td>
+              <td className="row-head sticky-col">総労働時間</td>
               {dates.map((date) => (
                 <td key={date} className="summary-cell">{dailyWorkHours(assignments, date).toFixed(2)} h</td>
               ))}
             </tr>
             <tr className="summary-row">
-              <td className="row-head sticky-col">💴 人件費(目安)</td>
+              <td className="row-head sticky-col">人件費(目安)</td>
               {dates.map((date) => {
                 const cost = dailyLaborCost(assignments, date);
                 const pct = Math.round((cost / DAILY_SALES_TARGET) * 100);
@@ -98,7 +103,7 @@ export function ManagerMatrix({ year, month }: ManagerMatrixProps) {
               })}
             </tr>
             <tr className="section-row">
-              <td className="row-head sticky-col">⚙ 全体モデルシフト</td>
+              <td className="row-head sticky-col">全体モデルシフト</td>
               {dates.map((date) => <td key={date} className="section-cell" />)}
             </tr>
             {WORK_SLOTS.map((slot) => (
@@ -130,7 +135,7 @@ export function ManagerMatrix({ year, month }: ManagerMatrixProps) {
                       defaultValue={current}
                       key={`${date}:${current}`}
                       maxLength={200}
-                      placeholder="—"
+                      placeholder=""
                       aria-label={`${date} の店舗メモ`}
                       onBlur={(e) => {
                         const v = e.target.value.trim();
@@ -143,17 +148,12 @@ export function ManagerMatrix({ year, month }: ManagerMatrixProps) {
             </tr>
             {staff.map((person) => {
               const hours = staffMonthlyHours(assignments, person.id, dates);
-              const noteCount = dayNotes.filter((n) => n.staffId === person.id).length;
               return (
                 <tr key={person.id} className="staff-row">
                   <td className="row-head sticky-col staff-head">
-                    <span className="staff-avatar" aria-hidden="true">{person.name.slice(0, 1)}</span>
                     <span className="staff-meta">
                       <span className="staff-name">{person.name}</span>
-                      <span className="staff-sub">
-                        <span className="staff-hours">{hours.toFixed(2)} h</span>
-                        {noteCount > 0 && <span className="staff-notes">💬 {noteCount}</span>}
-                      </span>
+                      <span className="staff-hours">{hours.toFixed(2)}</span>
                     </span>
                   </td>
                   {dates.map((date) => {
@@ -169,7 +169,7 @@ export function ManagerMatrix({ year, month }: ManagerMatrixProps) {
                     };
                     return (
                       <td key={date} className={`shift-cell ${dowClass(date)}`}>
-                        {req !== 'none' && (
+                        {showRequests && req !== 'none' && (
                           <span
                             className={`chip ${REQUEST_CLASS[req]} ${assigned ? 'assigned' : ''} ${targetSlot ? 'clickable' : ''}`}
                             role={targetSlot ? 'button' : undefined}
@@ -189,7 +189,7 @@ export function ManagerMatrix({ year, month }: ManagerMatrixProps) {
                             {REQUEST_LABEL[req]}
                           </span>
                         )}
-                        {note && <span className="cell-memo" title={note.text}>💬 {note.text}</span>}
+                        {showMemos && note && <span className="cell-memo" title={note.text}>{note.text}</span>}
                       </td>
                     );
                   })}

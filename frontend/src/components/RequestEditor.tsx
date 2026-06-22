@@ -16,10 +16,10 @@ const VALUE_CHIP: Record<Exclude<DayRequestValue, 'none'>, { label: string; cls:
 };
 
 const PICKS: { value: DayRequestValue; label: string; sel: string }[] = [
-  { value: 'early', label: '🌅 早番', sel: 'sel-early' },
-  { value: 'mid', label: '🌤 中番', sel: 'sel-mid' },
-  { value: 'late', label: '🌙 遅番', sel: 'sel-late' },
-  { value: 'off', label: '😴 休み', sel: 'sel-off' },
+  { value: 'early', label: '早番', sel: 'sel-early' },
+  { value: 'mid', label: '中番', sel: 'sel-mid' },
+  { value: 'late', label: '遅番', sel: 'sel-late' },
+  { value: 'off', label: '休み', sel: 'sel-off' },
 ];
 
 interface RequestEditorProps { year: number; month: number; }
@@ -65,7 +65,7 @@ export function RequestEditor({ year, month }: RequestEditorProps) {
           return (
             <>
               {chip && <span className={`chip ${chip.cls}`}>{chip.label}</span>}
-              {note && <span className="cell-memo" title={note.text}>💬 {note.text}</span>}
+              {note && <span className="cell-memo" title={note.text}>{note.text}</span>}
             </>
           );
         }}
