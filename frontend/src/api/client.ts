@@ -12,6 +12,7 @@ export interface ApiRequest { staffId: number; date: string; slot: 'early' | 'mi
 export interface ApiAssignment { date: string; slot: 'early' | 'mid' | 'late'; staffId: number; }
 export interface ApiDayNote { staffId: number; date: string; text: string; }
 export interface ApiStoreNote { date: string; text: string; }
+export interface ApiRecruitment { date: string; message: string; }
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -116,6 +117,19 @@ export const api = {
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ date, text }),
+    });
+  },
+
+  async recruitments(storeId: number, month: string): Promise<ApiRecruitment[]> {
+    return json<ApiRecruitment[]>(await fetch(`/api/stores/${storeId}/recruitments?month=${month}`, { credentials: 'include' }));
+  },
+
+  async setRecruitment(storeId: number, date: string, message: string): Promise<void> {
+    await fetch(`/api/stores/${storeId}/recruitments`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date, message }),
     });
   },
 };

@@ -11,9 +11,9 @@ const A: Assignment[] = [
 ];
 
 const STAFF: Staff[] = [
-  { id: '1', name: 'A', storeId: '1', employmentType: '正社員', rank: 5, skills: [] },
-  { id: '2', name: 'B', storeId: '1', employmentType: 'パート', rank: 3, skills: [] },
-  { id: '3', name: 'C', storeId: '1', employmentType: 'パート', rank: 2, skills: [] },
+  { id: '1', name: 'A', storeId: '1', employmentType: '正社員', role: 'STAFF', rank: 5, skills: [] },
+  { id: '2', name: 'B', storeId: '1', employmentType: 'パート', role: 'STAFF', rank: 3, skills: [] },
+  { id: '3', name: 'C', storeId: '1', employmentType: 'パート', role: 'STAFF', rank: 2, skills: [] },
 ];
 
 describe('labor', () => {

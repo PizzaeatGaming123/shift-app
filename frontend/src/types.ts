@@ -22,6 +22,7 @@ export interface Staff {
   name: string;
   storeId: string;
   employmentType: EmploymentType;
+  role: 'STAFF' | 'MANAGER';
   rank: number | null;
   skills: string[];
 }
@@ -49,6 +50,12 @@ export interface DayNote {
 export interface StoreNote {
   date: string; // 'YYYY-MM-DD'
   text: string;
+}
+
+/** 追加募集（日ごと・メッセージ付き） */
+export interface Recruitment {
+  date: string; // 'YYYY-MM-DD'
+  message: string;
 }
 
 export interface AppData {

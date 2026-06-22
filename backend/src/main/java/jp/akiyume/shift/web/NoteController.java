@@ -2,7 +2,9 @@ package jp.akiyume.shift.web;
 
 import jp.akiyume.shift.repo.service.NoteService;
 import jp.akiyume.shift.web.dto.DayNoteDto;
+import jp.akiyume.shift.web.dto.RecruitmentDto;
 import jp.akiyume.shift.web.dto.SetDayNoteBody;
+import jp.akiyume.shift.web.dto.SetRecruitmentBody;
 import jp.akiyume.shift.web.dto.SetStoreNoteBody;
 import jp.akiyume.shift.web.dto.StoreNoteDto;
 import org.springframework.security.core.Authentication;
@@ -44,5 +46,17 @@ public class NoteController {
         YearMonth ym = YearMonth.parse(month);
         return noteService.findStoreNotesByMonth(storeId, ym.atDay(1), ym.atEndOfMonth())
                 .stream().map(StoreNoteDto::from).toList();
+    }
+
+    @PutMapping("/stores/{storeId}/recruitments")
+    public void setRecruitment(@PathVariable Long storeId, @RequestBody SetRecruitmentBody body) {
+        noteService.setRecruitment(storeId, LocalDate.parse(body.date()), body.message());
+    }
+
+    @GetMapping("/stores/{storeId}/recruitments")
+    public List<RecruitmentDto> recruitments(@PathVariable Long storeId, @RequestParam String month) {
+        YearMonth ym = YearMonth.parse(month);
+        return noteService.findRecruitmentsByMonth(storeId, ym.atDay(1), ym.atEndOfMonth())
+                .stream().map(RecruitmentDto::from).toList();
     }
 }
