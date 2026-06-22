@@ -1,5 +1,21 @@
-import type { Assignment, Staff } from '../../types';
-import { staffMonthlyHours } from '../../store/labor';
+import {
+  SLOT_LABELS,
+  SLOT_TIMES,
+  WORK_SLOTS,
+} from '../../constants';
+import {
+  dailyLaborCost,
+  dailyRankTotal,
+  dailyWorkHours,
+  staffMonthlyHours,
+} from '../../store/labor';
+import type {
+  Assignment,
+  DayNote,
+  ShiftRequest,
+  Staff,
+  WorkSlot,
+} from '../../types';
 import type { ManagerView, StaffSortMode } from './types';
 
 export interface ManagerDateWindowInput {
@@ -65,4 +81,97 @@ export function formatDuration(hours: number): string {
   const wholeHours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
   return `${wholeHours}:${String(minutes).padStart(2, '0')}`;
+}
+
+interface ShiftDescriptor {
+  slot: WorkSlot | 'off';
+  label: string;
+  time: string | null;
+}
+
+export interface ShiftCellModel {
+  request: ShiftDescriptor | null;
+  assignment: ShiftDescriptor | null;
+  note: string | null;
+}
+
+export function getShiftCellModel({
+  staffId,
+  date,
+  requests,
+  assignments,
+  notes,
+}: {
+  staffId: string;
+  date: string;
+  requests: ShiftRequest[];
+  assignments: Assignment[];
+  notes: DayNote[];
+}): ShiftCellModel {
+  const request = requests.find(
+    (item) => item.staffId === staffId && item.date === date,
+  );
+  const assignment = WORK_SLOTS.find((slot) =>
+    assignments.some(
+      (item) =>
+        item.date === date
+        && item.slot === slot
+        && item.staffIds.includes(staffId),
+    ),
+  );
+  const note = notes.find(
+    (item) => item.staffId === staffId && item.date === date,
+  )?.text ?? null;
+
+  return {
+    request: request
+      ? {
+          slot: request.slot,
+          label: request.slot === 'off' ? '休み' : SLOT_LABELS[request.slot],
+          time: request.slot === 'off' ? null : SLOT_TIMES[request.slot],
+        }
+      : null,
+    assignment: assignment
+      ? {
+          slot: assignment,
+          label: SLOT_LABELS[assignment],
+          time: SLOT_TIMES[assignment],
+        }
+      : null,
+    note,
+  };
+}
+
+export interface DailySummary {
+  sales: number;
+  workHours: number;
+  laborCost: number;
+  laborCostRate: number;
+  salesPerHour: number;
+  rankTotal: number;
+}
+
+export function getDailySummary({
+  date,
+  assignments,
+  staff,
+  salesTarget,
+}: {
+  date: string;
+  assignments: Assignment[];
+  staff: Staff[];
+  salesTarget: number;
+}): DailySummary {
+  const workHours = dailyWorkHours(assignments, date);
+  const laborCost = dailyLaborCost(assignments, date);
+  return {
+    sales: salesTarget,
+    workHours,
+    laborCost,
+    laborCostRate: salesTarget > 0
+      ? Math.round((laborCost / salesTarget) * 100)
+      : 0,
+    salesPerHour: workHours > 0 ? Math.round(salesTarget / workHours) : 0,
+    rankTotal: dailyRankTotal(assignments, staff, date),
+  };
 }
