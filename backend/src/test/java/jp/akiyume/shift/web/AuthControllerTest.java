@@ -33,7 +33,7 @@ class AuthControllerTest {
         mvc.perform(get("/api/auth/me").session(
                 (org.springframework.mock.web.MockHttpSession) session))
            .andExpect(status().isOk())
-           .andExpect(jsonPath("$.name").value("山田（店長）"));
+           .andExpect(jsonPath("$.name").value("西村健一"));
     }
 
     @Test

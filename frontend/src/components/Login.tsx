@@ -3,7 +3,7 @@ import { useApp } from '../store/AppContext';
 
 const DEMO_ACCOUNTS = [
   { label: '中島店 店長', username: 'nakashima-mgr' },
-  { label: '中島店 スタッフ（佐藤）', username: 'nakashima-1' },
+  { label: '中島店 スタッフ（田中太郎）', username: 'nakashima-1' },
   { label: '新田店 店長', username: 'nitta-mgr' },
   { label: '早島店 店長', username: 'hayashima-mgr' },
 ];

@@ -51,25 +51,25 @@ public class DataSeeder implements CommandLineRunner {
         if (storeRepository.count() > 0) return; // 既にseed済みなら何もしない
 
         seedStore("中島店", List.of(
-                new Person("nakashima-mgr", "山田（店長）", EmploymentType.FULL_TIME, Role.MANAGER),
-                new Person("nakashima-1", "佐藤", EmploymentType.FULL_TIME, Role.STAFF),
-                new Person("nakashima-2", "鈴木", EmploymentType.PART_TIME, Role.STAFF),
-                new Person("nakashima-3", "高橋", EmploymentType.PART_TIME, Role.STAFF),
-                new Person("nakashima-4", "田中", EmploymentType.PART_TIME, Role.STAFF)));
+                new Person("nakashima-mgr", "西村健一", EmploymentType.FULL_TIME, Role.MANAGER),
+                new Person("nakashima-1", "田中太郎", EmploymentType.FULL_TIME, Role.STAFF),
+                new Person("nakashima-2", "山田花子", EmploymentType.PART_TIME, Role.STAFF),
+                new Person("nakashima-3", "岡健太郎", EmploymentType.PART_TIME, Role.STAFF),
+                new Person("nakashima-4", "貴島小夜子", EmploymentType.PART_TIME, Role.STAFF)));
 
         seedStore("新田店", List.of(
-                new Person("nitta-mgr", "伊藤（店長）", EmploymentType.FULL_TIME, Role.MANAGER),
-                new Person("nitta-1", "渡辺", EmploymentType.FULL_TIME, Role.STAFF),
-                new Person("nitta-2", "中村", EmploymentType.PART_TIME, Role.STAFF),
-                new Person("nitta-3", "小林", EmploymentType.PART_TIME, Role.STAFF),
-                new Person("nitta-4", "加藤", EmploymentType.PART_TIME, Role.STAFF)));
+                new Person("nitta-mgr", "三浦誠", EmploymentType.FULL_TIME, Role.MANAGER),
+                new Person("nitta-1", "加藤緑", EmploymentType.FULL_TIME, Role.STAFF),
+                new Person("nitta-2", "石山豊", EmploymentType.PART_TIME, Role.STAFF),
+                new Person("nitta-3", "藤本美咲", EmploymentType.PART_TIME, Role.STAFF),
+                new Person("nitta-4", "中川大輔", EmploymentType.PART_TIME, Role.STAFF)));
 
         seedStore("早島店", List.of(
-                new Person("hayashima-mgr", "吉田（店長）", EmploymentType.FULL_TIME, Role.MANAGER),
-                new Person("hayashima-1", "山本", EmploymentType.FULL_TIME, Role.STAFF),
-                new Person("hayashima-2", "松本", EmploymentType.PART_TIME, Role.STAFF),
-                new Person("hayashima-3", "井上", EmploymentType.PART_TIME, Role.STAFF),
-                new Person("hayashima-4", "木村", EmploymentType.PART_TIME, Role.STAFF)));
+                new Person("hayashima-mgr", "森田優子", EmploymentType.FULL_TIME, Role.MANAGER),
+                new Person("hayashima-1", "柳谷智宣", EmploymentType.FULL_TIME, Role.STAFF),
+                new Person("hayashima-2", "小早川彩", EmploymentType.PART_TIME, Role.STAFF),
+                new Person("hayashima-3", "横山健司", EmploymentType.PART_TIME, Role.STAFF),
+                new Person("hayashima-4", "福田直樹", EmploymentType.PART_TIME, Role.STAFF)));
     }
 
     private void seedStore(String storeName, List<Person> people) {

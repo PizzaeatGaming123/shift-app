@@ -25,3 +25,6 @@ export const SLOT_HOURS: Record<WorkSlot, number> = { early: 9, mid: 9, late: 9 
 
 /** デモ用の仮時給（円）。日次人件費の目安算出に使用 */
 export const HOURLY_WAGE = 1100;
+
+/** デモ用の1日あたり売上計画（円）。人件費率の算出に使用 */
+export const DAILY_SALES_TARGET = 90000;

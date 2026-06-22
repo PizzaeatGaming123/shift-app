@@ -61,9 +61,9 @@ input:focus-visible,
 }
 
 .app {
-  max-width: 1040px;
+  max-width: 1680px;
   margin: 0 auto;
-  padding: 0 14px 96px;
+  padding: 0 16px 64px;
 }
 
 .screen {
@@ -240,8 +240,8 @@ button.role-toggle {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  margin: 16px 0 8px;
+  gap: 10px;
+  margin: 10px 0 6px;
   flex-wrap: wrap;
 }
 
@@ -277,23 +277,23 @@ button.role-toggle {
 /* ---- segmented tabs ---- */
 .segment,
 .tabs {
-  display: flex;
-  gap: 6px;
+  display: inline-flex;
+  gap: 4px;
   background: #eef1f6;
-  padding: 4px;
-  border-radius: var(--r-md);
+  padding: 3px;
+  border-radius: var(--r-sm);
+  margin-bottom: 6px;
 }
 
 .segment button,
 .tabs button {
-  flex: 1;
-  padding: 10px;
-  font-size: 14px;
+  padding: 7px 18px;
+  font-size: 13px;
   font-weight: 600;
   border: none;
   background: transparent;
   color: var(--muted);
-  border-radius: var(--r-sm);
+  border-radius: 6px;
   cursor: pointer;
   transition: all var(--t);
 }
@@ -380,32 +380,43 @@ button.cal-cell:active {
 .chip {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 3px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 6px;
-  margin: 1px 2px 1px 0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin: 0 2px 1px 0;
+  border: 1px solid transparent;
+}
+
+.shift-cell .chip {
+  width: 100%;
+  margin: 0 0 1px 0;
 }
 
 .chip.early {
   background: var(--early-soft);
   color: var(--early-text);
+  border-color: #f0c4d0;
 }
 
 .chip.late {
   background: var(--late-soft);
   color: var(--late-text);
+  border-color: #b9d6f0;
 }
 
 .chip.mid {
   background: var(--mid-soft);
   color: var(--mid-text);
+  border-color: #bfe0c6;
 }
 
 .chip.off {
   background: var(--off-soft);
   color: var(--muted);
+  border-color: #d6dbe1;
 }
 
 .chip.clickable {
@@ -590,7 +601,7 @@ button.cal-cell:active {
 .matrix {
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 13px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
   width: 100%;
 }
@@ -599,18 +610,19 @@ button.cal-cell:active {
 .matrix td {
   border-bottom: 1px solid var(--line);
   border-right: 1px solid var(--line);
-  padding: 5px 6px;
+  padding: 3px 5px;
   text-align: center;
-  min-width: 46px;
+  min-width: 42px;
 }
 
 .matrix thead th {
   position: sticky;
   top: 0;
-  background: #f2f4f7;
+  background: #eef1f5;
   z-index: 2;
   font-weight: 700;
   color: var(--text);
+  padding: 4px 5px;
 }
 
 .date-head .d-num {
@@ -635,28 +647,64 @@ button.cal-cell:active {
   z-index: 1;
   font-weight: 600;
   box-shadow: 1px 0 0 var(--line);
-  min-width: 120px;
+  min-width: 152px;
+  width: 152px;
 }
 
 .matrix thead th.sticky-col {
   z-index: 3;
-  background: #f2f4f7;
+  background: #eef1f5;
 }
 
 .summary-row td {
   background: #f8fafc;
-  color: var(--muted);
-  font-weight: 700;
-  font-size: 12px;
+  color: var(--text);
+  font-weight: 600;
+  font-size: 11px;
 }
 
 .summary-row .row-head {
   background: #f8fafc;
+  color: var(--muted);
+  font-weight: 700;
 }
 
 .summary-cell.cost {
   color: var(--text);
+}
+
+.cost-pct {
+  color: var(--muted);
+  font-size: 9px;
+  margin-left: 2px;
+}
+
+/* セクション見出し行 */
+.section-row td {
+  background: #e7ebf1;
+  height: 8px;
+  padding: 2px 6px;
+}
+
+.section-row .row-head {
+  background: #e7ebf1;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.row-head.indent {
+  padding-left: 20px;
+}
+
+.slot-name {
   font-weight: 600;
+}
+
+.slot-time {
+  display: block;
+  font-size: 9px;
+  color: var(--muted);
+  font-weight: 400;
 }
 
 .count-row td {
@@ -668,21 +716,53 @@ button.cal-cell:active {
 .count.ok { color: var(--ok); }
 .count.over { color: var(--over); }
 
-.staff-head .staff-name {
-  display: block;
+/* スタッフ左カラム（アバター＋氏名＋合計時間＋メモ数） */
+.staff-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.staff-avatar {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.staff-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.staff-name {
   font-weight: 700;
   color: var(--text);
 }
 
-.staff-head .staff-hours {
-  display: block;
-  font-size: 11px;
-  font-weight: 600;
+.staff-sub {
+  display: flex;
+  gap: 6px;
+  font-size: 10px;
   color: var(--muted);
+  font-weight: 600;
+}
+
+.staff-notes {
+  color: var(--primary-dark);
 }
 
 .shift-cell {
-  padding: 4px;
+  padding: 3px;
+  vertical-align: top;
 }
 
 .shift-cell.dow-sun { background: #fdf4f4; }
