@@ -9,10 +9,10 @@ import { useToast } from './ui/Toast';
 import type { DayRequestValue } from '../types';
 
 const VALUE_CHIP: Record<Exclude<DayRequestValue, 'none'>, { label: string; cls: string }> = {
-  early: { label: '早', cls: 'early' },
-  late: { label: '遅', cls: 'late' },
-  both: { label: '早遅', cls: 'early' },
-  off: { label: '休', cls: 'off' },
+  early: { label: '早番', cls: 'early' },
+  late: { label: '遅番', cls: 'late' },
+  both: { label: '早番+遅番', cls: 'early' },
+  off: { label: '休み', cls: 'off' },
 };
 
 interface RequestEditorProps { year: number; month: number; }

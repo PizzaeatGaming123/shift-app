@@ -1,11 +1,8 @@
 import { useApp } from '../store/AppContext';
 import { MonthCalendar } from './MonthCalendar';
 import { WORK_SLOTS, SLOT_LABELS } from '../constants';
-import type { WorkSlot } from '../types';
 
 interface SharedViewProps { year: number; month: number; }
-
-const SLOT_ICON: Record<WorkSlot, string> = { early: '🌅', late: '🌙' };
 
 export function SharedView({ year, month }: SharedViewProps) {
   const { staff, assignments } = useApp();
@@ -27,7 +24,7 @@ export function SharedView({ year, month }: SharedViewProps) {
               if (names.length === 0) return null;
               return (
                 <div key={slot} className="shared-slot">
-                  <span className={`chip ${slot}`}>{SLOT_ICON[slot]} {SLOT_LABELS[slot]}</span>
+                  <span className={`chip ${slot}`}>{SLOT_LABELS[slot]}</span>
                   <span className="shared-names">{names.join('、')}</span>
                 </div>
               );
