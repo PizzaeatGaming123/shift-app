@@ -24,7 +24,8 @@ describe('ManagerMatrix', () => {
     await waitFor(() => expect(screen.getByText('山田（店長）')).toBeInTheDocument());
     expect(screen.getByText('総労働時間')).toBeInTheDocument();
     expect(screen.getByText('人件費(目安)')).toBeInTheDocument();
-    expect(screen.getByText('早番')).toBeInTheDocument();
-    expect(screen.getByText('遅番')).toBeInTheDocument();
+    // 「早番」「遅番」は凡例とマトリクス行見出しの両方に出るため複数マッチを許容する
+    expect(screen.getAllByText('早番').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('遅番').length).toBeGreaterThan(0);
   });
 });
