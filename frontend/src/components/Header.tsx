@@ -1,16 +1,15 @@
 import type { Store } from '../types';
 
-export type Role = 'staff' | 'manager';
-
 interface HeaderProps {
   stores: Store[];
   storeId: string;
   onStoreChange: (id: string) => void;
-  role: Role;
-  onRoleChange: (role: Role) => void;
+  userName: string;
+  roleLabel: string;
+  onLogout: () => void;
 }
 
-export function Header({ stores, storeId, onStoreChange, role, onRoleChange }: HeaderProps) {
+export function Header({ stores, storeId, onStoreChange, userName, roleLabel, onLogout }: HeaderProps) {
   return (
     <header className="header">
       <span className="logo">暁夢シフト</span>
@@ -20,18 +19,10 @@ export function Header({ stores, storeId, onStoreChange, role, onRoleChange }: H
         ))}
       </select>
       <div className="role-toggle">
-        <button
-          className={role === 'staff' ? 'active' : ''}
-          onClick={() => onRoleChange('staff')}
-        >
-          スタッフ用
-        </button>
-        <button
-          className={role === 'manager' ? 'active' : ''}
-          onClick={() => onRoleChange('manager')}
-        >
-          店長用
-        </button>
+        <span style={{ alignSelf: 'center', fontSize: 14, color: '#666' }}>
+          {userName}（{roleLabel}）
+        </span>
+        <button onClick={onLogout}>ログアウト</button>
       </div>
     </header>
   );
