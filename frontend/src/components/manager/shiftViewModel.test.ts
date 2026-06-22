@@ -1,8 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import type { Assignment, Staff } from '../../types';
+import type {
+  Assignment,
+  DayNote,
+  ShiftRequest,
+  Staff,
+} from '../../types';
 import {
   formatDuration,
+  getDailySummary,
   getManagerDateWindow,
+  getShiftCellModel,
   sortShiftStaff,
 } from './shiftViewModel';
 
@@ -36,6 +43,14 @@ const assignments: Assignment[] = [
   { date: '2026-07-01', slot: 'early', staffIds: ['1'] },
   { date: '2026-07-01', slot: 'late', staffIds: ['2'] },
   { date: '2026-07-02', slot: 'early', staffIds: ['2'] },
+];
+
+const requests: ShiftRequest[] = [
+  { staffId: '1', date: '2026-07-01', slot: 'early' },
+];
+
+const notes: DayNote[] = [
+  { staffId: '1', date: '2026-07-01', text: '早番大丈夫です！' },
 ];
 
 describe('getManagerDateWindow', () => {
@@ -116,5 +131,53 @@ describe('formatDuration', () => {
   it('小数時間を時:分で表示する', () => {
     expect(formatDuration(45)).toBe('45:00');
     expect(formatDuration(7.5)).toBe('7:30');
+  });
+});
+
+describe('getShiftCellModel', () => {
+  it('希望・確定・勤務メモを別の表示層として返す', () => {
+    expect(getShiftCellModel({
+      staffId: '1',
+      date: '2026-07-01',
+      requests,
+      assignments,
+      notes,
+    })).toEqual({
+      request: { slot: 'early', label: '早番', time: '7:00-16:00' },
+      assignment: { slot: 'early', label: '早番', time: '7:00-16:00' },
+      note: '早番大丈夫です！',
+    });
+  });
+
+  it('休み希望は勤務時刻を持たない', () => {
+    expect(getShiftCellModel({
+      staffId: '1',
+      date: '2026-07-03',
+      requests: [{ staffId: '1', date: '2026-07-03', slot: 'off' }],
+      assignments,
+      notes,
+    }).request).toEqual({
+      slot: 'off',
+      label: '休み',
+      time: null,
+    });
+  });
+});
+
+describe('getDailySummary', () => {
+  it('売上・労働時間・人件費・人時売上高・ランク計を算出する', () => {
+    expect(getDailySummary({
+      date: '2026-07-01',
+      assignments,
+      staff,
+      salesTarget: 90000,
+    })).toEqual({
+      sales: 90000,
+      workHours: 18,
+      laborCost: 19800,
+      laborCostRate: 22,
+      salesPerHour: 5000,
+      rankTotal: 8,
+    });
   });
 });
