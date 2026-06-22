@@ -342,7 +342,10 @@ export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots
                         {person.name}
                         {warnings > 0 && <span className="warn-badge" title="労務注意">!{warnings}</span>}
                       </span>
-                      <span className="staff-hours">{hm(hours)}</span>
+                      <span className="staff-sub2">
+                        <span className={`emp-tag ${person.employmentType === '正社員' ? 'full' : 'part'}`}>{person.employmentType}</span>
+                        <span className="staff-hours">{hm(hours)}</span>
+                      </span>
                     </span>
                   </td>
                   {dates.map((date) => {

@@ -58,6 +58,9 @@ export function TopNav({ onHome }: { onHome?: () => void }) {
   const [notify, setNotify] = useSetting(`akiyume-notify:${storeId}`, { onConfirm: true, onRecruit: true, onChange: false });
   const [integ, setInteg] = useSetting(`akiyume-integ:${storeId}`, { pos: false, attendance: false, payroll: false });
   const [fontSize, setFontSize] = useSetting<'small' | 'standard' | 'large'>(`akiyume-fontsize:${storeId}`, 'standard');
+  const [perms, setPerms] = useSetting(`akiyume-perms:${storeId}`, {
+    submit: true, viewOwn: true, viewOthers: false, postMemo: true, viewCost: false,
+  });
   const [newDept, setNewDept] = useState('');
 
   const dates = getMonthDates(Number(month.slice(0, 4)), Number(month.slice(5, 7)));
@@ -315,11 +318,21 @@ export function TopNav({ onHome }: { onHome?: () => void }) {
         )}
 
         {modal === 'perm' && (
-          <dl>
-            <dt>店長</dt><dd>全機能（割り当て・確定・設定・スタッフ管理）</dd>
-            <dt>スタッフ</dt><dd>希望シフトの提出のみ</dd>
-            <dt>店舗の閲覧範囲</dt><dd>自分の所属店舗のみ</dd>
-          </dl>
+          <div className="settings-form">
+            <p className="muted-sm">スタッフに許可する操作を設定します（店長は常に全機能）。</p>
+            {([
+              ['submit', '希望シフトの提出'],
+              ['viewOwn', '自分の確定シフトの閲覧'],
+              ['viewOthers', '他スタッフのシフトの閲覧'],
+              ['postMemo', 'ひとことメモの投稿'],
+              ['viewCost', '人件費の閲覧'],
+            ] as const).map(([key, label]) => (
+              <label key={key} className="menu-check">
+                <input type="checkbox" checked={perms[key]} onChange={(e) => setPerms({ ...perms, [key]: e.target.checked })} />
+                {label}
+              </label>
+            ))}
+          </div>
         )}
 
         {modal === 'import' && (
