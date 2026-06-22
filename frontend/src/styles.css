@@ -376,20 +376,26 @@ button.role-toggle {
 }
 
 /* ---- request picker / sheet actions ---- */
-.picker,
-.sheet-actions {
+.picker {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
   margin: 12px 0;
 }
 
+.sheet-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 12px 0;
+}
+
 .picker button,
 .sheet-actions button,
 .pick {
-  padding: 10px 16px;
-  font-size: 16px;
-  border-radius: 10px;
+  padding: 14px;
+  font-size: 15px;
+  border-radius: var(--r-md);
   border: 2px solid var(--line);
   background: #fff;
   cursor: pointer;
