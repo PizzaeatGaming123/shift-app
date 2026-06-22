@@ -1,22 +1,29 @@
 :root {
   /* palette */
-  --primary: #4f46e5;
-  --primary-dark: #4338ca;
-  --primary-soft: #eef2ff;
-  --bg: #f8fafc;
+  --primary: #2f80c4;
+  --primary-dark: #246aa6;
+  --primary-soft: #e7f1fb;
+  --bg: #f4f5f7;
   --card: #ffffff;
-  --text: #0f172a;
-  --muted: #64748b;
-  --line: #e2e8f0;
-  --early: #f59e0b;
-  --early-soft: #fef3c7;
-  --late: #6366f1;
-  --late-soft: #e0e7ff;
-  --off: #94a3b8;
-  --off-soft: #f1f5f9;
-  --low: #ef4444;
-  --ok: #10b981;
-  --over: #f59e0b;
+  --text: #1f2933;
+  --muted: #6b7785;
+  --line: #d8dde3;
+  --early: #d96a86;
+  --early-soft: #fce6ec;
+  --early-text: #a33a58;
+  --late: #4a90d9;
+  --late-soft: #e3f0fb;
+  --late-text: #1f5d9e;
+  --mid: #5c9e6a;
+  --mid-soft: #e4f3e7;
+  --mid-text: #2f7a42;
+  --off: #9aa4b0;
+  --off-soft: #eef1f4;
+  --low: #d64545;
+  --ok: #3fa45b;
+  --over: #e08a2f;
+  --c-sun: #d83a3a;
+  --c-sat: #2f72c4;
   /* radius / shadow / motion */
   --r-sm: 8px;
   --r-md: 12px;
@@ -49,7 +56,7 @@ button:focus-visible,
 select:focus-visible,
 input:focus-visible,
 [tabindex]:focus-visible {
-  outline: 3px solid rgba(79, 70, 229, .28);
+  outline: 3px solid rgba(47, 128, 196, .32);
   outline-offset: 2px;
 }
 
@@ -354,6 +361,21 @@ button.cal-cell:active {
   cursor: default;
 }
 
+/* ---- 曜日色分け ---- */
+.cal-head.dow-sun,
+.day-num.dow-sun,
+.date-head.dow-sun .d-num,
+.date-head.dow-sun .d-dow {
+  color: var(--c-sun);
+}
+
+.cal-head.dow-sat,
+.day-num.dow-sat,
+.date-head.dow-sat .d-num,
+.date-head.dow-sat .d-dow {
+  color: var(--c-sat);
+}
+
 /* ---- chips ---- */
 .chip {
   display: inline-flex;
@@ -368,17 +390,42 @@ button.cal-cell:active {
 
 .chip.early {
   background: var(--early-soft);
-  color: #92400e;
+  color: var(--early-text);
 }
 
 .chip.late {
   background: var(--late-soft);
-  color: #3730a3;
+  color: var(--late-text);
+}
+
+.chip.mid {
+  background: var(--mid-soft);
+  color: var(--mid-text);
 }
 
 .chip.off {
   background: var(--off-soft);
   color: var(--muted);
+}
+
+.chip.clickable {
+  cursor: pointer;
+  transition: background var(--t), color var(--t), box-shadow var(--t), transform var(--t);
+}
+
+.chip.clickable:active {
+  transform: scale(.97);
+}
+
+/* 割り当て確定はベタ塗りで表現 */
+.chip.assigned.early {
+  background: var(--early);
+  color: #fff;
+}
+
+.chip.assigned.late {
+  background: var(--late);
+  color: #fff;
 }
 
 /* ---- request picker / sheet actions ---- */
