@@ -1,8 +1,8 @@
 import {
   createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode,
 } from 'react';
-import { api, type Me, type ApiStore, type ApiStaff, type ApiRequest, type ApiAssignment } from '../api/client';
-import type { ShiftRequest, Assignment, Staff, Store, DayRequestValue } from '../types';
+import { api, type Me, type ApiStore, type ApiStaff, type ApiRequest, type ApiAssignment, type ApiDayNote, type ApiStoreNote } from '../api/client';
+import type { ShiftRequest, Assignment, Staff, Store, DayRequestValue, DayNote, StoreNote, WorkSlot } from '../types';
 
 interface AppContextValue {
   me: Me | null;
@@ -11,6 +11,8 @@ interface AppContextValue {
   staff: Staff[];
   requests: ShiftRequest[];
   assignments: Assignment[];
+  dayNotes: DayNote[];
+  storeNotes: StoreNote[];
   storeId: number | null;
   month: string; // 'YYYY-MM'
   setStoreId: (id: number) => void;
@@ -18,7 +20,9 @@ interface AppContextValue {
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   setDayRequest: (date: string, value: DayRequestValue) => Promise<void>;
-  toggleAssignment: (date: string, slot: 'early' | 'late', staffId: string, assigned: boolean) => Promise<void>;
+  toggleAssignment: (date: string, slot: WorkSlot, staffId: string, assigned: boolean) => Promise<void>;
+  setDayNote: (date: string, text: string) => Promise<void>;
+  setStoreNote: (date: string, text: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -38,6 +42,12 @@ function toRequest(r: ApiRequest): ShiftRequest {
 function toAssignment(a: ApiAssignment): Assignment {
   return { date: a.date, slot: a.slot, staffIds: [String(a.staffId)] };
 }
+function toDayNote(n: ApiDayNote): DayNote {
+  return { staffId: String(n.staffId), date: n.date, text: n.text };
+}
+function toStoreNote(n: ApiStoreNote): StoreNote {
+  return { date: n.date, text: n.text };
+}
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [me, setMe] = useState<Me | null>(null);
@@ -46,6 +56,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [staff, setStaff] = useState<Staff[]>([]);
   const [requests, setRequests] = useState<ShiftRequest[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [dayNotes, setDayNotes] = useState<DayNote[]>([]);
+  const [storeNotes, setStoreNotes] = useState<StoreNote[]>([]);
   const [storeId, setStoreId] = useState<number | null>(null);
   const [month, setMonth] = useState('2026-07');
 
@@ -65,14 +77,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const reloadStoreData = useCallback(async () => {
     if (!storeId) return;
-    const [st, rq, as] = await Promise.all([
+    const [st, rq, as, dn, sn] = await Promise.all([
       api.staff(storeId),
       api.requests(storeId, month),
       api.assignments(storeId, month),
+      api.dayNotes(storeId, month),
+      api.storeNotes(storeId, month),
     ]);
     setStaff(st.map((s) => toStaff(s, storeId)));
     setRequests(rq.map(toRequest));
     setAssignments(as.map(toAssignment));
+    setDayNotes(dn.map(toDayNote));
+    setStoreNotes(sn.map(toStoreNote));
   }, [storeId, month]);
 
   useEffect(() => {
@@ -89,6 +105,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await api.logout();
     setMe(null);
     setStores([]); setStaff([]); setRequests([]); setAssignments([]);
+    setDayNotes([]); setStoreNotes([]);
     setStoreId(null);
   }, []);
 
@@ -98,18 +115,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [reloadStoreData]);
 
   const toggleAssignment = useCallback(
-    async (date: string, slot: 'early' | 'late', staffId: string, assigned: boolean) => {
+    async (date: string, slot: WorkSlot, staffId: string, assigned: boolean) => {
       if (!storeId) return;
       if (assigned) await api.unassign(storeId, date, slot, Number(staffId));
       else await api.assign(storeId, date, slot, Number(staffId));
       await reloadStoreData();
     }, [storeId, reloadStoreData]);
 
+  const setDayNote = useCallback(async (date: string, text: string) => {
+    await api.setDayNote(date, text);
+    await reloadStoreData();
+  }, [reloadStoreData]);
+
+  const setStoreNote = useCallback(async (date: string, text: string) => {
+    if (!storeId) return;
+    await api.setStoreNote(storeId, date, text);
+    await reloadStoreData();
+  }, [storeId, reloadStoreData]);
+
   const value = useMemo<AppContextValue>(() => ({
-    me, loading, stores, staff, requests, assignments, storeId, month,
-    setStoreId, setMonth, login, logout, setDayRequest, toggleAssignment,
-  }), [me, loading, stores, staff, requests, assignments, storeId, month,
-       login, logout, setDayRequest, toggleAssignment]);
+    me, loading, stores, staff, requests, assignments, dayNotes, storeNotes, storeId, month,
+    setStoreId, setMonth, login, logout, setDayRequest, toggleAssignment, setDayNote, setStoreNote,
+  }), [me, loading, stores, staff, requests, assignments, dayNotes, storeNotes, storeId, month,
+       login, logout, setDayRequest, toggleAssignment, setDayNote, setStoreNote]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

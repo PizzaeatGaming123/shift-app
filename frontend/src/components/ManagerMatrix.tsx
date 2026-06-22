@@ -15,10 +15,10 @@ interface ManagerMatrixProps {
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
 
 const REQUEST_LABEL: Record<DayRequestValue, string> = {
-  none: '', early: '早番', late: '遅番', both: '早番', off: '休み',
+  none: '', early: '早番', mid: '中番', late: '遅番', off: '休み',
 };
 const REQUEST_CLASS: Record<DayRequestValue, string> = {
-  none: '', early: 'early', late: 'late', both: 'early', off: 'off',
+  none: '', early: 'early', mid: 'mid', late: 'late', off: 'off',
 };
 
 function dow(date: string): number {
@@ -35,7 +35,7 @@ function yen(n: number): string {
 }
 
 export function ManagerMatrix({ year, month }: ManagerMatrixProps) {
-  const { staff, requests, assignments, toggleAssignment } = useApp();
+  const { staff, requests, assignments, dayNotes, storeNotes, toggleAssignment, setStoreNote } = useApp();
   const dates = getMonthDates(year, month);
 
   if (staff.length === 0) {
@@ -99,6 +99,29 @@ export function ManagerMatrix({ year, month }: ManagerMatrixProps) {
                 })}
               </tr>
             ))}
+            <tr className="store-note-row">
+              <td className="row-head sticky-col">店舗メモ</td>
+              {dates.map((date) => {
+                const note = storeNotes.find((n) => n.date === date);
+                const current = note?.text ?? '';
+                return (
+                  <td key={date} className="store-note-cell">
+                    <input
+                      className="store-note-input"
+                      defaultValue={current}
+                      key={`${date}:${current}`}
+                      maxLength={200}
+                      placeholder="—"
+                      aria-label={`${date} の店舗メモ`}
+                      onBlur={(e) => {
+                        const v = e.target.value.trim();
+                        if (v !== current) void setStoreNote(date, v);
+                      }}
+                    />
+                  </td>
+                );
+              })}
+            </tr>
             {staff.map((person) => {
               const hours = staffMonthlyHours(assignments, person.id, dates);
               return (
@@ -110,9 +133,10 @@ export function ManagerMatrix({ year, month }: ManagerMatrixProps) {
                   {dates.map((date) => {
                     const req = getDayRequest(requests, person.id, date);
                     const targetSlot: WorkSlot | null =
-                      req === 'off' || req === 'none' ? null : req === 'late' ? 'late' : 'early';
+                      req === 'off' || req === 'none' ? null : (req as WorkSlot);
                     const assigned = targetSlot
                       ? isAssigned(assignments, date, targetSlot, person.id) : false;
+                    const note = dayNotes.find((n) => n.staffId === person.id && n.date === date);
                     const toggle = () => {
                       if (!targetSlot) return;
                       void toggleAssignment(date, targetSlot, person.id, assigned);
@@ -139,6 +163,7 @@ export function ManagerMatrix({ year, month }: ManagerMatrixProps) {
                             {REQUEST_LABEL[req]}
                           </span>
                         )}
+                        {note && <span className="cell-memo" title={note.text}>💬 {note.text}</span>}
                       </td>
                     );
                   })}

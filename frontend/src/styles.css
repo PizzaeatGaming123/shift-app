@@ -459,14 +459,20 @@ button.cal-cell:active {
 .pick.sel-early {
   border-color: var(--early);
   background: var(--early-soft);
-  color: #92400e;
+  color: var(--early-text);
 }
 
 .picker button.sel-late,
 .pick.sel-late {
   border-color: var(--late);
   background: var(--late-soft);
-  color: #3730a3;
+  color: var(--late-text);
+}
+
+.pick.sel-mid {
+  border-color: var(--mid);
+  background: var(--mid-soft);
+  color: var(--mid-text);
 }
 
 .picker button.sel-off,
@@ -681,6 +687,79 @@ button.cal-cell:active {
 
 .shift-cell.dow-sun { background: #fdf4f4; }
 .shift-cell.dow-sat { background: #f3f7fb; }
+
+/* セル内のひとことメモ吹き出し */
+.cell-memo {
+  display: block;
+  margin-top: 3px;
+  font-size: 10px;
+  line-height: 1.25;
+  color: #7a5a12;
+  background: #fff7e0;
+  border: 1px solid #f0e0a8;
+  border-radius: 6px;
+  padding: 2px 5px;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+/* 店舗メモ行 */
+.store-note-row td {
+  background: #fffdf5;
+}
+
+.store-note-input {
+  width: 100%;
+  min-width: 90px;
+  border: 1px solid transparent;
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  color: var(--text);
+  padding: 3px 4px;
+  border-radius: 6px;
+}
+
+.store-note-input::placeholder {
+  color: #c2c8d0;
+}
+
+.store-note-input:hover {
+  border-color: var(--line);
+  background: #fff;
+}
+
+.store-note-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: #fff;
+}
+
+/* ボトムシートのひとこと入力 */
+.memo-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 600;
+  margin: 4px 0 12px;
+}
+
+.memo-field textarea {
+  font: inherit;
+  font-size: 15px;
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 9px 10px;
+  resize: vertical;
+}
+
+.memo-field textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+}
 
 /* ---- shared view ---- */
 .shared-slot {
