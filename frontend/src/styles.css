@@ -323,16 +323,20 @@ button.role-toggle {
   font: inherit;
   text-align: left;
   width: 100%;
-  cursor: pointer;
+  cursor: default;
   transition: border-color var(--t), box-shadow var(--t), transform var(--t);
 }
 
-.cal-cell:hover {
+button.cal-cell {
+  cursor: pointer;
+}
+
+button.cal-cell:hover {
   border-color: var(--primary);
   box-shadow: var(--sh-sm);
 }
 
-.cal-cell:active {
+button.cal-cell:active {
   transform: scale(.98);
 }
 
