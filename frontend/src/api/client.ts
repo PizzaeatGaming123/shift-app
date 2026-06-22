@@ -7,7 +7,7 @@ export interface Me {
   storeId: number;
 }
 export interface ApiStore { id: number; name: string; }
-export interface ApiStaff { id: number; name: string; employmentType: string; role: string; }
+export interface ApiStaff { id: number; name: string; employmentType: string; role: string; rank?: number | null; skills?: string | null; }
 export interface ApiRequest { staffId: number; date: string; slot: 'early' | 'mid' | 'late' | 'off'; }
 export interface ApiAssignment { date: string; slot: 'early' | 'mid' | 'late'; staffId: number; }
 export interface ApiDayNote { staffId: number; date: string; text: string; }

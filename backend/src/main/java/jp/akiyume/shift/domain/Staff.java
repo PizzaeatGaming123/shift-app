@@ -32,6 +32,11 @@ public class Staff {
 
     private Integer hourlyWage; // Phase 1 用、null 可
 
+    private Integer rank; // 1〜5 の労働力ランク、null 可
+
+    @Column(length = 200)
+    private String skills; // 保有スキル（カンマ区切り）、null 可
+
     protected Staff() {}
 
     public Staff(String username, String passwordHash, String name, Store store,
@@ -52,4 +57,9 @@ public class Staff {
     public EmploymentType getEmploymentType() { return employmentType; }
     public Role getRole() { return role; }
     public Integer getHourlyWage() { return hourlyWage; }
+    public Integer getRank() { return rank; }
+    public String getSkills() { return skills; }
+
+    public void setRank(Integer rank) { this.rank = rank; }
+    public void setSkills(String skills) { this.skills = skills; }
 }

@@ -63,8 +63,14 @@ export function TopNav() {
         <ul className="modal-list">
           {staff.map((s) => (
             <li key={s.id}>
-              <span>{s.name}<span className="muted-sm">（{s.employmentType}）</span></span>
-              <span>{staffMonthlyHours(assignments, s.id, dates).toFixed(2)} h</span>
+              <span className="staff-li-main">
+                <span className="staff-li-name">{s.name}<span className="muted-sm">（{s.employmentType}）</span></span>
+                <span className="staff-li-sub">
+                  {s.rank != null && <span className="rank-badge">ランク{s.rank}</span>}
+                  {s.skills.map((sk) => <span key={sk} className="skill-tag">{sk}</span>)}
+                </span>
+              </span>
+              <span className="staff-li-hours">{staffMonthlyHours(assignments, s.id, dates).toFixed(2)} h</span>
             </li>
           ))}
         </ul>

@@ -34,6 +34,8 @@ function toStaff(s: ApiStaff, storeId: number): Staff {
     name: s.name,
     storeId: String(storeId),
     employmentType: s.employmentType === '正社員' ? '正社員' : 'パート',
+    rank: s.rank ?? null,
+    skills: s.skills ? s.skills.split(',').map((t) => t.trim()).filter(Boolean) : [],
   };
 }
 function toRequest(r: ApiRequest): ShiftRequest {

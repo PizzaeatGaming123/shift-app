@@ -72,12 +72,21 @@ public class DataSeeder implements CommandLineRunner {
                 new Person("hayashima-4", "福田直樹", EmploymentType.PART_TIME, Role.STAFF)));
     }
 
+    private static final String[] SKILL_POOL = { "ホール", "キッチン", "レジ", "新人教育", "多言語対応" };
+
     private void seedStore(String storeName, List<Person> people) {
         Store store = storeRepository.save(new Store(storeName));
         String hash = passwordEncoder.encode("password");
         List<Staff> saved = new ArrayList<>();
+        int idx = 0;
         for (Person p : people) {
-            saved.add(staffRepository.save(new Staff(p.username(), hash, p.name(), store, p.type(), p.role())));
+            Staff staff = new Staff(p.username(), hash, p.name(), store, p.type(), p.role());
+            staff.setRank(p.role() == Role.MANAGER ? 5 : (idx % 4) + 2); // 店長は5、スタッフは2〜5
+            staff.setSkills(p.role() == Role.MANAGER
+                    ? "ホール,キッチン,新人教育"
+                    : SKILL_POOL[idx % SKILL_POOL.length] + "," + SKILL_POOL[(idx + 2) % SKILL_POOL.length]);
+            saved.add(staffRepository.save(staff));
+            idx++;
         }
         if (seedDemoShifts) {
             seedDemoShifts(store, saved);
