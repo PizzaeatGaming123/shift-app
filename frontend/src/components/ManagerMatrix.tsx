@@ -1,11 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useApp } from '../store/AppContext';
 import { getMonthDates, sliceByView } from '../lib/date';
 import { getDayRequest } from '../store/requests';
-import { isAssigned, countAssigned, fulfillmentLevel } from '../store/assignments';
-import { dailyWorkHours, dailyLaborCost, staffMonthlyHours } from '../store/labor';
-import { WORK_SLOTS, SLOT_LABELS, SLOT_TIMES, MAX_STAFF_PER_SLOT, DAILY_SALES_TARGET } from '../constants';
+import { isAssigned, countAssigned } from '../store/assignments';
+import { dailyWorkHours, dailyLaborCost, staffMonthlyHours, dailyRankTotal } from '../store/labor';
+import { WORK_SLOTS, SLOT_LABELS, SLOT_TIMES, DAILY_SALES_TARGET } from '../constants';
+import { Modal } from './ui/Modal';
 import type { DayRequestValue, WorkSlot, RequestSlot, SlotVisibility } from '../types';
+
+type RequiredBySlot = Record<WorkSlot, number>;
+const DEFAULT_REQUIRED: RequiredBySlot = { early: 2, mid: 2, late: 2 };
 
 interface ManagerMatrixProps {
   year: number;
@@ -45,10 +49,28 @@ function yen(n: number): string {
 }
 
 export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots }: ManagerMatrixProps) {
-  const { staff, requests, assignments, dayNotes, storeNotes, toggleAssignment, setStoreNote } = useApp();
+  const { staff, requests, assignments, dayNotes, storeNotes, storeId, toggleAssignment, setStoreNote } = useApp();
   const [showRequests, setShowRequests] = useState(true);
   const [showMemos, setShowMemos] = useState(true);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [required, setRequired] = useState<RequiredBySlot>(DEFAULT_REQUIRED);
   const dates = sliceByView(getMonthDates(year, month), view);
+
+  const reqKey = `akiyume-required:${storeId}`;
+  useEffect(() => {
+    const raw = localStorage.getItem(reqKey);
+    if (!raw) { setRequired(DEFAULT_REQUIRED); return; }
+    try {
+      setRequired({ ...DEFAULT_REQUIRED, ...JSON.parse(raw) });
+    } catch {
+      setRequired(DEFAULT_REQUIRED);
+    }
+  }, [reqKey]);
+
+  function saveRequired(next: RequiredBySlot) {
+    setRequired(next);
+    localStorage.setItem(reqKey, JSON.stringify(next));
+  }
 
   if (staff.length === 0) {
     return <section className="empty"><p>この店舗のスタッフがいません。</p></section>;
@@ -78,7 +100,7 @@ export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots
             {label}
           </button>
         ))}
-        <button type="button" className="tb-btn sm">シフト設定</button>
+        <button type="button" className="tb-btn sm" onClick={() => setSettingsOpen(true)}>シフト設定</button>
       </div>
 
       <div className="matrix-wrap">
@@ -131,15 +153,22 @@ export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots
                 </td>
                 {dates.map((date) => {
                   const count = countAssigned(assignments, date, slot);
-                  const level = fulfillmentLevel(count);
+                  const need = required[slot];
+                  const level = count < need ? 'low' : count > need ? 'over' : 'ok';
                   return (
                     <td key={date} className={`count ${level}`}>
-                      {count}/{MAX_STAFF_PER_SLOT}
+                      {count}/{need}
                     </td>
                   );
                 })}
               </tr>
             ))}
+            <tr className="count-row">
+              <td className="row-head sticky-col indent">ランク計（労働力）</td>
+              {dates.map((date) => (
+                <td key={date} className="count">{dailyRankTotal(assignments, staff, date)}</td>
+              ))}
+            </tr>
             <tr className="store-note-row">
               <td className="row-head sticky-col">店舗メモ</td>
               {dates.map((date) => {
@@ -216,6 +245,24 @@ export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots
           </tbody>
         </table>
       </div>
+
+      <Modal open={settingsOpen} title="シフト設定（必要人数）" onClose={() => setSettingsOpen(false)}>
+        <p>時間帯ごとの必要人数を設定します。マトリクスの過不足判定（色）に反映されます。</p>
+        <div className="settings-form">
+          {WORK_SLOTS.map((slot) => (
+            <label key={slot} className="settings-row">
+              <span>{SLOT_LABELS[slot]}<span className="muted-sm">（{SLOT_TIMES[slot]}）</span></span>
+              <input
+                type="number"
+                min={0}
+                max={20}
+                value={required[slot]}
+                onChange={(e) => saveRequired({ ...required, [slot]: Math.max(0, Number(e.target.value) || 0) })}
+              />
+            </label>
+          ))}
+        </div>
+      </Modal>
     </section>
   );
 }
