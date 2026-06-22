@@ -382,17 +382,17 @@ button.cal-cell:active {
   align-items: center;
   justify-content: center;
   gap: 3px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 3px 6px;
+  border-radius: 0;
   margin: 0 2px 1px 0;
   border: 1px solid transparent;
 }
 
 .shift-cell .chip {
   width: 100%;
-  margin: 0 0 1px 0;
+  margin: 0 0 2px 0;
 }
 
 .chip.early {
@@ -589,7 +589,7 @@ button.cal-cell:active {
 .matrix-wrap {
   overflow-x: auto;
   border: 1px solid var(--line);
-  border-radius: 0 0 var(--r-md) var(--r-md);
+  border-radius: 0;
   background: #fff;
   box-shadow: var(--sh-sm);
 }
@@ -597,7 +597,7 @@ button.cal-cell:active {
 .matrix {
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 12px;
+  font-size: 13px;
   font-variant-numeric: tabular-nums;
   width: 100%;
 }
@@ -606,20 +606,41 @@ button.cal-cell:active {
 .matrix td {
   border-bottom: 1px solid var(--line);
   border-right: 1px solid var(--line);
-  padding: 3px 5px;
+  padding: 4px 6px;
   text-align: center;
-  min-width: 42px;
+  min-width: 46px;
 }
 
 .matrix thead th {
-  position: sticky;
-  top: 0;
   background: #eef1f5;
   z-index: 2;
   font-weight: 700;
   color: var(--text);
-  padding: 4px 5px;
+  padding: 5px 6px;
 }
+
+/* 上部固定（ヘッダー行をスクロール時に固定） */
+.matrix.top-fixed thead th {
+  position: sticky;
+  top: 0;
+}
+
+/* 縮小拡大（拡大表示） */
+.matrix.is-large {
+  font-size: 15px;
+}
+.matrix.is-large th,
+.matrix.is-large td {
+  padding: 8px 9px;
+  min-width: 58px;
+}
+.matrix.is-large .chip {
+  font-size: 13px;
+  padding: 5px 7px;
+}
+.matrix.is-large .staff-name { font-size: 14px; }
+.matrix.is-large .slot-time { font-size: 10px; }
+.matrix.is-large .cell-memo { font-size: 11px; }
 
 .date-head .d-num {
   display: block;
@@ -1143,7 +1164,7 @@ button.cal-cell:active {
   background: #eef1f5;
   border: 1px solid var(--line);
   border-bottom: none;
-  border-radius: 8px 8px 0 0;
+  border-radius: 0;
   padding: 7px 10px;
   font-size: 12px;
 }
@@ -1163,8 +1184,8 @@ button.cal-cell:active {
 .filter-chip {
   font-size: 11px;
   font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 4px;
+  padding: 3px 8px;
+  border-radius: 0;
   border: 1px solid transparent;
 }
 

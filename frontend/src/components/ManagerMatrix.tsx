@@ -4,7 +4,7 @@ import { getMonthDates, sliceByView } from '../lib/date';
 import { getDayRequest } from '../store/requests';
 import { isAssigned } from '../store/assignments';
 import { dailyWorkHours, dailyLaborCost, staffMonthlyHours, dailyRankTotal, maxConsecutiveAssignedDays } from '../store/labor';
-import { SLOT_LABELS, DAILY_SALES_TARGET } from '../constants';
+import { SLOT_LABELS, SLOT_TIMES, DAILY_SALES_TARGET } from '../constants';
 import { Modal } from './ui/Modal';
 import { useToast } from './ui/Toast';
 import { useSetting } from '../lib/settings';
@@ -74,7 +74,12 @@ function bandCoverage(assignments: Assignment[], date: string, slots: WorkSlot[]
 export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots }: ManagerMatrixProps) {
   const { staff, requests, assignments, dayNotes, storeNotes, recruitments, storeId, toggleAssignment, setStoreNote, setRecruitment, bulkAssignRequested } = useApp();
   const { showToast } = useToast();
+  const [topFixed, setTopFixed] = useState(true);
+  const [large, setLarge] = useState(true);
+  const [workersOnly, setWorkersOnly] = useState(false);
+  const [showPattern, setShowPattern] = useState(false);
   const [showRequests, setShowRequests] = useState(true);
+  const [showTasks, setShowTasks] = useState(true);
   const [showMemos, setShowMemos] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [required, setRequired] = useState<RequiredByBand>(DEFAULT_REQUIRED);
@@ -102,17 +107,42 @@ export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots
     return <section className="empty"><p>この店舗のスタッフがいません。</p></section>;
   }
 
+  const dateSet = new Set(dates);
+  const visibleStaff = workersOnly
+    ? staff.filter((p) => assignments.some((a) => dateSet.has(a.date) && a.staffIds.includes(p.id)))
+    : staff;
+
   return (
     <section className="matrix-section">
       <div className="cat-row">
         <span className="cat-name">ホール</span>
         <label className="cat-check">
+          <input type="checkbox" checked={topFixed} onChange={(e) => setTopFixed(e.target.checked)} />
+          上部固定
+        </label>
+        <label className="cat-check">
+          <input type="checkbox" checked={large} onChange={(e) => setLarge(e.target.checked)} />
+          縮小拡大
+        </label>
+        <label className="cat-check">
+          <input type="checkbox" checked={workersOnly} onChange={(e) => setWorkersOnly(e.target.checked)} />
+          出勤者のみ
+        </label>
+        <label className="cat-check">
+          <input type="checkbox" checked={showPattern} onChange={(e) => setShowPattern(e.target.checked)} />
+          シフトパターン
+        </label>
+        <label className="cat-check">
           <input type="checkbox" checked={showRequests} onChange={(e) => setShowRequests(e.target.checked)} />
-          希望シフトを表示
+          希望シフト
+        </label>
+        <label className="cat-check">
+          <input type="checkbox" checked={showTasks} onChange={(e) => setShowTasks(e.target.checked)} />
+          タスク
         </label>
         <label className="cat-check">
           <input type="checkbox" checked={showMemos} onChange={(e) => setShowMemos(e.target.checked)} />
-          勤務メモを表示
+          勤務メモ
         </label>
         <button
           type="button"
@@ -139,7 +169,7 @@ export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots
       </div>
 
       <div className="matrix-wrap">
-        <table className="matrix">
+        <table className={`matrix ${large ? 'is-large' : ''} ${topFixed ? 'top-fixed' : ''}`}>
           <thead>
             <tr>
               <th className="row-head sticky-col">スタッフ並び替え</th>
@@ -251,30 +281,32 @@ export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots
                 );
               })}
             </tr>
-            <tr className="recruit-row">
-              <td className="row-head sticky-col">追加募集</td>
-              {dates.map((date) => {
-                const rec = recruitments.find((r) => r.date === date);
-                const current = rec?.message ?? '';
-                return (
-                  <td key={date} className={`recruit-cell ${current ? 'has-recruit' : ''}`}>
-                    <input
-                      className="store-note-input recruit-input"
-                      defaultValue={current}
-                      key={`rec:${date}:${current}`}
-                      maxLength={200}
-                      placeholder="募集なし"
-                      aria-label={`${date} の追加募集`}
-                      onBlur={(e) => {
-                        const v = e.target.value.trim();
-                        if (v !== current) void setRecruitment(date, v);
-                      }}
-                    />
-                  </td>
-                );
-              })}
-            </tr>
-            {staff.map((person) => {
+            {showTasks && (
+              <tr className="recruit-row">
+                <td className="row-head sticky-col">追加募集</td>
+                {dates.map((date) => {
+                  const rec = recruitments.find((r) => r.date === date);
+                  const current = rec?.message ?? '';
+                  return (
+                    <td key={date} className={`recruit-cell ${current ? 'has-recruit' : ''}`}>
+                      <input
+                        className="store-note-input recruit-input"
+                        defaultValue={current}
+                        key={`rec:${date}:${current}`}
+                        maxLength={200}
+                        placeholder="募集なし"
+                        aria-label={`${date} の追加募集`}
+                        onBlur={(e) => {
+                          const v = e.target.value.trim();
+                          if (v !== current) void setRecruitment(date, v);
+                        }}
+                      />
+                    </td>
+                  );
+                })}
+              </tr>
+            )}
+            {visibleStaff.map((person) => {
               const hours = staffMonthlyHours(assignments, person.id, dates);
               const consec = maxConsecutiveAssignedDays(assignments, person.id, dates);
               const warnings = (consec >= 6 ? 1 : 0) + (hours > 180 ? 1 : 0);
@@ -319,7 +351,7 @@ export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots
                               }
                             }}
                           >
-                            {REQUEST_LABEL[req]}
+                            {showPattern && targetSlot ? SLOT_TIMES[targetSlot] : REQUEST_LABEL[req]}
                           </span>
                         )}
                         {showMemos && note && <span className="cell-memo" title={note.text}>{note.text}</span>}
