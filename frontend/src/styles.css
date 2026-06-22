@@ -1274,7 +1274,21 @@ button.cal-cell:active {
   border-radius: var(--r-sm);
   text-align: right;
 }
-.settings-row input:focus { outline: none; border-color: var(--primary); }
+.settings-row input:focus,
+.settings-row select:focus,
+.text-input:focus { outline: none; border-color: var(--primary); }
+
+.settings-row select,
+.text-input {
+  padding: 7px 10px;
+  font-size: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: #fff;
+  color: var(--text);
+}
+.settings-row .text-input { width: 220px; text-align: left; }
+.settings-row input[type="time"] { width: 120px; text-align: left; }
 
 /* ---- login ---- */
 .login {

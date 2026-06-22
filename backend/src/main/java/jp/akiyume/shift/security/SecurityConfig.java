@@ -26,6 +26,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/assignments").hasRole("MANAGER")
                 .requestMatchers(HttpMethod.DELETE, "/api/assignments").hasRole("MANAGER")
                 .requestMatchers(HttpMethod.PUT, "/api/stores/*/store-notes").hasRole("MANAGER")
+                .requestMatchers(HttpMethod.PUT, "/api/staff/*").hasRole("MANAGER")
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll())
             .headers(h -> h.frameOptions(f -> f.disable())) // h2-console 表示用
