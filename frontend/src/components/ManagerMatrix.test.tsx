@@ -22,8 +22,9 @@ describe('ManagerMatrix', () => {
   it('集計行（総労働時間・人件費）とスタッフ行を表示する', async () => {
     render(<AppProvider><ManagerMatrix year={2026} month={7} /></AppProvider>);
     await waitFor(() => expect(screen.getByText('山田（店長）')).toBeInTheDocument());
-    expect(screen.getByText('総労働時間')).toBeInTheDocument();
-    expect(screen.getByText('人件費(目安)')).toBeInTheDocument();
+    expect(screen.getByText(/総労働時間/)).toBeInTheDocument();
+    expect(screen.getByText(/人件費\(目安\)/)).toBeInTheDocument();
+    expect(screen.getByText(/売上計画/)).toBeInTheDocument();
     expect(screen.getByText('店舗メモ')).toBeInTheDocument();
     // 「早番」「中番」「遅番」は凡例とマトリクス行見出しの両方に出るため複数マッチを許容する
     expect(screen.getAllByText('早番').length).toBeGreaterThan(0);

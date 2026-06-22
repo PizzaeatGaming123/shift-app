@@ -3,7 +3,7 @@ import { getMonthDates } from '../lib/date';
 import { getDayRequest } from '../store/requests';
 import { isAssigned, countAssigned, fulfillmentLevel } from '../store/assignments';
 import { dailyWorkHours, dailyLaborCost, staffMonthlyHours } from '../store/labor';
-import { WORK_SLOTS, SLOT_LABELS, MAX_STAFF_PER_SLOT } from '../constants';
+import { WORK_SLOTS, SLOT_LABELS, SLOT_TIMES, MAX_STAFF_PER_SLOT, DAILY_SALES_TARGET } from '../constants';
 import { Legend } from './ui/Legend';
 import type { DayRequestValue, WorkSlot } from '../types';
 
@@ -74,20 +74,39 @@ export function ManagerMatrix({ year, month }: ManagerMatrixProps) {
           </thead>
           <tbody>
             <tr className="summary-row">
-              <td className="row-head sticky-col">総労働時間</td>
+              <td className="row-head sticky-col">💰 売上計画</td>
               {dates.map((date) => (
-                <td key={date} className="summary-cell">{dailyWorkHours(assignments, date)}h</td>
+                <td key={date} className="summary-cell">{yen(DAILY_SALES_TARGET)}</td>
               ))}
             </tr>
             <tr className="summary-row">
-              <td className="row-head sticky-col">人件費(目安)</td>
+              <td className="row-head sticky-col">⏱ 総労働時間</td>
               {dates.map((date) => (
-                <td key={date} className="summary-cell cost">{yen(dailyLaborCost(assignments, date))}</td>
+                <td key={date} className="summary-cell">{dailyWorkHours(assignments, date).toFixed(2)} h</td>
               ))}
+            </tr>
+            <tr className="summary-row">
+              <td className="row-head sticky-col">💴 人件費(目安)</td>
+              {dates.map((date) => {
+                const cost = dailyLaborCost(assignments, date);
+                const pct = Math.round((cost / DAILY_SALES_TARGET) * 100);
+                return (
+                  <td key={date} className="summary-cell cost">
+                    {yen(cost)}<span className="cost-pct">({pct}%)</span>
+                  </td>
+                );
+              })}
+            </tr>
+            <tr className="section-row">
+              <td className="row-head sticky-col">⚙ 全体モデルシフト</td>
+              {dates.map((date) => <td key={date} className="section-cell" />)}
             </tr>
             {WORK_SLOTS.map((slot) => (
               <tr key={slot} className="count-row">
-                <td className="row-head sticky-col">{SLOT_LABELS[slot]}</td>
+                <td className="row-head sticky-col indent">
+                  <span className="slot-name">{SLOT_LABELS[slot]}</span>
+                  <span className="slot-time">{SLOT_TIMES[slot]}</span>
+                </td>
                 {dates.map((date) => {
                   const count = countAssigned(assignments, date, slot);
                   const level = fulfillmentLevel(count);
@@ -124,11 +143,18 @@ export function ManagerMatrix({ year, month }: ManagerMatrixProps) {
             </tr>
             {staff.map((person) => {
               const hours = staffMonthlyHours(assignments, person.id, dates);
+              const noteCount = dayNotes.filter((n) => n.staffId === person.id).length;
               return (
                 <tr key={person.id} className="staff-row">
                   <td className="row-head sticky-col staff-head">
-                    <span className="staff-name">{person.name}</span>
-                    <span className="staff-hours">{hours}h</span>
+                    <span className="staff-avatar" aria-hidden="true">{person.name.slice(0, 1)}</span>
+                    <span className="staff-meta">
+                      <span className="staff-name">{person.name}</span>
+                      <span className="staff-sub">
+                        <span className="staff-hours">{hours.toFixed(2)} h</span>
+                        {noteCount > 0 && <span className="staff-notes">💬 {noteCount}</span>}
+                      </span>
+                    </span>
                   </td>
                   {dates.map((date) => {
                     const req = getDayRequest(requests, person.id, date);
