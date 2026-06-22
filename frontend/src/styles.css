@@ -492,6 +492,59 @@ button.cal-cell:active {
   margin-top: 4px;
 }
 
+.matrix-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 4px 2px 10px;
+}
+
+.view-tabs {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  background: #fff;
+}
+
+.view-tabs button {
+  border: none;
+  background: #fff;
+  color: var(--muted);
+  padding: 7px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  border-right: 1px solid var(--line);
+}
+
+.view-tabs button:last-child {
+  border-right: none;
+}
+
+.view-tabs button.active {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+}
+
+.toolbar-actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.alert-badge {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--low);
+  background: #fdeaea;
+  border: 1px solid #f3c6c6;
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
 .legend {
   display: flex;
   flex-wrap: wrap;
@@ -514,24 +567,16 @@ button.cal-cell:active {
   display: inline-block;
 }
 
-.dot.low {
-  background: var(--low);
-}
-
-.dot.ok {
-  background: var(--ok);
-}
-
-.dot.over {
-  background: var(--over);
-}
+.dot.low { background: var(--low); }
+.dot.ok { background: var(--ok); }
+.dot.over { background: var(--over); }
 
 .matrix-wrap {
-  max-height: calc(100dvh - 210px);
+  max-height: calc(100dvh - 230px);
   overflow: auto;
   overscroll-behavior: contain;
   border: 1px solid var(--line);
-  border-radius: var(--r-lg);
+  border-radius: var(--r-md);
   background: #fff;
   box-shadow: var(--sh-sm);
 }
@@ -548,22 +593,34 @@ button.cal-cell:active {
 .matrix td {
   border-bottom: 1px solid var(--line);
   border-right: 1px solid var(--line);
-  padding: 6px 8px;
+  padding: 5px 6px;
   text-align: center;
-  min-width: 38px;
+  min-width: 46px;
 }
 
 .matrix thead th {
   position: sticky;
   top: 0;
-  background: #f8fafc;
+  background: #f2f4f7;
   z-index: 2;
   font-weight: 700;
+  color: var(--text);
+}
+
+.date-head .d-num {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.date-head .d-dow {
+  display: block;
+  font-size: 10px;
   color: var(--muted);
 }
 
-.matrix th.staff-name,
-.matrix td.staff-name {
+.row-head,
+.sticky-col {
   text-align: left;
   white-space: nowrap;
   position: sticky;
@@ -572,91 +629,58 @@ button.cal-cell:active {
   z-index: 1;
   font-weight: 600;
   box-shadow: 1px 0 0 var(--line);
+  min-width: 120px;
 }
 
-.matrix thead th.staff-name {
+.matrix thead th.sticky-col {
   z-index: 3;
+  background: #f2f4f7;
+}
+
+.summary-row td {
+  background: #f8fafc;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.summary-row .row-head {
   background: #f8fafc;
 }
 
-.cell-btn {
-  cursor: pointer;
-  user-select: none;
-  transition: background var(--t), outline-color var(--t), color var(--t), box-shadow var(--t);
-}
-
-.cell-btn.req-early {
-  background: var(--early-soft);
-  color: #92400e;
-  font-weight: 700;
-}
-
-.cell-btn.req-late {
-  background: var(--late-soft);
-  color: #3730a3;
-  font-weight: 700;
-}
-
-.cell-btn.req-off {
-  background: var(--off-soft);
-  color: var(--muted);
-}
-
-.cell-btn.assigned {
-  outline: 2px solid var(--primary);
-  outline-offset: -2px;
+.summary-cell.cost {
+  color: var(--text);
+  font-weight: 600;
 }
 
 .count-row td {
-  background: #fbfcfe;
-}
-
-.count {
-  vertical-align: middle;
-}
-
-.count-num {
+  background: #fbfcfd;
   font-weight: 700;
 }
 
-.count.low .count-num {
-  color: #b91c1c;
-}
+.count.low { color: var(--low); }
+.count.ok { color: var(--ok); }
+.count.over { color: var(--over); }
 
-.count.ok .count-num {
-  color: #047857;
-}
-
-.count.over .count-num {
-  color: #92400e;
-}
-
-.fill-bar {
+.staff-head .staff-name {
   display: block;
-  height: 4px;
-  border-radius: 999px;
-  background: var(--line);
-  margin-top: 3px;
-  overflow: hidden;
+  font-weight: 700;
+  color: var(--text);
 }
 
-.fill {
+.staff-head .staff-hours {
   display: block;
-  height: 100%;
-  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
 }
 
-.fill.low {
-  background: var(--low);
+.shift-cell {
+  padding: 4px;
 }
 
-.fill.ok {
-  background: var(--ok);
-}
-
-.fill.over {
-  background: var(--over);
-}
+.shift-cell.dow-sun { background: #fdf4f4; }
+.shift-cell.dow-sat { background: #f3f7fb; }
 
 /* ---- shared view ---- */
 .shared-slot {
