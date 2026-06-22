@@ -22,6 +22,8 @@ export interface Staff {
   name: string;
   storeId: string;
   employmentType: EmploymentType;
+  rank: number | null;
+  skills: string[];
 }
 
 export interface ShiftRequest {

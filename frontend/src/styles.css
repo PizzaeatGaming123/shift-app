@@ -589,9 +589,7 @@ button.cal-cell:active {
 .dot.over { background: var(--over); }
 
 .matrix-wrap {
-  max-height: calc(100dvh - 250px);
-  overflow: auto;
-  overscroll-behavior: contain;
+  overflow-x: auto;
   border: 1px solid var(--line);
   border-radius: 0 0 var(--r-md) var(--r-md);
   background: #fff;
@@ -1230,6 +1228,30 @@ button.cal-cell:active {
 }
 
 .muted-sm { color: var(--muted); font-size: 12px; margin-left: 4px; }
+
+.modal-list li { align-items: flex-start; }
+.staff-li-main { display: flex; flex-direction: column; gap: 4px; }
+.staff-li-name { font-weight: 600; }
+.staff-li-sub { display: flex; flex-wrap: wrap; gap: 4px; }
+.staff-li-hours { font-weight: 600; white-space: nowrap; }
+
+.rank-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  background: var(--primary-soft);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+.skill-tag {
+  font-size: 11px;
+  color: var(--muted);
+  background: #f1f3f6;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
 
 /* ---- login ---- */
 .login {
