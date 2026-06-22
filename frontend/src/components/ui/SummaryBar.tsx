@@ -18,6 +18,7 @@ export function SummaryBar({ requests, staffId, dates }: SummaryBarProps) {
       </div>
       <div className="summary-tags" aria-label="希望の内訳">
         <span className="chip early">早 {summary.early}</span>
+        <span className="chip mid">中 {summary.mid}</span>
         <span className="chip late">遅 {summary.late}</span>
         <span className="chip off">休 {summary.off}</span>
       </div>
