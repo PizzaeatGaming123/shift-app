@@ -6,6 +6,7 @@ import { isAssigned, countAssigned } from '../store/assignments';
 import { dailyWorkHours, dailyLaborCost, staffMonthlyHours, dailyRankTotal } from '../store/labor';
 import { WORK_SLOTS, SLOT_LABELS, SLOT_TIMES, DAILY_SALES_TARGET } from '../constants';
 import { Modal } from './ui/Modal';
+import { useSetting } from '../lib/settings';
 import type { DayRequestValue, WorkSlot, RequestSlot, SlotVisibility } from '../types';
 
 type RequiredBySlot = Record<WorkSlot, number>;
@@ -55,6 +56,7 @@ export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [required, setRequired] = useState<RequiredBySlot>(DEFAULT_REQUIRED);
   const dates = sliceByView(getMonthDates(year, month), view);
+  const [salesTarget] = useSetting(`akiyume-sales:${storeId}`, DAILY_SALES_TARGET);
 
   const reqKey = `akiyume-required:${storeId}`;
   useEffect(() => {
@@ -120,7 +122,7 @@ export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots
             <tr className="summary-row">
               <td className="row-head sticky-col">売上計画</td>
               {dates.map((date) => (
-                <td key={date} className="summary-cell">{yen(DAILY_SALES_TARGET)}</td>
+                <td key={date} className="summary-cell">{yen(salesTarget)}</td>
               ))}
             </tr>
             <tr className="summary-row">
@@ -133,7 +135,7 @@ export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots
               <td className="row-head sticky-col">人件費(目安)</td>
               {dates.map((date) => {
                 const cost = dailyLaborCost(assignments, date);
-                const pct = Math.round((cost / DAILY_SALES_TARGET) * 100);
+                const pct = salesTarget > 0 ? Math.round((cost / salesTarget) * 100) : 0;
                 return (
                   <td key={date} className="summary-cell cost">
                     {yen(cost)}<span className="cost-pct">({pct}%)</span>

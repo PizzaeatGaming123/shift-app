@@ -48,6 +48,15 @@ export const api = {
     return json<ApiStaff[]>(await fetch(`/api/stores/${storeId}/staff`, { credentials: 'include' }));
   },
 
+  async updateStaff(id: number, rank: number | null, skills: string): Promise<void> {
+    await fetch(`/api/staff/${id}`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rank, skills }),
+    });
+  },
+
   async requests(storeId: number, month: string): Promise<ApiRequest[]> {
     return json<ApiRequest[]>(await fetch(`/api/stores/${storeId}/requests?month=${month}`, { credentials: 'include' }));
   },

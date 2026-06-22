@@ -23,6 +23,7 @@ interface AppContextValue {
   toggleAssignment: (date: string, slot: WorkSlot, staffId: string, assigned: boolean) => Promise<void>;
   setDayNote: (date: string, text: string) => Promise<void>;
   setStoreNote: (date: string, text: string) => Promise<void>;
+  updateStaff: (id: string, rank: number | null, skills: string[]) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -135,11 +136,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await reloadStoreData();
   }, [storeId, reloadStoreData]);
 
+  const updateStaff = useCallback(async (id: string, rank: number | null, skills: string[]) => {
+    await api.updateStaff(Number(id), rank, skills.join(','));
+    await reloadStoreData();
+  }, [reloadStoreData]);
+
   const value = useMemo<AppContextValue>(() => ({
     me, loading, stores, staff, requests, assignments, dayNotes, storeNotes, storeId, month,
-    setStoreId, setMonth, login, logout, setDayRequest, toggleAssignment, setDayNote, setStoreNote,
+    setStoreId, setMonth, login, logout, setDayRequest, toggleAssignment, setDayNote, setStoreNote, updateStaff,
   }), [me, loading, stores, staff, requests, assignments, dayNotes, storeNotes, storeId, month,
-       login, logout, setDayRequest, toggleAssignment, setDayNote, setStoreNote]);
+       login, logout, setDayRequest, toggleAssignment, setDayNote, setStoreNote, updateStaff]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
