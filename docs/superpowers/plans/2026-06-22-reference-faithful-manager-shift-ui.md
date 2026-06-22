@@ -20,10 +20,10 @@
 - Preserve keyboard operation, visible focus, ARIA labels/states, and `prefers-reduced-motion`.
 - Store business data in backend APIs. Use `localStorage` only for device-level display preferences.
 - Repair any mojibake encountered in modified files; all source files and Japanese UI strings must remain UTF-8.
-- Do not stage or modify `.claude/`, `.codex/`, or the user's untracked reference files under `要件定義/`.
+- Do not stage or modify local assistant configuration directories or the user's untracked reference files under `要件定義/`.
 - Preserve every existing visual detail that already matches the reference. Replace only a verified mismatch.
 - Capture the current manager screen before Task 2 and compare after every visual task. If a task reduces reference fidelity, revert only that task's commit before continuing.
-- Do not add `Codex`, `AI`, generated-by notices, or co-author trailers to branch names, commit messages, pull-request text, or GitHub-visible metadata.
+- Do not add tool attribution notices or co-author trailers to branch names, commit messages, pull-request text, or GitHub-visible metadata.
 
 ---
 
@@ -2791,7 +2791,7 @@ Confirm:
 
 - No temporary screenshots or rendered PDF pages are tracked.
 - No reference files under `要件定義/` were changed.
-- No `.claude/` or `.codex/` files were staged.
+- No local assistant configuration files were staged.
 - No mojibake remains in modified files.
 
 - [ ] **Step 8: Commit**

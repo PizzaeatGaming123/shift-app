@@ -8,7 +8,6 @@
 
 **Tech Stack:** Spring Boot 3.x, Java 21, Maven (wrapper), Spring Web / Data JPA / Security / Validation, H2 (file), JUnit 5 + spring-security-test, React + Vite + TS（既存）。
 
-> コミットメッセージに `Co-Authored-By` 等の Claude 帰属トレーラーは付けない（プレーンなメッセージのみ）。
 > パッケージ: `jp.akiyume.shift`。backend の artifactId: `shift-backend`。
 > backend のコマンドは `backend/` ディレクトリで `./mvnw ...`（Windows は `mvnw.cmd`、Git Bash なら `./mvnw`）。
 

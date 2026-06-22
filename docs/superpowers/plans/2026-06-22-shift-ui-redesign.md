@@ -10,7 +10,6 @@
 
 ## Global Constraints
 
-- コミットメッセージは Claude 帰属トレーラーを付けないプレーンなメッセージにする。
 - frontend のコマンドは `frontend/` ディレクトリで実行する。
 - Tailwind CSS や UI ライブラリなど、新しいランタイム依存は追加しない。
 - API 連携（`AppContext` / `api/client`）とドメインロジック（`lib/date`・`store/requests`・`store/assignments`）は変更しない。
