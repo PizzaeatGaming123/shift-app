@@ -428,15 +428,10 @@ button.cal-cell:active {
   transform: scale(.97);
 }
 
-/* 割り当て確定はベタ塗りで表現 */
-.chip.assigned.early {
-  background: var(--early);
-  color: #fff;
-}
-
-.chip.assigned.late {
-  background: var(--late);
-  color: #fff;
+/* 割り当て確定は枠線リングで表現（参照画像に合わせ淡い配色を維持） */
+.chip.assigned {
+  box-shadow: inset 0 0 0 1.5px currentColor;
+  font-weight: 800;
 }
 
 /* ---- request picker / sheet actions ---- */
@@ -730,6 +725,21 @@ button.cal-cell:active {
   font-size: 11px;
   color: var(--muted);
   font-weight: 600;
+}
+
+.warn-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 5px;
+  min-width: 16px;
+  height: 15px;
+  padding: 0 3px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #fff;
+  background: var(--low);
+  border-radius: 3px;
 }
 
 .shift-cell {

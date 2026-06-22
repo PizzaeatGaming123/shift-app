@@ -2,15 +2,21 @@ import { useEffect, useState } from 'react';
 import { useApp } from '../store/AppContext';
 import { getMonthDates, sliceByView } from '../lib/date';
 import { getDayRequest } from '../store/requests';
-import { isAssigned, countAssigned } from '../store/assignments';
-import { dailyWorkHours, dailyLaborCost, staffMonthlyHours, dailyRankTotal } from '../store/labor';
-import { WORK_SLOTS, SLOT_LABELS, SLOT_TIMES, DAILY_SALES_TARGET } from '../constants';
+import { isAssigned } from '../store/assignments';
+import { dailyWorkHours, dailyLaborCost, staffMonthlyHours, dailyRankTotal, maxConsecutiveAssignedDays } from '../store/labor';
+import { SLOT_LABELS, DAILY_SALES_TARGET } from '../constants';
 import { Modal } from './ui/Modal';
 import { useSetting } from '../lib/settings';
-import type { DayRequestValue, WorkSlot, RequestSlot, SlotVisibility } from '../types';
+import type { Assignment, DayRequestValue, WorkSlot, RequestSlot, SlotVisibility } from '../types';
 
-type RequiredBySlot = Record<WorkSlot, number>;
-const DEFAULT_REQUIRED: RequiredBySlot = { early: 2, mid: 2, late: 2 };
+type BandKey = 'b1' | 'b2' | 'b3';
+const BANDS: { key: BandKey; label: string; slots: WorkSlot[] }[] = [
+  { key: 'b1', label: '09:00 - 14:00', slots: ['early', 'mid'] },
+  { key: 'b2', label: '14:00 - 19:00', slots: ['early', 'mid', 'late'] },
+  { key: 'b3', label: '19:00 - 23:00', slots: ['mid', 'late'] },
+];
+type RequiredByBand = Record<BandKey, number>;
+const DEFAULT_REQUIRED: RequiredByBand = { b1: 2, b2: 2, b3: 2 };
 
 interface ManagerMatrixProps {
   year: number;
@@ -48,15 +54,31 @@ function dowClass(date: string): string {
 function yen(n: number): string {
   return `¥${n.toLocaleString('ja-JP')}`;
 }
+/** 労働時間を「時:分」形式にする（例: 45 -> 45:00） */
+function hm(hours: number): string {
+  const h = Math.floor(hours);
+  const m = Math.round((hours - h) * 60);
+  return `${h}:${String(m).padStart(2, '0')}`;
+}
+/** 時間帯バンドを満たす（重なるスロットに割り当てられた）スタッフ数 */
+function bandCoverage(assignments: Assignment[], date: string, slots: WorkSlot[]): number {
+  const ids = new Set<string>();
+  for (const slot of slots) {
+    const a = assignments.find((x) => x.date === date && x.slot === slot);
+    for (const id of a?.staffIds ?? []) ids.add(id);
+  }
+  return ids.size;
+}
 
 export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots }: ManagerMatrixProps) {
   const { staff, requests, assignments, dayNotes, storeNotes, recruitments, storeId, toggleAssignment, setStoreNote, setRecruitment } = useApp();
   const [showRequests, setShowRequests] = useState(true);
   const [showMemos, setShowMemos] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [required, setRequired] = useState<RequiredBySlot>(DEFAULT_REQUIRED);
+  const [required, setRequired] = useState<RequiredByBand>(DEFAULT_REQUIRED);
   const dates = sliceByView(getMonthDates(year, month), view);
   const [salesTarget] = useSetting(`akiyume-sales:${storeId}`, DAILY_SALES_TARGET);
+  const [hallMemos, setHallMemos] = useSetting<Record<string, string>>(`akiyume-hallmemo:${storeId}`, {});
 
   const reqKey = `akiyume-required:${storeId}`;
   useEffect(() => {
@@ -69,7 +91,7 @@ export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots
     }
   }, [reqKey]);
 
-  function saveRequired(next: RequiredBySlot) {
+  function saveRequired(next: RequiredByBand) {
     setRequired(next);
     localStorage.setItem(reqKey, JSON.stringify(next));
   }
@@ -132,13 +154,13 @@ export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots
               ))}
             </tr>
             <tr className="summary-row">
-              <td className="row-head sticky-col">人件費(目安)</td>
+              <td className="row-head sticky-col">人件費（時給）</td>
               {dates.map((date) => {
                 const cost = dailyLaborCost(assignments, date);
-                const pct = salesTarget > 0 ? Math.round((cost / salesTarget) * 100) : 0;
+                const pct = salesTarget > 0 ? (cost / salesTarget) * 100 : 0;
                 return (
                   <td key={date} className="summary-cell cost">
-                    {yen(cost)}<span className="cost-pct">({pct}%)</span>
+                    {yen(cost)}<span className="cost-pct">({pct.toFixed(2)}%)</span>
                   </td>
                 );
               })}
@@ -147,19 +169,18 @@ export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots
               <td className="row-head sticky-col">全体モデルシフト</td>
               {dates.map((date) => <td key={date} className="section-cell" />)}
             </tr>
-            {WORK_SLOTS.map((slot) => (
-              <tr key={slot} className="count-row">
+            {BANDS.map((band) => (
+              <tr key={band.key} className="count-row">
                 <td className="row-head sticky-col indent">
-                  <span className="slot-name">{SLOT_LABELS[slot]}</span>
-                  <span className="slot-time">{SLOT_TIMES[slot]}</span>
+                  <span className="slot-name">{band.label}</span>
                 </td>
                 {dates.map((date) => {
-                  const count = countAssigned(assignments, date, slot);
-                  const need = required[slot];
-                  const level = count < need ? 'low' : count > need ? 'over' : 'ok';
+                  const cov = bandCoverage(assignments, date, band.slots);
+                  const need = required[band.key];
+                  const level = cov < need ? 'low' : cov > need ? 'over' : 'ok';
                   return (
                     <td key={date} className={`count ${level}`}>
-                      {count}/{need}
+                      {cov}/{need}
                     </td>
                   );
                 })}
@@ -194,6 +215,31 @@ export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots
                 );
               })}
             </tr>
+            <tr className="store-note-row">
+              <td className="row-head sticky-col">ホールメモ</td>
+              {dates.map((date) => {
+                const current = hallMemos[date] ?? '';
+                return (
+                  <td key={date} className="store-note-cell">
+                    <input
+                      className="store-note-input"
+                      defaultValue={current}
+                      key={`hall:${date}:${current}`}
+                      maxLength={200}
+                      placeholder=""
+                      aria-label={`${date} のホールメモ`}
+                      onBlur={(e) => {
+                        const v = e.target.value.trim();
+                        if (v === current) return;
+                        const next = { ...hallMemos };
+                        if (v) next[date] = v; else delete next[date];
+                        setHallMemos(next);
+                      }}
+                    />
+                  </td>
+                );
+              })}
+            </tr>
             <tr className="recruit-row">
               <td className="row-head sticky-col">追加募集</td>
               {dates.map((date) => {
@@ -219,12 +265,17 @@ export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots
             </tr>
             {staff.map((person) => {
               const hours = staffMonthlyHours(assignments, person.id, dates);
+              const consec = maxConsecutiveAssignedDays(assignments, person.id, dates);
+              const warnings = (consec >= 6 ? 1 : 0) + (hours > 180 ? 1 : 0);
               return (
                 <tr key={person.id} className="staff-row">
                   <td className="row-head sticky-col staff-head">
                     <span className="staff-meta">
-                      <span className="staff-name">{person.name}</span>
-                      <span className="staff-hours">{hours.toFixed(2)}</span>
+                      <span className="staff-name">
+                        {person.name}
+                        {warnings > 0 && <span className="warn-badge" title="労務注意">!{warnings}</span>}
+                      </span>
+                      <span className="staff-hours">{hm(hours)}</span>
                     </span>
                   </td>
                   {dates.map((date) => {
@@ -271,18 +322,18 @@ export function ManagerMatrix({ year, month, view, visibleSlots, setVisibleSlots
         </table>
       </div>
 
-      <Modal open={settingsOpen} title="シフト設定（必要人数）" onClose={() => setSettingsOpen(false)}>
-        <p>時間帯ごとの必要人数を設定します。マトリクスの過不足判定（色）に反映されます。</p>
+      <Modal open={settingsOpen} title="シフト設定（モデルシフト必要人数）" onClose={() => setSettingsOpen(false)}>
+        <p>時間帯ごとの必要人数を設定します。全体モデルシフトの過不足判定（色）に反映されます。</p>
         <div className="settings-form">
-          {WORK_SLOTS.map((slot) => (
-            <label key={slot} className="settings-row">
-              <span>{SLOT_LABELS[slot]}<span className="muted-sm">（{SLOT_TIMES[slot]}）</span></span>
+          {BANDS.map((band) => (
+            <label key={band.key} className="settings-row">
+              <span>{band.label}</span>
               <input
                 type="number"
                 min={0}
                 max={20}
-                value={required[slot]}
-                onChange={(e) => saveRequired({ ...required, [slot]: Math.max(0, Number(e.target.value) || 0) })}
+                value={required[band.key]}
+                onChange={(e) => saveRequired({ ...required, [band.key]: Math.max(0, Number(e.target.value) || 0) })}
               />
             </label>
           ))}
