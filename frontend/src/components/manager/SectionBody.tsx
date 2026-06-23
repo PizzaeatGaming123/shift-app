@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useApp } from '../../store/AppContext';
+import { api } from '../../api/client';
 import { useToast } from '../ui/Toast';
 import { useSetting } from '../../lib/settings';
 import { getMonthDates } from '../../lib/date';
@@ -196,7 +197,28 @@ export function SectionBody({ section }: { section: ManagerSection }) {
   const activeRecruitDate = recruitDate || dates[0] || '';
   const storeName = stores.find((s) => String(s.id) === String(storeId))?.name ?? '店舗';
   const targetStaff = staff.filter((person) => person.role === 'STAFF');
-  const submittedStaffIds = new Set(
+  // 回収状況は「シフト設定の対象月」が真値。対象月 ≠ シフト表表示月の場合は
+  // AppContext の requests には該当月の希望が無いため、対象月分を別途取得する。
+  const [targetMonthSubmitterIds, setTargetMonthSubmitterIds] = useState<Set<string> | null>(null);
+  useEffect(() => {
+    if (!storeId) return;
+    if (collect.targetMonth === month) {
+      // 表示月と一致するときは追加取得せず、AppContext の requests を使う
+      setTargetMonthSubmitterIds(null);
+      return;
+    }
+    let canceled = false;
+    void api.requests(storeId, collect.targetMonth).then((list) => {
+      if (canceled) return;
+      const ids = new Set(list.map((r) => String(r.staffId)));
+      setTargetMonthSubmitterIds(ids);
+    }).catch(() => {
+      if (!canceled) setTargetMonthSubmitterIds(new Set());
+    });
+    return () => { canceled = true; };
+  }, [storeId, collect.targetMonth, month]);
+
+  const submittedStaffIds = targetMonthSubmitterIds ?? new Set(
     requests
       .filter((request) => request.date.startsWith(collect.targetMonth))
       .map((request) => request.staffId),
