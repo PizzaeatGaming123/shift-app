@@ -16,7 +16,7 @@ import {
 type ModalKind =
   | null | 'staff' | 'regStaff' | 'regAdmin' | 'rank' | 'skills' | 'sales' | 'cost' | 'sph'
   | 'laborStatus' | 'attendance' | 'hoursAlert' | 'stores' | 'dept' | 'perm'
-  | 'import' | 'integ' | 'hours' | 'collect' | 'notify' | 'display' | 'help' | 'account';
+  | 'import' | 'integ' | 'hours' | 'collect' | 'notify' | 'display' | 'help' | 'account' | 'model';
 
 const TITLES: Record<Exclude<ModalKind, null>, string> = {
   staff: 'スタッフ一覧', regStaff: 'スタッフ登録', regAdmin: '管理者登録',
@@ -25,6 +25,7 @@ const TITLES: Record<Exclude<ModalKind, null>, string> = {
   hoursAlert: '労働時間アラート', stores: '店舗管理', dept: '部門', perm: '権限設定',
   import: 'CSVインポート', integ: '連携設定', hours: '営業時間', collect: 'シフト回収設定',
   notify: '通知設定', display: '表示設定', help: '使い方', account: 'アカウント設定',
+  model: 'モデルシフト',
 };
 
 const FONT_SIZES: { value: 'small' | 'standard' | 'large'; label: string }[] = [
@@ -61,6 +62,7 @@ const ENABLED_SECTIONS = new Set<ManagerSection>([
   'business-hours',
   'collection-settings',
   'notification-settings',
+  'model-shift',
 ]);
 
 function yen(n: number): string { return `¥${n.toLocaleString('ja-JP')}`; }
@@ -96,6 +98,11 @@ export function TopNav({ onHome }: { onHome?: () => void }) {
     submit: true, viewOwn: true, viewOthers: false, postMemo: true, viewCost: false,
   });
   const [newDept, setNewDept] = useState('');
+  const [modelPos, setModelPos] = useState<string>(positions[0] ?? 'ホール');
+  const [modelRequired, setModelRequired] = useSetting(
+    `akiyume-required:${storeId}:${modelPos}`,
+    { morning: 2, afternoon: 2, night: 2 },
+  );
 
   const dates = getMonthDates(Number(month.slice(0, 4)), Number(month.slice(5, 7)));
   const storeName = stores.find((s) => String(s.id) === String(storeId))?.name ?? '店舗';
@@ -146,6 +153,7 @@ export function TopNav({ onHome }: { onHome?: () => void }) {
       'business-hours': 'hours',
       'collection-settings': 'collect',
       'notification-settings': 'notify',
+      'model-shift': 'model',
     };
 
     if (section === 'shift-table' || section === 'confirmed-shifts') {
@@ -464,6 +472,39 @@ export function TopNav({ onHome }: { onHome?: () => void }) {
             <dt>権限</dt><dd>{me?.role === 'MANAGER' ? '店長' : 'スタッフ'}</dd>
             <dt>所属店舗</dt><dd>{storeName}</dd>
           </dl>
+        )}
+
+        {modal === 'model' && (
+          <div className="settings-form">
+            <p className="muted-sm">
+              時間帯ごとの必要人数を設定します。シフト表の「全体モデルシフト」に必要数として反映されます。
+            </p>
+            <label className="settings-row">
+              <span>ポジション</span>
+              <select value={modelPos} onChange={(e) => setModelPos(e.target.value)}>
+                {positions.map((p) => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </label>
+            {([
+              ['morning', '09:00 - 14:00'],
+              ['afternoon', '14:00 - 19:00'],
+              ['night', '19:00 - 23:00'],
+            ] as const).map(([key, label]) => (
+              <label key={key} className="settings-row">
+                <span>{label}</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={20}
+                  value={modelRequired[key]}
+                  onChange={(e) => setModelRequired({
+                    ...modelRequired,
+                    [key]: Math.min(20, Math.max(0, Number(e.target.value) || 0)),
+                  })}
+                />
+              </label>
+            ))}
+          </div>
         )}
       </Modal>
     </>
