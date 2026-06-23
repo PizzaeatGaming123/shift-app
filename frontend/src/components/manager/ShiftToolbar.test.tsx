@@ -14,6 +14,7 @@ function renderToolbar(overrides = {}) {
     deadlineLabel: '〜前月末 23:59',
     unconfirmedCount: 3,
     recruitmentCount: 1,
+    shiftMode: 'assignment' as const,
     onStoreChange: vi.fn(),
     onPositionChange: vi.fn(),
     onViewChange: vi.fn(),
@@ -25,6 +26,7 @@ function renderToolbar(overrides = {}) {
     onOpenShiftTypes: vi.fn(),
     onOpenDisplayItems: vi.fn(),
     onOpenRecruitment: vi.fn(),
+    onShiftModeChange: vi.fn(),
     ...overrides,
   };
   render(<ShiftToolbar {...props} />);
@@ -40,8 +42,10 @@ describe('ShiftToolbar', () => {
     expect(screen.getByRole('button', { name: 'シフト確定 未確定あり 3件' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '印刷' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'シフトの種類' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '希望確認・割り当て' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: '確定シフト' })).toBeInTheDocument();
     expect(screen.getByText('2026年7月')).toBeInTheDocument();
-    expect(screen.getByText('提出期限 〜前月末 23:59')).toBeInTheDocument();
+    expect(screen.getByText('提出期間 〜前月末 23:59')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '追加募集中 1件' })).toBeInTheDocument();
   });
 

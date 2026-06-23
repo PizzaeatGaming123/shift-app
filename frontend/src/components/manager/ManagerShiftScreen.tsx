@@ -123,6 +123,9 @@ export function ManagerShiftScreen({
     'standard',
   );
   const [sortMode, setSortMode] = useState<StaffSortMode>('default');
+  const [shiftMode, setShiftMode] = useState<'assignment' | 'confirmed'>(
+    'assignment',
+  );
   const [shiftTypesOpen, setShiftTypesOpen] = useState(false);
   const [displayItemsOpen, setDisplayItemsOpen] = useState(false);
   const [recruitmentOpen, setRecruitmentOpen] = useState(false);
@@ -258,6 +261,7 @@ export function ManagerShiftScreen({
         deadlineLabel="〜前月末 23:59"
         unconfirmedCount={unconfirmedCount}
         recruitmentCount={recruitmentCount}
+        shiftMode={shiftMode}
         onStoreChange={(id) => setStoreId(Number(id))}
         onPositionChange={setPosition}
         onViewChange={(nextView) => {
@@ -272,16 +276,22 @@ export function ManagerShiftScreen({
         onOpenShiftTypes={() => setShiftTypesOpen(true)}
         onOpenDisplayItems={() => setDisplayItemsOpen(true)}
         onOpenRecruitment={() => setRecruitmentOpen(true)}
+        onShiftModeChange={(nextMode) => {
+          setShiftMode(nextMode);
+          setLayers((current) => ({
+            ...current,
+            showRequests: nextMode === 'assignment',
+            showNotes: nextMode === 'assignment',
+          }));
+        }}
       />
 
       <ShiftDisplayControls
         position={position}
         layers={layers}
         density={density}
-        sortMode={sortMode}
         onLayersChange={setLayers}
         onDensityChange={setDensity}
-        onSortChange={setSortMode}
         onBulkAction={() => void runBulkAssignment()}
         onCopyPast={() => showToast('過去シフトのコピー対象を選択してください')}
       />

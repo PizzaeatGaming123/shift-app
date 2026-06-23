@@ -11,6 +11,7 @@ interface ShiftToolbarProps {
   deadlineLabel: string;
   unconfirmedCount: number;
   recruitmentCount: number;
+  shiftMode: 'assignment' | 'confirmed';
   onStoreChange: (storeId: string) => void;
   onPositionChange: (position: string) => void;
   onViewChange: (view: ManagerView) => void;
@@ -22,6 +23,7 @@ interface ShiftToolbarProps {
   onOpenShiftTypes: () => void;
   onOpenDisplayItems: () => void;
   onOpenRecruitment: () => void;
+  onShiftModeChange: (mode: 'assignment' | 'confirmed') => void;
 }
 
 const VIEW_OPTIONS: { value: ManagerView; label: string }[] = [
@@ -41,6 +43,7 @@ export function ShiftToolbar({
   deadlineLabel,
   unconfirmedCount,
   recruitmentCount,
+  shiftMode,
   onStoreChange,
   onPositionChange,
   onViewChange,
@@ -52,6 +55,7 @@ export function ShiftToolbar({
   onOpenShiftTypes,
   onOpenDisplayItems,
   onOpenRecruitment,
+  onShiftModeChange,
 }: ShiftToolbarProps) {
   const confirmationLabel = unconfirmedCount > 0
     ? `シフト確定 未確定あり ${unconfirmedCount}件`
@@ -93,6 +97,22 @@ export function ShiftToolbar({
         </button>
         <button type="button" onClick={onPrint}>印刷</button>
         <button type="button" onClick={onOpenShiftTypes}>シフトの種類</button>
+        <div className="rk-shift-mode-switch" aria-label="シフト表示">
+          <button
+            type="button"
+            aria-pressed={shiftMode === 'assignment'}
+            onClick={() => onShiftModeChange('assignment')}
+          >
+            希望確認・割り当て
+          </button>
+          <button
+            type="button"
+            aria-pressed={shiftMode === 'confirmed'}
+            onClick={() => onShiftModeChange('confirmed')}
+          >
+            確定シフト
+          </button>
+        </div>
       </div>
 
       <div className="rk-shift-toolbar__secondary">
@@ -113,7 +133,7 @@ export function ShiftToolbar({
         <button type="button" aria-label="次へ" onClick={onNext}>›</button>
         <span className="rk-shift-toolbar__period">{periodLabel}</span>
         <button type="button" onClick={onToday}>今月</button>
-        <span className="rk-shift-toolbar__deadline">提出期限 {deadlineLabel}</span>
+        <span className="rk-shift-toolbar__deadline">提出期間 {deadlineLabel}</span>
         <button type="button" onClick={onOpenDisplayItems}>表示項目設定</button>
         <button type="button" onClick={onOpenRecruitment}>
           追加募集中 {recruitmentCount}件

@@ -41,6 +41,8 @@ interface GlobalNavProps {
   onHome: () => void;
   onOpenSection: (section: ManagerSection) => void;
   onLogout: () => void;
+  onOpenHelp?: () => void;
+  onOpenAccount?: () => void;
 }
 
 const NAV_GROUPS: {
@@ -123,6 +125,8 @@ export function GlobalNav({
   onHome,
   onOpenSection,
   onLogout,
+  onOpenHelp,
+  onOpenAccount,
 }: GlobalNavProps) {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const rootRef = useRef<HTMLElement>(null);
@@ -198,7 +202,14 @@ export function GlobalNav({
       })}
 
       <div className="rk-global-nav__spacer" />
-      <button type="button" className="rk-global-nav__icon" aria-label="ヘルプ">?</button>
+      <button
+        type="button"
+        className="rk-global-nav__icon"
+        aria-label="ヘルプ"
+        onClick={onOpenHelp}
+      >
+        ?
+      </button>
       <div className="rk-global-nav__group rk-global-nav__account">
         <button
           type="button"
@@ -215,6 +226,18 @@ export function GlobalNav({
             aria-label="アカウントメニュー"
             className="rk-global-nav__menu"
           >
+            {onOpenAccount && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setOpenMenu(null);
+                  onOpenAccount();
+                }}
+              >
+                アカウント設定
+              </button>
+            )}
             <button type="button" role="menuitem" onClick={onLogout}>
               ログアウト
             </button>
