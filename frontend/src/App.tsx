@@ -1,23 +1,18 @@
 import { useState } from 'react';
 import { useApp } from './store/AppContext';
 import { TopNav } from './components/TopNav';
-import { ManagerToolbar } from './components/ManagerToolbar';
 import { Login } from './components/Login';
 import { RequestEditor } from './components/RequestEditor';
-import { ManagerMatrix } from './components/ManagerMatrix';
 import { SharedView } from './components/SharedView';
 import { Skeleton } from './components/ui/Skeleton';
-import type { SlotVisibility } from './types';
+import { ManagerShiftScreen } from './components/manager/ManagerShiftScreen';
 
 type Tab = 'main' | 'shared';
-
-const ALL_SLOTS_VISIBLE: SlotVisibility = { early: true, mid: true, late: true, off: true };
 
 export function App() {
   const { me, loading, month, setMonth } = useApp();
   const [tab, setTab] = useState<Tab>('main');
-  const [view, setView] = useState('月');
-  const [visibleSlots, setVisibleSlots] = useState<SlotVisibility>(ALL_SLOTS_VISIBLE);
+  const [managerHomeSignal, setManagerHomeSignal] = useState(0);
 
   if (loading) {
     return (
@@ -49,57 +44,40 @@ export function App() {
   }
 
   const isManager = me.role === 'MANAGER';
-  const monthTitle = `${year}年 ${monthNum}月`;
 
-  function goHome() {
+  function goStaffHome() {
     setTab('main');
-    setView('月');
     goToday();
+  }
+
+  if (isManager) {
+    return (
+      <>
+        <TopNav onHome={() => setManagerHomeSignal((value) => value + 1)} />
+        <ManagerShiftScreen homeSignal={managerHomeSignal} />
+      </>
+    );
   }
 
   return (
     <>
-      <TopNav onHome={goHome} />
+      <TopNav onHome={goStaffHome} />
       <div className="app">
-        {isManager ? (
-          <>
-            <ManagerToolbar
-              monthTitle={monthTitle}
-              onPrev={() => shiftMonthStr(-1)}
-              onNext={() => shiftMonthStr(1)}
-              onToday={goToday}
-              tab={tab}
-              setTab={setTab}
-              view={view}
-              setView={setView}
-              visibleSlots={visibleSlots}
-              setVisibleSlots={setVisibleSlots}
-            />
-            <main className="screen">
-              {tab === 'shared'
-                ? <SharedView year={year} month={monthNum} />
-                : <ManagerMatrix year={year} month={monthNum} view={view} visibleSlots={visibleSlots} setVisibleSlots={setVisibleSlots} />}
-            </main>
-          </>
-        ) : (
-          <>
-            <div className="month-nav">
-              <button type="button" className="btn btn-ghost" onClick={() => shiftMonthStr(-1)} aria-label="前の月">‹</button>
-              <span className="month-title">{year}年 {monthNum}月</span>
-              <button type="button" className="btn btn-ghost" onClick={() => shiftMonthStr(1)} aria-label="次の月">›</button>
-              <button type="button" className="btn btn-soft btn-sm today-btn" onClick={goToday}>今月</button>
-            </div>
-            <nav className="segment" aria-label="画面切り替え">
-              <button type="button" className={tab === 'main' ? 'active' : ''} onClick={() => setTab('main')}>希望を出す</button>
-              <button type="button" className={tab === 'shared' ? 'active' : ''} onClick={() => setTab('shared')}>確定シフト</button>
-            </nav>
-            <main className="screen">
-              {tab === 'shared'
-                ? <SharedView year={year} month={monthNum} />
-                : <RequestEditor year={year} month={monthNum} />}
-            </main>
-          </>
-        )}
+        <div className="month-nav">
+          <button type="button" className="btn btn-ghost" onClick={() => shiftMonthStr(-1)} aria-label="前の月">‹</button>
+          <span className="month-title">{year}年 {monthNum}月</span>
+          <button type="button" className="btn btn-ghost" onClick={() => shiftMonthStr(1)} aria-label="次の月">›</button>
+          <button type="button" className="btn btn-soft btn-sm today-btn" onClick={goToday}>今月</button>
+        </div>
+        <nav className="segment" aria-label="画面切り替え">
+          <button type="button" className={tab === 'main' ? 'active' : ''} onClick={() => setTab('main')}>希望を出す</button>
+          <button type="button" className={tab === 'shared' ? 'active' : ''} onClick={() => setTab('shared')}>確定シフト</button>
+        </nav>
+        <main className="screen">
+          {tab === 'shared'
+            ? <SharedView year={year} month={monthNum} />
+            : <RequestEditor year={year} month={monthNum} />}
+        </main>
       </div>
     </>
   );
