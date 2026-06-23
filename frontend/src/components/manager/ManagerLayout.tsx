@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../../store/AppContext';
 import { Modal } from '../ui/Modal';
+import { AccountSettingsForm } from '../AccountSettingsForm';
 import { GlobalNav, type ManagerSection } from './GlobalNav';
 import { ManagerShiftScreen } from './ManagerShiftScreen';
 import { SectionBody, SECTION_TITLES } from './SectionBody';
@@ -12,12 +13,10 @@ const ENABLED_SECTIONS: ReadonlySet<ManagerSection> = new Set<ManagerSection>([
 ]);
 
 export function ManagerLayout() {
-  const { me, logout, stores, storeId } = useApp();
+  const { me, logout } = useApp();
   const [activeSection, setActiveSection] = useState<ManagerSection>('shift-table');
   const [homeSignal, setHomeSignal] = useState(0);
   const [util, setUtil] = useState<null | 'account' | 'help'>(null);
-
-  const storeName = stores.find((s) => String(s.id) === String(storeId))?.name ?? '店舗';
 
   function goHome() {
     setActiveSection('shift-table');
@@ -67,13 +66,7 @@ export function ManagerLayout() {
             <p>「シフト確定」で確定し、「データ管理 → CSVエクスポート」で表を書き出せます。</p>
           </>
         )}
-        {util === 'account' && (
-          <dl>
-            <dt>氏名</dt><dd>{me?.name}</dd>
-            <dt>権限</dt><dd>{me?.role === 'MANAGER' ? '店長' : 'スタッフ'}</dd>
-            <dt>所属店舗</dt><dd>{storeName}</dd>
-          </dl>
-        )}
+        {util === 'account' && <AccountSettingsForm />}
       </Modal>
     </>
   );

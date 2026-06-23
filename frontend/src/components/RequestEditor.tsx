@@ -14,6 +14,7 @@ import {
   createDefaultCollectionSettings,
   daysUntilDeadline,
 } from '../lib/collectionSettings';
+import { shiftStatusSettingKey, type ShiftPlanStatus } from '../lib/shiftStatus';
 import { Modal } from './ui/Modal';
 import { useToast } from './ui/Toast';
 import type { DayRequestValue } from '../types';
@@ -51,6 +52,14 @@ export function RequestEditor({ year, month }: RequestEditorProps) {
     ...createDefaultCollectionSettings(`${year}-${String(month).padStart(2, '0')}`),
     ...storedCollection,
   };
+  const monthKey = `${year}-${String(month).padStart(2, '0')}`;
+  const [shiftStatus] = useSetting<ShiftPlanStatus>(
+    shiftStatusSettingKey(storeId, monthKey),
+    'DRAFT',
+  );
+  const locked = shiftStatus === 'CONFIRMED'
+    || shiftStatus === 'PUBLISHED'
+    || shiftStatus === 'REPUBLISHED';
   const myId = me ? String(me.id) : '';
   const dates = getMonthDates(year, month);
 
@@ -107,6 +116,8 @@ export function RequestEditor({ year, month }: RequestEditorProps) {
   }).length;
 
   function openDay(date: string) {
+    // 確定済みの月は閲覧専用。日付タップでもモーダルを開かない。
+    if (locked) return;
     const v = myValue(date);
     setAttend(v === 'early' || v === 'late' || v === 'any');
     const time = timeFor(date);
@@ -259,11 +270,18 @@ export function RequestEditor({ year, month }: RequestEditorProps) {
         </div>
       )}
 
-      <div className="rk-staff-submit__tools">
-        <button type="button" className="rk-staff-submit__bulk" onClick={() => setBulkOpen(true)}>一括入力</button>
+      {locked && (
+        <div className="rk-staff-submit__locked" role="status">
+          <strong>このシフトは確定済みです。変更できません。</strong>
+          <span>変更を希望する場合は店長へご相談ください。</span>
+        </div>
+      )}
+
+      <div className="rk-staff-submit__tools" aria-disabled={locked}>
+        <button type="button" className="rk-staff-submit__bulk" disabled={locked} onClick={() => setBulkOpen(true)}>一括入力</button>
         <div className="rk-staff-submit__subtools">
-          <button type="button" className="rk-staff-submit__history" onClick={restoreSubmittedValues}>提出履歴から自動入力</button>
-          <button type="button" className="rk-staff-submit__clear" onClick={clearAll}>全削除</button>
+          <button type="button" className="rk-staff-submit__history" disabled={locked} onClick={restoreSubmittedValues}>提出履歴から自動入力</button>
+          <button type="button" className="rk-staff-submit__clear" disabled={locked} onClick={clearAll}>全削除</button>
         </div>
       </div>
 
@@ -299,15 +317,19 @@ export function RequestEditor({ year, month }: RequestEditorProps) {
       <div className="rk-staff-submit__bar">
         <span className="rk-staff-submit__count">
           出勤日数：{workDays}日
-          <small>{submitted ? '提出済みです' : '未提出のシフト期間です'}</small>
+          <small>
+            {locked
+              ? '確定済み・変更不可'
+              : submitted ? '提出済みです' : '未提出のシフト期間です'}
+          </small>
         </span>
         <button
           type="button"
           className="rk-staff-submit__go"
           onClick={() => void submit()}
-          disabled={submitting}
+          disabled={submitting || locked}
         >
-          {submitting ? '提出中...' : 'シフトを提出'}
+          {locked ? '確定済み（変更不可）' : submitting ? '提出中...' : 'シフトを提出'}
         </button>
       </div>
 
