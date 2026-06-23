@@ -25,6 +25,7 @@ import {
   WEEKDAY_COLUMNS,
   type WeekdayRequired,
 } from './modelShift';
+import { RankSkillScreen } from './RankSkillScreen';
 
 /** 各セクション画面のタイトル（GlobalNav のラベルと一致） */
 export const SECTION_TITLES: Partial<Record<ManagerSection, string>> = {
@@ -36,8 +37,8 @@ export const SECTION_TITLES: Partial<Record<ManagerSection, string>> = {
   'staff-list': 'スタッフ一覧',
   'staff-registration': 'スタッフ登録',
   'manager-registration': '管理者登録',
-  'rank-settings': 'ランク設定',
-  'skill-settings': 'スキル設定',
+  'rank-settings': 'ランク・スキル一覧',
+  'skill-settings': 'ランク・スキル一覧',
   'fixed-shifts': '固定シフト',
   'sales-plan': '売上計画',
   'labor-cost': '人件費',
@@ -82,7 +83,7 @@ function assignedDays(
 export function SectionBody({ section }: { section: ManagerSection }) {
   const {
     stores, staff, assignments, storeId, month,
-    updateStaff, createStaff, recruitments, setRecruitment,
+    createStaff, recruitments, setRecruitment,
   } = useApp();
   const { showToast } = useToast();
 
@@ -215,43 +216,10 @@ export function SectionBody({ section }: { section: ManagerSection }) {
     }
 
     case 'rank-settings':
-      return (
-        <div className="settings-form">
-          <p className="muted-sm">スタッフごとの労働力ランク（1〜5）を設定します。</p>
-          {staff.map((s) => (
-            <label key={s.id} className="settings-row">
-              <span>{s.name}</span>
-              <select
-                value={s.rank ?? 3}
-                onChange={(e) => void updateStaff(s.id, Number(e.target.value), s.skills)}
-              >
-                {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>ランク{n}</option>)}
-              </select>
-            </label>
-          ))}
-        </div>
-      );
+      return <RankSkillScreen initialTab="rank" />;
 
     case 'skill-settings':
-      return (
-        <div className="settings-form">
-          <p className="muted-sm">スキルをカンマ区切りで入力します（例：ホール,キッチン）。</p>
-          {staff.map((s) => (
-            <label key={s.id} className="settings-row">
-              <span>{s.name}</span>
-              <input
-                className="text-input"
-                defaultValue={s.skills.join(',')}
-                key={s.skills.join(',')}
-                onBlur={(e) => {
-                  const next = e.target.value.split(',').map((t) => t.trim()).filter(Boolean);
-                  if (next.join(',') !== s.skills.join(',')) void updateStaff(s.id, s.rank, next);
-                }}
-              />
-            </label>
-          ))}
-        </div>
-      );
+      return <RankSkillScreen initialTab="skill" />;
 
     case 'sales-plan':
       return (
