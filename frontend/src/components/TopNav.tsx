@@ -8,6 +8,10 @@ import { dailyWorkHours, dailyLaborCost, staffMonthlyHours, maxConsecutiveAssign
 import { isAssigned, countAssigned } from '../store/assignments';
 import { buildScheduleCsv, downloadCsv } from '../lib/csv';
 import { WORK_SLOTS, SLOT_LABELS, SLOT_HOURS, HOURLY_WAGE, DAILY_SALES_TARGET } from '../constants';
+import {
+  GlobalNav,
+  type ManagerSection,
+} from './manager/GlobalNav';
 
 type ModalKind =
   | null | 'staff' | 'regStaff' | 'regAdmin' | 'rank' | 'skills' | 'sales' | 'cost' | 'sph'
@@ -28,6 +32,36 @@ const FONT_SIZES: { value: 'small' | 'standard' | 'large'; label: string }[] = [
   { value: 'standard', label: '標準' },
   { value: 'large', label: '大（見やすい）' },
 ];
+
+const ENABLED_SECTIONS = new Set<ManagerSection>([
+  'shift-table',
+  'shift-settings',
+  'collection',
+  'confirmed-shifts',
+  'messages',
+  'staff-list',
+  'staff-registration',
+  'manager-registration',
+  'rank-settings',
+  'skill-settings',
+  'sales-plan',
+  'labor-cost',
+  'sales-per-hour',
+  'labor-status',
+  'attendance',
+  'labor-alerts',
+  'store-management',
+  'departments',
+  'positions',
+  'permissions',
+  'csv-export',
+  'csv-import',
+  'integrations',
+  'display-settings',
+  'business-hours',
+  'collection-settings',
+  'notification-settings',
+]);
 
 function yen(n: number): string { return `¥${n.toLocaleString('ja-JP')}`; }
 function assignedDays(assignments: ReturnType<typeof useApp>['assignments'], staffId: string, dates: string[]): number {
@@ -86,42 +120,57 @@ export function TopNav({ onHome }: { onHome?: () => void }) {
     showToast(`${count}行を読み込みました ✓`);
   }
 
-  const MENUS: { label: string; items: { label: string; onClick: () => void }[] }[] = [
-    { label: 'シフト', items: [{ label: '印刷', onClick: () => window.print() }, { label: 'CSVエクスポート', onClick: exportCsv }] },
-    { label: 'スタッフ', items: [{ label: 'スタッフ一覧', onClick: () => setModal('staff') }, { label: 'スタッフ登録', onClick: () => setModal('regStaff') }, { label: '管理者登録', onClick: () => setModal('regAdmin') }, { label: 'ランク設定', onClick: () => setModal('rank') }, { label: 'スキル設定', onClick: () => setModal('skills') }] },
-    { label: '会計', items: [{ label: '売上計画', onClick: () => setModal('sales') }, { label: '人件費', onClick: () => setModal('cost') }, { label: '人時売上高', onClick: () => setModal('sph') }] },
-    { label: '労務', items: [{ label: '労務状況', onClick: () => setModal('laborStatus') }, { label: '勤怠', onClick: () => setModal('attendance') }, { label: '労働時間アラート', onClick: () => setModal('hoursAlert') }] },
-    { label: '組織', items: [{ label: '店舗管理', onClick: () => setModal('stores') }, { label: '部門', onClick: () => setModal('dept') }, { label: '権限設定', onClick: () => setModal('perm') }] },
-    { label: 'データ管理', items: [{ label: 'CSVエクスポート', onClick: exportCsv }, { label: 'CSVインポート', onClick: () => setModal('import') }, { label: '連携設定', onClick: () => setModal('integ') }] },
-    { label: '設定', items: [{ label: '表示設定', onClick: () => setModal('display') }, { label: '営業時間', onClick: () => setModal('hours') }, { label: 'シフト回収設定', onClick: () => setModal('collect') }, { label: '通知設定', onClick: () => setModal('notify') }] },
-  ];
+  function openSection(section: ManagerSection) {
+    const modalBySection: Partial<Record<ManagerSection, Exclude<ModalKind, null>>> = {
+      'shift-settings': 'display',
+      collection: 'collect',
+      messages: 'notify',
+      'staff-list': 'staff',
+      'staff-registration': 'regStaff',
+      'manager-registration': 'regAdmin',
+      'rank-settings': 'rank',
+      'skill-settings': 'skills',
+      'sales-plan': 'sales',
+      'labor-cost': 'cost',
+      'sales-per-hour': 'sph',
+      'labor-status': 'laborStatus',
+      attendance: 'attendance',
+      'labor-alerts': 'hoursAlert',
+      'store-management': 'stores',
+      departments: 'dept',
+      positions: 'dept',
+      permissions: 'perm',
+      'csv-import': 'import',
+      integrations: 'integ',
+      'display-settings': 'display',
+      'business-hours': 'hours',
+      'collection-settings': 'collect',
+      'notification-settings': 'notify',
+    };
+
+    if (section === 'shift-table' || section === 'confirmed-shifts') {
+      onHome?.();
+      return;
+    }
+    if (section === 'csv-export') {
+      exportCsv();
+      return;
+    }
+    const nextModal = modalBySection[section];
+    if (nextModal) setModal(nextModal);
+  }
 
   return (
-    <header className="topnav">
-      <button type="button" className="topnav-brand" onClick={() => onHome?.()}>暁夢シフト</button>
-      <nav className="topnav-menus" aria-label="メインメニュー">
-        {MENUS.map((m) => (
-          <details className="nav-dd" name="topnav" key={m.label}>
-            <summary>{m.label}<span className="caret" aria-hidden="true" /></summary>
-            <div className="nav-menu">
-              {m.items.map((it) => (
-                <button type="button" key={it.label} className="nav-menu-item" onClick={it.onClick}>{it.label}</button>
-              ))}
-            </div>
-          </details>
-        ))}
-      </nav>
-      <div className="topnav-right">
-        <button type="button" className="topnav-icon" aria-label="ヘルプ" onClick={() => setModal('help')}>?</button>
-        <button type="button" className="topnav-icon bell" aria-label="通知"><span className="bell-dot" /></button>
-        <details className="nav-dd user-dd" name="topnav">
-          <summary>{me?.name ?? ''} さん<span className="caret" aria-hidden="true" /></summary>
-          <div className="nav-menu right">
-            <button type="button" className="nav-menu-item" onClick={() => setModal('account')}>アカウント設定</button>
-            <button type="button" className="nav-menu-item" onClick={() => void logout()}>ログアウト</button>
-          </div>
-        </details>
-      </div>
+    <>
+      <GlobalNav
+        userName={me?.name ?? ''}
+        enabledSections={ENABLED_SECTIONS}
+        onHome={() => onHome?.()}
+        onOpenSection={openSection}
+        onOpenHelp={() => setModal('help')}
+        onOpenAccount={() => setModal('account')}
+        onLogout={() => void logout()}
+      />
 
       <Modal open={modal !== null} title={modal ? TITLES[modal] : ''} onClose={() => setModal(null)}>
         {modal === 'staff' && (
@@ -417,6 +466,6 @@ export function TopNav({ onHome }: { onHome?: () => void }) {
           </dl>
         )}
       </Modal>
-    </header>
+    </>
   );
 }

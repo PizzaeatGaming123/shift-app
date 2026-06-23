@@ -9,10 +9,8 @@ function renderControls(overrides = {}) {
     position: 'キッチン',
     layers: DEFAULT_SHIFT_LAYERS,
     density: 'standard' as const,
-    sortMode: 'default' as const,
     onLayersChange: vi.fn(),
     onDensityChange: vi.fn(),
-    onSortChange: vi.fn(),
     onBulkAction: vi.fn(),
     onCopyPast: vi.fn(),
     ...overrides,
@@ -38,7 +36,8 @@ describe('ShiftDisplayControls', () => {
     ]);
     expect(screen.getByRole('button', { name: '一括操作' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '過去コピー' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'スタッフ並び替え 標準' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'スタッフ並び替え 標準' }))
+      .not.toBeInTheDocument();
   });
 
   it('希望シフト表示を切り替える', async () => {
@@ -52,14 +51,12 @@ describe('ShiftDisplayControls', () => {
     });
   });
 
-  it('表示サイズと並び順を循環する', async () => {
+  it('表示サイズを循環する', async () => {
     const user = userEvent.setup();
     const props = renderControls();
 
     await user.click(screen.getByRole('button', { name: '縮小/拡大 標準' }));
-    await user.click(screen.getByRole('button', { name: 'スタッフ並び替え 標準' }));
 
     expect(props.onDensityChange).toHaveBeenCalledWith('large');
-    expect(props.onSortChange).toHaveBeenCalledWith('name');
   });
 });
