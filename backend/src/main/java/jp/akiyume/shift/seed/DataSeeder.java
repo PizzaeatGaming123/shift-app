@@ -98,9 +98,9 @@ public class DataSeeder implements CommandLineRunner {
         // staff[0] は店長。希望はスタッフ4名（index 1..4）に割り当てる。
         // 各スタッフに曜日パターンで早番/中番/遅番/休みをばらまく。
         RequestSlot[] pattern1 = { RequestSlot.EARLY, RequestSlot.EARLY, RequestSlot.OFF, RequestSlot.EARLY };
-        RequestSlot[] pattern2 = { RequestSlot.LATE, RequestSlot.MID, RequestSlot.LATE, RequestSlot.OFF };
-        RequestSlot[] pattern3 = { RequestSlot.MID, RequestSlot.LATE, RequestSlot.MID, RequestSlot.MID };
-        RequestSlot[] pattern4 = { RequestSlot.OFF, RequestSlot.EARLY, RequestSlot.EARLY, RequestSlot.LATE };
+        RequestSlot[] pattern2 = { RequestSlot.LATE, RequestSlot.LATE, RequestSlot.EARLY, RequestSlot.OFF };
+        RequestSlot[] pattern3 = { RequestSlot.EARLY, RequestSlot.LATE, RequestSlot.OFF, RequestSlot.LATE };
+        RequestSlot[] pattern4 = { RequestSlot.OFF, RequestSlot.EARLY, RequestSlot.LATE, RequestSlot.LATE };
         List<RequestSlot[]> patterns = List.of(pattern1, pattern2, pattern3, pattern4);
 
         for (int day = 1; day <= 12; day++) {

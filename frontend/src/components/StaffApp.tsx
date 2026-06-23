@@ -7,14 +7,12 @@ type Tab = 'main' | 'shared';
 
 /** スタッフ向けのスマホ／LINE風シェル。希望提出と確定シフト確認をモバイルUIで提供する。 */
 export function StaffApp() {
-  const { me, logout, stores, storeId, month, setMonth } = useApp();
+  const { logout, month, setMonth } = useApp();
   const [tab, setTab] = useState<Tab>('main');
 
   const [yearStr, monthStr] = month.split('-');
   const year = Number(yearStr);
   const monthNum = Number(monthStr);
-  const storeName = stores.find((s) => String(s.id) === String(storeId))?.name ?? 'シフト';
-  const initial = (me?.name ?? '？').trim().charAt(0);
 
   function shiftMonthStr(delta: number) {
     const zero = monthNum - 1 + delta;
@@ -34,16 +32,11 @@ export function StaffApp() {
         <header className="line-head">
           <button
             type="button"
-            className="line-head__home"
-            aria-label="ホーム"
+            className="line-head__title"
             onClick={() => { setTab('main'); goToday(); }}
           >
-            <span className="line-avatar" aria-hidden="true">{initial}</span>
+            シフト希望
           </button>
-          <span className="line-head__txt">
-            <strong>{storeName}</strong>
-            <small>{me?.name} さん</small>
-          </span>
           <button
             type="button"
             className="line-head__logout"
