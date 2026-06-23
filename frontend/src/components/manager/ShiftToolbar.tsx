@@ -12,6 +12,7 @@ interface ShiftToolbarProps {
   unconfirmedCount: number;
   recruitmentCount: number;
   shiftMode: 'assignment' | 'confirmed';
+  shiftStatus: 'DRAFT' | 'ADJUSTING' | 'CONFIRMED' | 'PUBLISHED' | 'CHANGING' | 'REPUBLISHED';
   onStoreChange: (storeId: string) => void;
   onPositionChange: (position: string) => void;
   onViewChange: (view: ManagerView) => void;
@@ -19,6 +20,7 @@ interface ShiftToolbarProps {
   onNext: () => void;
   onToday: () => void;
   onConfirm: () => void;
+  onPublish: () => void;
   onPrint: () => void;
   onOpenShiftTypes: () => void;
   onOpenDisplayItems: () => void;
@@ -44,6 +46,7 @@ export function ShiftToolbar({
   unconfirmedCount,
   recruitmentCount,
   shiftMode,
+  shiftStatus,
   onStoreChange,
   onPositionChange,
   onViewChange,
@@ -51,6 +54,7 @@ export function ShiftToolbar({
   onNext,
   onToday,
   onConfirm,
+  onPublish,
   onPrint,
   onOpenShiftTypes,
   onOpenDisplayItems,
@@ -94,6 +98,14 @@ export function ShiftToolbar({
           {unconfirmedCount > 0
             ? <span className="rk-shift-toolbar__warning">未確定あり {unconfirmedCount}件</span>
             : <span className="rk-shift-toolbar__confirmed">確定済み</span>}
+        </button>
+        <button
+          type="button"
+          className="rk-shift-toolbar__publish"
+          disabled={shiftStatus !== 'CONFIRMED' && shiftStatus !== 'REPUBLISHED'}
+          onClick={onPublish}
+        >
+          {shiftStatus === 'PUBLISHED' ? '公開済み' : 'スタッフへ公開'}
         </button>
         <button type="button" onClick={onPrint}>印刷</button>
         <button type="button" onClick={onOpenShiftTypes}>シフトの種類</button>

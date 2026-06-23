@@ -42,6 +42,7 @@ interface ShiftTableProps {
   onStoreNoteChange: (date: string, text: string) => void;
   onPositionNoteChange: (date: string, text: string) => void;
   onSortChange: (mode: StaffSortMode) => void;
+  slotHours?: Record<WorkSlot, number>;
 }
 
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
@@ -102,6 +103,7 @@ export function ShiftTable({
   onStoreNoteChange,
   onPositionNoteChange,
   onSortChange,
+  slotHours,
 }: ShiftTableProps) {
   const visibleDates = new Set(dates);
   const assignedStaffIds = new Set(
@@ -160,6 +162,7 @@ export function ShiftTable({
               requiredByBand={requiredByBand}
               onStoreNoteChange={onStoreNoteChange}
               onPositionNoteChange={onPositionNoteChange}
+              slotHours={slotHours}
             />
           )}
 

@@ -34,3 +34,16 @@ describe('api.setRequest', () => {
     expect(spy).toHaveBeenCalledWith('/api/requests', expect.objectContaining({ method: 'PUT' }));
   });
 });
+
+describe('api.submitRequests', () => {
+  it('PUTs the complete submission once', async () => {
+    const spy = mockFetch(null);
+    await api.submitRequests([{ date: '2026-07-01', value: 'early', note: '午前希望' }]);
+    expect(spy).toHaveBeenCalledWith('/api/requests/submission', expect.objectContaining({
+      method: 'PUT',
+      body: JSON.stringify({
+        entries: [{ date: '2026-07-01', value: 'early', note: '午前希望' }],
+      }),
+    }));
+  });
+});

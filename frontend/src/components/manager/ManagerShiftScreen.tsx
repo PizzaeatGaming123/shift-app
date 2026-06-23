@@ -19,6 +19,20 @@ import { ShiftToolbar } from './ShiftToolbar';
 import { getManagerDateWindow } from './shiftViewModel';
 import { DEFAULT_WEEKDAY_REQUIRED, requiredForDate } from './modelShift';
 import {
+  DEFAULT_SHIFT_PATTERNS,
+  normalizeShiftPatterns,
+  shiftPatternHours,
+  shiftPatternSettingKey,
+} from '../../lib/shiftPatterns';
+import {
+  shiftStatusSettingKey,
+  type ShiftPlanStatus,
+} from '../../lib/shiftStatus';
+import {
+  collectionSettingKey,
+  createDefaultCollectionSettings,
+} from '../../lib/collectionSettings';
+import {
   DEFAULT_SHIFT_LAYERS,
   type ManagerView,
   type ShiftTableDensity,
@@ -131,6 +145,7 @@ export function ManagerShiftScreen({
   const [displayItemsOpen, setDisplayItemsOpen] = useState(false);
   const [recruitmentOpen, setRecruitmentOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [publishOpen, setPublishOpen] = useState(false);
   const [visibleSummaryItems, setVisibleSummaryItems] = useState<SummaryItemKey[]>(
     SUMMARY_OPTIONS.map((item) => item.key),
   );
@@ -147,6 +162,32 @@ export function ManagerShiftScreen({
     `akiyume-sales:${storeId}`,
     DAILY_SALES_TARGET,
   );
+  const [storedCollection] = useSetting(
+    collectionSettingKey(storeId),
+    createDefaultCollectionSettings(month),
+  );
+  const collection = {
+    ...createDefaultCollectionSettings(month),
+    ...storedCollection,
+  };
+  const shiftStatusKey = shiftStatusSettingKey(storeId, month);
+  const [shiftStatus, setShiftStatus] = useSetting<ShiftPlanStatus>(
+    shiftStatusKey,
+    'DRAFT',
+  );
+  const effectiveShiftStatus: ShiftPlanStatus = localStorage.getItem(shiftStatusKey) === null
+    && assignments.some((assignment) => assignment.staffIds.length > 0)
+    ? 'PUBLISHED'
+    : shiftStatus;
+  const [storedShiftPatterns] = useSetting(
+    shiftPatternSettingKey(storeId),
+    DEFAULT_SHIFT_PATTERNS,
+  );
+  const shiftPatterns = normalizeShiftPatterns(storedShiftPatterns);
+  const slotHours: Record<WorkSlot, number> = {
+    early: shiftPatternHours(shiftPatterns.early),
+    late: shiftPatternHours(shiftPatterns.late),
+  };
 
   const [year, monthNumber] = month.split('-').map(Number);
   const monthDates = useMemo(
@@ -233,9 +274,15 @@ export function ManagerShiftScreen({
   }
 
   async function confirmShift() {
-    localStorage.setItem(`akiyume-confirmed:${storeId}:${month}`, '1');
+    setShiftStatus('CONFIRMED');
     setConfirmOpen(false);
-    showToast('シフトを確定しました');
+    showToast('シフトを確定しました。まだスタッフには公開されていません');
+  }
+
+  function publishShift() {
+    setShiftStatus(effectiveShiftStatus === 'PUBLISHED' ? 'REPUBLISHED' : 'PUBLISHED');
+    setPublishOpen(false);
+    showToast('シフトをスタッフへ公開しました');
   }
 
   async function runBulkAssignment() {
@@ -260,10 +307,11 @@ export function ManagerShiftScreen({
         position={position}
         view={view}
         periodLabel={formatManagerPeriodLabel(view, dates)}
-        deadlineLabel="〜前月末 23:59"
+        deadlineLabel={`〜${collection.deadlineAt.replace('T', ' ')}`}
         unconfirmedCount={unconfirmedCount}
         recruitmentCount={recruitmentCount}
         shiftMode={shiftMode}
+        shiftStatus={effectiveShiftStatus}
         onStoreChange={(id) => setStoreId(Number(id))}
         onPositionChange={setPosition}
         onViewChange={(nextView) => {
@@ -274,6 +322,7 @@ export function ManagerShiftScreen({
         onNext={() => moveManagerPeriod(1)}
         onToday={goToCurrentMonth}
         onConfirm={() => setConfirmOpen(true)}
+        onPublish={() => setPublishOpen(true)}
         onPrint={() => window.print()}
         onOpenShiftTypes={() => setShiftTypesOpen(true)}
         onOpenDisplayItems={() => setDisplayItemsOpen(true)}
@@ -327,6 +376,7 @@ export function ManagerShiftScreen({
           onStoreNoteChange={editStoreNote}
           onPositionNoteChange={editPositionNote}
           onSortChange={setSortMode}
+          slotHours={slotHours}
         />
       )}
 
@@ -340,13 +390,22 @@ export function ManagerShiftScreen({
       </Modal>
 
       <Modal
+        open={publishOpen}
+        title="シフト公開"
+        onClose={() => setPublishOpen(false)}
+      >
+        <p>確定したシフトをスタッフ画面へ公開します。</p>
+        <p className="muted-sm">公開後の変更は、変更理由と対象スタッフの確認状態を記録する運用になります。</p>
+        <button type="button" onClick={publishShift}>スタッフへ公開する</button>
+      </Modal>
+
+      <Modal
         open={shiftTypesOpen}
         title="シフトの種類"
         onClose={() => setShiftTypesOpen(false)}
       >
         {([
           ['early', '早番'],
-          ['mid', '中番'],
           ['late', '遅番'],
           ['off', '休'],
         ] as const).map(([slot, label]) => (

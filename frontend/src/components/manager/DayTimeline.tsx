@@ -12,7 +12,6 @@ interface DayTimelineProps {
 
 const SLOT_RANGE: Record<WorkSlot, { start: number; end: number }> = {
   early: { start: 7, end: 16 },
-  mid: { start: 11, end: 20 },
   late: { start: 15, end: 24 },
 };
 

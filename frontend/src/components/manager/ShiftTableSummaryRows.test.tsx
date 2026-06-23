@@ -23,7 +23,7 @@ it('資料と同じ順序で集計行を表示する', () => {
             'storeNote',
             'positionNote',
           ]}
-          requiredByBand={() => ({ morning: 2, afternoon: 2, night: 2 })}
+          requiredByBand={() => ({ early: 2, late: 2 })}
           onStoreNoteChange={() => {}}
           onPositionNoteChange={() => {}}
         />
@@ -39,9 +39,8 @@ it('資料と同じ順序で集計行を表示する', () => {
     '総労働時間',
     '人件費',
     '全体モデルシフト',
-    '09:00 - 14:00',
-    '14:00 - 19:00',
-    '19:00 - 23:00',
+    '早番 7:00〜16:00',
+    '遅番 15:00〜24:00',
     'ランク計',
     '店舗メモ',
     'ポジションメモ',
@@ -60,7 +59,7 @@ it('非表示にした集計項目は描画しない', () => {
           storeNotes={[]}
           positionNotes={{}}
           visibleItems={['sales', 'workHours']}
-          requiredByBand={() => ({ morning: 2, afternoon: 2, night: 2 })}
+          requiredByBand={() => ({ early: 2, late: 2 })}
           onStoreNoteChange={() => {}}
           onPositionNoteChange={() => {}}
         />

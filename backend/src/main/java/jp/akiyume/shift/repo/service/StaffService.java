@@ -39,7 +39,11 @@ public class StaffService {
     @Transactional
     public Staff create(Long storeId, String name, String employmentType, String role) {
         Store store = storeRepository.findById(storeId).orElseThrow();
-        EmploymentType type = "正社員".equals(employmentType) ? EmploymentType.FULL_TIME : EmploymentType.PART_TIME;
+        EmploymentType type = switch (employmentType == null ? "" : employmentType) {
+            case "正社員" -> EmploymentType.FULL_TIME;
+            case "アルバイト" -> EmploymentType.ARUBAITO;
+            default -> EmploymentType.PART_TIME;
+        };
         Role r = "MANAGER".equalsIgnoreCase(role) ? Role.MANAGER : Role.STAFF;
         String username = "u" + storeId + "-" + System.currentTimeMillis();
         String hash = passwordEncoder.encode("password");

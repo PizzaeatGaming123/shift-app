@@ -25,7 +25,6 @@ export const DEFAULT_SHIFT_LAYERS: ShiftLayerVisibility = {
   showSummary: true,
   visibleSlots: {
     early: true,
-    mid: true,
     late: true,
     off: true,
   },

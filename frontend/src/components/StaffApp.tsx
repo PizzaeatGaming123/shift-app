@@ -5,26 +5,14 @@ import { SharedView } from './SharedView';
 
 type Tab = 'main' | 'shared';
 
-/** スタッフ向けのスマホ／LINE風シェル。希望提出と確定シフト確認をモバイルUIで提供する。 */
+/** スタッフ向けのスマホシェル。資料の提出画面と同じ単一カラムで表示する。 */
 export function StaffApp() {
-  const { logout, month, setMonth } = useApp();
+  const { logout, month } = useApp();
   const [tab, setTab] = useState<Tab>('main');
 
   const [yearStr, monthStr] = month.split('-');
   const year = Number(yearStr);
   const monthNum = Number(monthStr);
-
-  function shiftMonthStr(delta: number) {
-    const zero = monthNum - 1 + delta;
-    const y = year + Math.floor(zero / 12);
-    const m = ((zero % 12) + 12) % 12 + 1;
-    setMonth(`${y}-${String(m).padStart(2, '0')}`);
-  }
-
-  function goToday() {
-    const now = new Date();
-    setMonth(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
-  }
 
   return (
     <div className="line-stage">
@@ -32,11 +20,15 @@ export function StaffApp() {
         <header className="line-head">
           <button
             type="button"
-            className="line-head__title"
-            onClick={() => { setTab('main'); goToday(); }}
+            className="line-head__back"
+            onClick={() => setTab('main')}
+            aria-label="シフト提出へ戻る"
           >
-            シフト希望
+            ‹
           </button>
+          <span className="line-head__title">
+            {tab === 'main' ? 'シフト提出＆確認' : '確定シフト'}
+          </span>
           <button
             type="button"
             className="line-head__logout"
@@ -47,23 +39,16 @@ export function StaffApp() {
         </header>
 
         <div className="line-body">
-          <div className="month-nav">
-            <button type="button" className="btn btn-ghost" onClick={() => shiftMonthStr(-1)} aria-label="前の月">‹</button>
-            <span className="month-title">{year}年 {monthNum}月</span>
-            <button type="button" className="btn btn-ghost" onClick={() => shiftMonthStr(1)} aria-label="次の月">›</button>
-            <button type="button" className="btn btn-soft btn-sm today-btn" onClick={goToday}>今月</button>
-          </div>
-
-          <nav className="segment line-segment" aria-label="画面切り替え">
-            <button type="button" className={tab === 'main' ? 'active' : ''} onClick={() => setTab('main')}>希望を出す</button>
-            <button type="button" className={tab === 'shared' ? 'active' : ''} onClick={() => setTab('shared')}>確定シフト</button>
-          </nav>
-
           <main className="screen">
             {tab === 'shared'
               ? <SharedView year={year} month={monthNum} />
               : <RequestEditor year={year} month={monthNum} />}
           </main>
+          {tab === 'main' && (
+            <button type="button" className="line-confirmed-link" onClick={() => setTab('shared')}>
+              確定シフトを確認する
+            </button>
+          )}
         </div>
       </div>
     </div>

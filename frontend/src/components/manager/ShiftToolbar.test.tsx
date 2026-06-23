@@ -15,6 +15,7 @@ function renderToolbar(overrides = {}) {
     unconfirmedCount: 3,
     recruitmentCount: 1,
     shiftMode: 'assignment' as const,
+    shiftStatus: 'DRAFT' as const,
     onStoreChange: vi.fn(),
     onPositionChange: vi.fn(),
     onViewChange: vi.fn(),
@@ -22,6 +23,7 @@ function renderToolbar(overrides = {}) {
     onNext: vi.fn(),
     onToday: vi.fn(),
     onConfirm: vi.fn(),
+    onPublish: vi.fn(),
     onPrint: vi.fn(),
     onOpenShiftTypes: vi.fn(),
     onOpenDisplayItems: vi.fn(),
@@ -40,6 +42,7 @@ describe('ShiftToolbar', () => {
     expect(screen.getByRole('combobox', { name: '店舗' })).toHaveValue('1');
     expect(screen.getByRole('combobox', { name: 'ポジション' })).toHaveValue('ホール');
     expect(screen.getByRole('button', { name: 'シフト確定 未確定あり 3件' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'スタッフへ公開' })).toBeDisabled();
     expect(screen.getByRole('button', { name: '印刷' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'シフトの種類' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '希望確認・割り当て' })).toHaveAttribute('aria-pressed', 'true');
@@ -47,6 +50,13 @@ describe('ShiftToolbar', () => {
     expect(screen.getByText('2026年7月')).toBeInTheDocument();
     expect(screen.getByText('提出期間 〜前月末 23:59')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '追加募集中 1件' })).toBeInTheDocument();
+  });
+
+  it('確定済みなら公開操作を実行できる', async () => {
+    const user = userEvent.setup();
+    const props = renderToolbar({ shiftStatus: 'CONFIRMED' });
+    await user.click(screen.getByRole('button', { name: 'スタッフへ公開' }));
+    expect(props.onPublish).toHaveBeenCalledOnce();
   });
 
   it('表示単位を切り替える', async () => {

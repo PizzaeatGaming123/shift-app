@@ -1,23 +1,20 @@
 import type { RequiredByBand } from './ShiftTableSummaryRows';
 
-/** 曜日ごと（0=日 .. 6=土）の時間帯バンド必要人数モデル。 */
+/** 曜日ごと（0=日 .. 6=土）の時間帯バンド必要人数モデル（早番/遅番の2バンド）。 */
 export interface WeekdayRequired {
-  morning: number[];
-  afternoon: number[];
-  night: number[];
+  early: number[];
+  late: number[];
 }
 
 export const DEFAULT_WEEKDAY_REQUIRED: WeekdayRequired = {
-  morning: Array(7).fill(2),
-  afternoon: Array(7).fill(2),
-  night: Array(7).fill(2),
+  early: Array(7).fill(2),
+  late: Array(7).fill(2),
 };
 
-/** モデルシフト画面の編集グリッド定義（時間帯バンド）。ラベルは集計行と一致させる。 */
+/** モデルシフト画面の編集グリッド定義。ラベルは集計行と一致させる。 */
 export const MODEL_BANDS: { key: keyof WeekdayRequired; label: string }[] = [
-  { key: 'morning', label: '09:00 - 14:00' },
-  { key: 'afternoon', label: '14:00 - 19:00' },
-  { key: 'night', label: '19:00 - 23:00' },
+  { key: 'early', label: '早番 7:00〜16:00' },
+  { key: 'late', label: '遅番 15:00〜24:00' },
 ];
 
 /** 表示用の曜日列（月→日）。値は Date.getDay() のインデックス。 */
@@ -35,8 +32,7 @@ export const WEEKDAY_COLUMNS: { index: number; label: string }[] = [
 export function requiredForDate(model: WeekdayRequired, date: string): RequiredByBand {
   const wd = new Date(`${date}T00:00:00`).getDay();
   return {
-    morning: model.morning[wd] ?? 0,
-    afternoon: model.afternoon[wd] ?? 0,
-    night: model.night[wd] ?? 0,
+    early: model.early[wd] ?? 0,
+    late: model.late[wd] ?? 0,
   };
 }

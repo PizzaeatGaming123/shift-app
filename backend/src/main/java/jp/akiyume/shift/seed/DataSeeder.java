@@ -96,7 +96,7 @@ public class DataSeeder implements CommandLineRunner {
     /** デモ表示用に当月の希望・割り当て・メモを投入する。 */
     private void seedDemoShifts(Store store, List<Staff> staff) {
         // staff[0] は店長。希望はスタッフ4名（index 1..4）に割り当てる。
-        // 各スタッフに曜日パターンで早番/中番/遅番/休みをばらまく。
+        // 各スタッフに曜日パターンで早番/遅番/休みをばらまく。
         RequestSlot[] pattern1 = { RequestSlot.EARLY, RequestSlot.EARLY, RequestSlot.OFF, RequestSlot.EARLY };
         RequestSlot[] pattern2 = { RequestSlot.LATE, RequestSlot.LATE, RequestSlot.EARLY, RequestSlot.OFF };
         RequestSlot[] pattern3 = { RequestSlot.EARLY, RequestSlot.LATE, RequestSlot.OFF, RequestSlot.LATE };
@@ -132,7 +132,6 @@ public class DataSeeder implements CommandLineRunner {
     private static WorkSlot toWorkSlot(RequestSlot slot) {
         return switch (slot) {
             case EARLY -> WorkSlot.EARLY;
-            case MID -> WorkSlot.MID;
             case LATE -> WorkSlot.LATE;
             case OFF -> throw new IllegalArgumentException("OFF は割り当てできません");
         };
