@@ -1,145 +1,121 @@
-# 管理メニュー（GlobalNav）セクション機能化 — 設計
+# 管理メニュー（GlobalNav）プルダウン各項目の機能化 — 設計
 
 作成日: 2026-06-23
+更新: 2026-06-23（現状調査により全面改訂）
 
-## 背景
+## 背景と現状（重要・改訂）
 
-`frontend/src/components/manager/GlobalNav.tsx` には、らくしふ（300.pdf p13 機能一覧）に倣った
-7グループ・約33セクションのプルダウンメニューが定義済みだが、**どこにもレンダリングされておらず**、
-各項目を押しても何も起きない。`enabledSections: ReadonlySet<ManagerSection>` で
-有効/無効を切り替える設計だけが用意されている。
+当初「GlobalNav はどこにもレンダリングされていない」と誤認したが、精査の結果は以下:
 
-ユーザー要望: このプルダウンの各項目を、一つ一つ「実際に動く機能」として実装する。
-進め方は **ロードマップ（`要件定義/300.pdf` 由来、メモ rakushifu-feature-roadmap）優先度順に1つずつ**。
+- 店長画面は `App.tsx` → **`TopNav`**（`components/TopNav.tsx`）＋ `ManagerShiftScreen`。
+- **`TopNav` が `GlobalNav` を内包してレンダリング済み**で、プルダウンは既に動作する。
+- `TopNav` は大半のセクションを **Modal として実装済み**:
+  スタッフ一覧／スタッフ・管理者登録／ランク／スキル／売上計画／人件費／人時売上高／
+  労務状況／勤怠／労働時間アラート／店舗管理／部門・ポジション／権限／CSV入出力／
+  連携／営業時間／回収設定／通知設定／表示設定／ヘルプ／アカウント。
 
-本ドキュメントは **増分1（土台＋最初の1セクション）** の仕様を定める。
-後続セクションは各々が独自の spec → plan → 実装サイクルを持つ。
+`TopNav` の `ENABLED_SECTIONS` に含まれず、**プルダウンで淡色（押下不可）＝真に未実装**なのは次の6つ:
 
-## 全体の進行順（コンテキスト／本spec対象外）
+| セクション | ロードマップ | p |
+|---|---|---|
+| model-shift（モデルシフト） | #1 | 18 |
+| recruitment（追加募集） | #3 | 22 |
+| store-help（他事業所ヘルプ） | #8 | 23 |
+| fixed-shifts（固定シフト） | #9 | 17 |
+| shift-patterns（シフトパターン） | #9 | 17 |
+| color-settings（色設定） | #10 | 18 |
 
-| 順 | セクション | 根拠 | データ |
-|---|---|---|---|
-| 土台 | セクション・ルーター | — | — |
-| 1 | モデルシフト | p18 | localStorage |
-| 2 | 追加募集 | p22 | backend済 |
-| 3 | 確定シフト＋確定フロー | p24 | localStorage |
-| 4 | ランク設定 | p19 | backend済 |
-| 5 | スキル設定 | p20 | backend済 |
-| 6 | 労務状況・労働時間アラート | p19 | 計算 |
-| 7 | メッセージ（1対1チャット） | p22 | localStorage |
-| 8 | 他事業所ヘルプ | p23 | localStorage |
-| 9 | 固定シフト・シフトパターン | p17 | localStorage |
-| 10 | 色設定／部門・ポジション・権限・雇用形態 | p18,25 | localStorage |
-| 11 | スタッフ簡単登録 | p14 | backend済 |
-| 12+ | 残り（一覧/CSV/連携/各種設定 等） | p13 | 既存活用 |
+加えて **messages（メッセージ）は有効だが誤配線**（押すと通知設定モーダルが開く＝チャット #7 が未実装のプレースホルダ）。
 
-各セクションは「設計→実装→テスト(vitest)→実機確認」を1サイクルとして1つずつ仕上げる。
+## ユーザー要望
 
-## 増分1 のスコープ
+プルダウンに並ぶ各項目を、一つずつ「本物の機能」として作り込む。時間をかけてよい。
+進め方は **ロードマップ優先度順に1つずつ**（設計→実装→テスト→実機確認の1サイクル）。
+まず真に未実装の6項目＋誤配線の messages を実装し、その後で既存モーダルを必要に応じ作り込む。
 
-**目的**: GlobalNav を店長画面に組み込み、「選んだ項目で本文が切り替わる」ルーター方式を確立する。
-最初の機能セクションとして、リスクが低く実データで end-to-end を証明できる **スタッフ一覧** を実装する。
+## 実装順（プログラム全体・本spec対象は増分1のみ）
 
-### 含むもの
-- GlobalNav の店長画面への組み込み（TopNav の置き換え）
-- セクション・ルーター（`activeSection` 切り替え）
-- セクション・レジストリ（実装済みセクションの単一ソース）
-- スタッフ一覧パネル（閲覧のみ）
-- vitest による回帰テスト
+| 順 | セクション | 種別 |
+|---|---|---|
+| 1 | モデルシフト | 新規（無効→点灯） |
+| 2 | 追加募集 | 新規（無効→点灯、`setRecruitment` API 活用） |
+| 3 | メッセージ（1対1チャット） | 誤配線の是正＋新規 |
+| 4 | 固定シフト | 新規（無効→点灯） |
+| 5 | シフトパターン | 新規（無効→点灯） |
+| 6 | 色設定 | 新規（無効→点灯） |
+| 7 | 他事業所ヘルプ | 新規（無効→点灯） |
+| 8+ | 既存モーダルの作り込み | 改良 |
 
-### 含まないもの（後続増分）
-- モデルシフト以降の各セクション機能
-- スタッフのランク／スキル編集（後続の rank-settings / skill-settings セクションで実装）
-- スタッフ新規登録UI（後続の staff-registration セクションで実装）
+---
 
-## アーキテクチャ
+## 増分1 詳細設計：モデルシフト（model-shift）
 
-### コンポーネント構成
+### 狙い
 
-```
-App.tsx (店長分岐)
-└─ ManagerLayout（新規）
-   ├─ GlobalNav（既存・配線する）
-   └─ <選択中セクションのパネル>
-      ├─ shift-table   → ManagerShiftScreen（既存・そのまま）
-      ├─ staff-list    → StaffListPanel（新規）
-      └─ その他         → メニューで無効（到達不能）
-```
+シフト表には既に「全体モデルシフト」サマリ行があり、3つの時間帯バンドで
+**充足/必要（x/y）** を表示している（`ShiftTableSummaryRows.tsx`）。
+必要人数 `requiredByBand` は `useSetting('akiyume-required:${storeId}:${position}', {morning:2,afternoon:2,night:2})`
+から読まれているが、**編集UIが無く既定値のまま**。
 
-### セクション・レジストリ（`components/manager/sections/registry.tsx`）
+モデルシフト機能＝「時間帯バンドごとの必要人数を事前設定する画面」。これを実装すれば、
+`useSetting` の同一タブ同期により**シフト表の x/y が即座に実値へ反映**される。
 
-`ManagerSection` → パネル描画情報の対応表を単一ソースとして持つ。
-`enabledSections`（GlobalNav へ渡す Set）も本文の出し分けも、ここから導出する。
+### バンド定義（既存と一致させる）
 
-```ts
-// 形のイメージ（実装時に確定）
-export interface SectionEntry {
-  render: () => ReactNode;
-}
-export const SECTION_REGISTRY: Partial<Record<ManagerSection, SectionEntry>>;
-export const ENABLED_SECTIONS: ReadonlySet<ManagerSection>; // = registry のキー集合
-```
+`ShiftTableSummaryRows` の `BANDS` と同じ3バンド・同じラベルを用いる:
 
-セクションを実装するたびに registry へ1エントリ追加するだけで、
-メニュー点灯（enabled）とルーティングの両方が有効になる。
+- morning: `09:00 - 14:00`
+- afternoon: `14:00 - 19:00`
+- night: `19:00 - 23:00`
 
-### ManagerLayout（`components/manager/ManagerLayout.tsx`）
+バンドの時間帯ラベル自体は本増分では固定（編集対象は必要人数のみ）。
+必要人数を事前設定し x/y 表示する、というロードマップ #1 の本旨を満たす。
 
-- `activeSection: ManagerSection` を state で保持。既定 `'shift-table'`。
-- `GlobalNav` を描画し、以下を配線:
-  - `userName` = `useApp().me?.name ?? ''`
-  - `enabledSections` = registry 由来の `ENABLED_SECTIONS`
-  - `onOpenSection(section)` = `setActiveSection(section)`
-  - `onHome` = `activeSection` を `'shift-table'` に戻し、既存のホーム挙動（月リセット）も発火
-  - `onLogout` = `useApp().logout`
-- 本文は `activeSection` から registry を引いて描画。
-  `shift-table` は `ManagerShiftScreen`（既存の `homeSignal` 挙動を維持）。
+### UI（モーダル）
 
-### ホーム挙動の移譲
+`TopNav` のモーダル群に `model` を追加（既存パターンに準拠）:
 
-現在 `App.tsx` は店長に対し `TopNav` をレンダリングし、`onHome` で `managerHomeSignal` を増やして
-`ManagerShiftScreen` をリセットしている。GlobalNav がトップバーを担うため、この `homeSignal` 機構は
-`ManagerLayout` 内に移す。`ManagerLayout` がブランド/ホームクリックで
-`activeSection='shift-table'` ＋ `homeSignal++` を行い、`ManagerShiftScreen` へ渡す。
+- 位置: 計画グループ →「モデルシフト」。
+- 必要人数はポジション別（キーが `:${position}` を含むため）。モーダル上部に
+  **ポジション選択**（`useSetting('akiyume-positions:${storeId}', ['ホール','キッチン'])` の値）を置く。既定は先頭。
+- 3バンドそれぞれに **数値入力**（0〜20）を置き、選択中ポジションの
+  `akiyume-required:${storeId}:${position}` に保存。
+- 補足文: 「時間帯ごとの必要人数を設定します。シフト表の『全体モデルシフト』に必要数として反映されます。」
 
-### スタッフ一覧パネル（`components/manager/sections/StaffListPanel.tsx`）
+### データ
 
-- データ: `useApp().staff`。
-- 表示: テーブル（列 = 氏名／雇用形態／役割／ランク／スキル）。
-  - 役割は STAFF/MANAGER を日本語表記（スタッフ／管理者）。
-  - ランク未設定は `—`、スキル無しは空。
-- 上部サマリ: 総数・正社員数・パート数。
-- 閲覧専用（この増分では編集なし）。
-- スタイルは参照UIに準拠（既存 `rk-` 系 className とテーブルパターンに合わせる）。
+- 保存先: `akiyume-required:${storeId}:${position}`（既存キーと完全一致）。
+- 形: `{ morning: number; afternoon: number; night: number }`（既存 `RequiredByBand` と一致）。
+- 新規バックエンド・新規型なし。`useSetting` のみ。
 
-## データフロー
+### 有効化と配線
 
-- 読み取りのみ。`AppContext` が既にログイン時に `staff` をロード済み。新規 API 呼び出しなし。
-- 状態の追加は `ManagerLayout` の `activeSection` のみ（永続化不要）。
+- `TopNav` の `ENABLED_SECTIONS` に `'model-shift'` を追加 → メニュー点灯。
+- `openSection` の `modalBySection` に `'model-shift': 'model'` を追加 → クリックでモーダル表示。
+- `ModalKind` 型・`TITLES` に `model`（タイトル「モデルシフト」）を追加。
 
-## エラーハンドリング
+### エラーハンドリング
 
-- `staff` 空配列時: 「スタッフがいません」を表示。
-- `me` 未取得は App.tsx 上流で既にガード済み（店長分岐に入る時点で `me` 確定）。
-- 未登録セクションは GlobalNav が disabled 表示するため、本文側で未定義を踏まない。
-  万一 registry に無いセクションが `activeSection` になっても、`shift-table` にフォールバック。
+- 数値入力は `Number(...) || 0` で NaN を 0 に、`Math.min(20, Math.max(0, n))` で範囲内に丸める。
+- `storeId` 未確定時はモーダルを開いても保存キーが `akiyume-required:null:...` になりうるが、
+  店長分岐到達時点で `storeId` は確定済み（既存モーダルと同条件）。
 
-## テスト方針（vitest + Testing Library）
+### テスト方針（vitest + Testing Library）
 
-- `ManagerLayout`:
-  - 既定で `ManagerShiftScreen`（シフト表）が表示される。
-  - メニューから「スタッフ一覧」を選ぶと StaffListPanel が表示される。
-  - registry 未登録セクションはメニューで無効（押下不可）。
-- `StaffListPanel`:
-  - スタッフ配列を渡すと各行が描画される。
-  - サマリ件数（総数／正社員／パート）が正しい。
-- 既存テスト（GlobalNav.test.tsx 等）が壊れないこと。
+`TopNav.test.tsx`（新規 or 既存に追記）で:
 
-## 受け入れ基準
+- 「モデルシフト」メニュー項目が**有効**（disabled でない）こと。
+- クリックでモーダルが開き、3バンドの数値入力が表示されること。
+- 必要人数を変更すると `localStorage['akiyume-required:<storeId>:<position>']` が更新されること。
+- ポジションを切り替えると対応キーの値が読み込まれること。
 
-1. 店長でログインすると上部に GlobalNav が表示され、ブランド名・アカウント・ログアウトが機能する。
-2. 既定でシフト表（既存画面）が表示され、従来どおり操作できる。
-3. 「スタッフ」グループ →「スタッフ一覧」でスタッフ一覧パネルに切り替わる。
-4. スタッフ一覧に現店舗スタッフが氏名・雇用形態・役割・ランク・スキルで一覧表示される。
-5. 未実装セクションはメニューで淡色・押下不可。
-6. `npm test`（フロント）と `npm run build` が通る。
+既存テスト（GlobalNav.test.tsx 等）を壊さないこと。
+
+### 受け入れ基準
+
+1. プルダウン「計画 → モデルシフト」が点灯し、押すとモーダルが開く。
+2. ポジションを選び、3バンドの必要人数を数値で設定・保存できる。
+3. 設定した必要人数が、同ポジション表示中のシフト表「全体モデルシフト」行の
+   分母（x/**y**）へ即時反映される。
+4. リロード後も設定が保持される（localStorage 永続）。
+5. `npm test` と `npm run build` が通る。
