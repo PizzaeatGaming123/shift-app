@@ -54,12 +54,6 @@ export function StaffApp() {
         </header>
 
         <div className="line-body">
-          <p className="line-bubble">
-            {tab === 'main'
-              ? 'シフト希望を出してね！日付をタップして「早番・中番・遅番・休み」を選ぶだけ📱'
-              : '確定したシフトだよ。出勤日を確認してね👍'}
-          </p>
-
           <div className="month-nav">
             <button type="button" className="btn btn-ghost" onClick={() => shiftMonthStr(-1)} aria-label="前の月">‹</button>
             <span className="month-title">{year}年 {monthNum}月</span>
