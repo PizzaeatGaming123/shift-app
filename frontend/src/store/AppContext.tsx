@@ -24,6 +24,13 @@ interface AppContextValue {
   logout: () => Promise<void>;
   setDayRequest: (date: string, value: DayRequestValue) => Promise<void>;
   bulkSetRequests: (entries: { date: string; value: DayRequestValue }[]) => Promise<void>;
+  submitRequests: (entries: {
+    date: string;
+    value: DayRequestValue;
+    startTime?: string | null;
+    endTime?: string | null;
+    note: string;
+  }[]) => Promise<void>;
   toggleAssignment: (date: string, slot: WorkSlot, staffId: string, assigned: boolean) => Promise<void>;
   setDayNote: (date: string, text: string) => Promise<void>;
   setStoreNote: (date: string, text: string) => Promise<void>;
@@ -41,7 +48,10 @@ function toStaff(s: ApiStaff, storeId: number): Staff {
     id: String(s.id),
     name: s.name,
     storeId: String(storeId),
-    employmentType: s.employmentType === '正社員' ? '正社員' : 'パート',
+    employmentType:
+      s.employmentType === '正社員' ? '正社員'
+      : s.employmentType === 'アルバイト' ? 'アルバイト'
+      : 'パート',
     role: s.role === 'MANAGER' ? 'MANAGER' : 'STAFF',
     rank: s.rank ?? null,
     skills: s.skills ? s.skills.split(',').map((t) => t.trim()).filter(Boolean) : [],
@@ -51,7 +61,13 @@ function toRecruitment(r: ApiRecruitment): Recruitment {
   return { date: r.date, message: r.message };
 }
 function toRequest(r: ApiRequest): ShiftRequest {
-  return { staffId: String(r.staffId), date: r.date, slot: r.slot };
+  return {
+    staffId: String(r.staffId),
+    date: r.date,
+    slot: r.slot,
+    startTime: r.startTime,
+    endTime: r.endTime,
+  };
 }
 function toAssignment(a: ApiAssignment): Assignment {
   return { date: a.date, slot: a.slot, staffIds: [String(a.staffId)] };
@@ -137,6 +153,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await reloadStoreData();
   }, [reloadStoreData]);
 
+  const submitRequests = useCallback(async (
+    entries: {
+      date: string;
+      value: DayRequestValue;
+      startTime?: string | null;
+      endTime?: string | null;
+      note: string;
+    }[],
+  ) => {
+    await api.submitRequests(entries);
+    await reloadStoreData();
+  }, [reloadStoreData]);
+
   const toggleAssignment = useCallback(
     async (date: string, slot: WorkSlot, staffId: string, assigned: boolean) => {
       if (!storeId) return;
@@ -194,9 +223,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AppContextValue>(() => ({
     me, loading, stores, staff, requests, assignments, dayNotes, storeNotes, recruitments, storeId, month,
-    setStoreId, setMonth, login, logout, setDayRequest, bulkSetRequests, toggleAssignment, setDayNote, setStoreNote, setRecruitment, updateStaff, createStaff, bulkAssignRequested,
+    setStoreId, setMonth, login, logout, setDayRequest, bulkSetRequests, submitRequests, toggleAssignment, setDayNote, setStoreNote, setRecruitment, updateStaff, createStaff, bulkAssignRequested,
   }), [me, loading, stores, staff, requests, assignments, dayNotes, storeNotes, recruitments, storeId, month,
-       login, logout, setDayRequest, bulkSetRequests, toggleAssignment, setDayNote, setStoreNote, setRecruitment, updateStaff, createStaff, bulkAssignRequested]);
+       login, logout, setDayRequest, bulkSetRequests, submitRequests, toggleAssignment, setDayNote, setStoreNote, setRecruitment, updateStaff, createStaff, bulkAssignRequested]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

@@ -37,7 +37,7 @@ const baseProps = {
   density: 'standard' as const,
   sortMode: 'default' as const,
   salesTarget: 90000,
-  requiredByBand: () => ({ morning: 2, afternoon: 2, night: 2 }),
+  requiredByBand: () => ({ early: 2, late: 2 }),
   onToggleAssignment: () => {},
   onStoreNoteChange: () => {},
   onPositionNoteChange: () => {},

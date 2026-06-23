@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum WorkSlot {
     EARLY("early"),
-    MID("mid"),
     LATE("late");
 
     private final String code;
