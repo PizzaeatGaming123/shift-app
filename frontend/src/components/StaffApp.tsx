@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../store/AppContext';
+import { Modal } from './ui/Modal';
+import { AccountSettingsForm } from './AccountSettingsForm';
 import { RequestEditor } from './RequestEditor';
 import { SharedView } from './SharedView';
 
@@ -9,6 +11,7 @@ type Tab = 'main' | 'shared';
 export function StaffApp() {
   const { logout, month } = useApp();
   const [tab, setTab] = useState<Tab>('main');
+  const [accountOpen, setAccountOpen] = useState(false);
 
   const [yearStr, monthStr] = month.split('-');
   const year = Number(yearStr);
@@ -29,13 +32,23 @@ export function StaffApp() {
           <span className="line-head__title">
             {tab === 'main' ? 'シフト提出＆確認' : '確定シフト'}
           </span>
-          <button
-            type="button"
-            className="line-head__logout"
-            onClick={() => void logout()}
-          >
-            ログアウト
-          </button>
+          <div className="line-head__actions">
+            <button
+              type="button"
+              className="line-head__account"
+              onClick={() => setAccountOpen(true)}
+              aria-label="アカウント設定"
+            >
+              アカウント
+            </button>
+            <button
+              type="button"
+              className="line-head__logout"
+              onClick={() => void logout()}
+            >
+              ログアウト
+            </button>
+          </div>
         </header>
 
         <div className="line-body">
@@ -51,6 +64,10 @@ export function StaffApp() {
           )}
         </div>
       </div>
+
+      <Modal open={accountOpen} title="アカウント設定" onClose={() => setAccountOpen(false)}>
+        <AccountSettingsForm />
+      </Modal>
     </div>
   );
 }
