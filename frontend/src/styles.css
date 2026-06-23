@@ -1991,6 +1991,128 @@ button.cal-cell:active {
   font-size: 13px;
 }
 
+/* ランク・スキル一覧 */
+.rk-ranks__tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--rk-rule, #e2e6ee);
+  margin-bottom: 14px;
+}
+
+.rk-ranks__tabs button {
+  border: none;
+  background: transparent;
+  padding: 9px 22px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted, #6b7785);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+}
+
+.rk-ranks__tabs button[aria-selected="true"] {
+  color: var(--primary, #2f80c4);
+  border-bottom-color: var(--primary, #2f80c4);
+}
+
+.rk-ranks__search input {
+  width: 100%;
+  max-width: 420px;
+  border: 1px solid var(--rk-rule, #d4d9e3);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.rk-ranks__table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.rk-ranks__table th,
+.rk-ranks__table td {
+  border-bottom: 1px solid var(--rk-rule, #eceff4);
+  padding: 10px 8px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.rk-ranks__table thead th {
+  background: #f3f6fb;
+  font-weight: 700;
+  border-bottom: 1px solid var(--rk-rule, #e2e6ee);
+}
+
+.rk-ranks__name {
+  font-weight: 700;
+  width: 120px;
+}
+
+.rk-ranks__del-col { width: 70px; text-align: center; }
+
+.rk-ranks__holders {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.rk-ranks__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--primary-soft, #e7f1fb);
+  color: var(--primary-dark, #246aa6);
+  border-radius: 14px;
+  padding: 3px 6px 3px 10px;
+  font-size: 12px;
+}
+
+.rk-ranks__chip button {
+  border: none;
+  background: rgba(0, 0, 0, .12);
+  color: #fff;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  line-height: 1;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.rk-ranks__add {
+  border: 1px dashed var(--primary, #2f80c4);
+  background: #fff;
+  color: var(--primary, #2f80c4);
+  border-radius: 14px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.rk-ranks__count { color: var(--muted, #6b7785); font-size: 12px; margin-left: 2px; }
+
+.rk-ranks__del {
+  border: none;
+  background: transparent;
+  color: var(--low, #d64545);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.rk-ranks__new {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  max-width: 420px;
+}
+
+.rk-ranks__new .text-input { flex: 1; }
+
 .rk-shift-toolbar {
   border-bottom: 1px solid var(--rk-rule);
   background: #fff;

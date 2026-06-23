@@ -55,3 +55,19 @@ it('スタッフ一覧: スタッフ名を表示する', async () => {
   renderSection('staff-list');
   expect(await screen.findByText(/田中太郎/)).toBeInTheDocument();
 });
+
+it('ランク・スキル: タブとランク階層S〜Dを表示し、保有者をスキルタブで切り替える', async () => {
+  const user = userEvent.setup();
+  renderSection('rank-settings');
+
+  // ランクタブ: S〜D の行
+  expect(await screen.findByRole('rowheader', { name: 'S' })).toBeInTheDocument();
+  expect(screen.getByRole('rowheader', { name: 'D' })).toBeInTheDocument();
+  // 田中太郎(rank3=B)がBランクの保有者
+  const bRow = screen.getByRole('rowheader', { name: 'B' }).closest('tr')!;
+  expect(bRow.textContent).toContain('田中太郎');
+
+  // スキルタブへ
+  await user.click(screen.getByRole('tab', { name: 'スキル' }));
+  expect(await screen.findByRole('rowheader', { name: 'キッチン' })).toBeInTheDocument();
+});
