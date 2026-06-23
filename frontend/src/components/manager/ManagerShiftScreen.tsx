@@ -18,6 +18,7 @@ import type { SummaryItemKey } from './ShiftTableSummaryRows';
 import { ShiftToolbar } from './ShiftToolbar';
 import { getManagerDateWindow } from './shiftViewModel';
 import { DEFAULT_WEEKDAY_REQUIRED, requiredForDate } from './modelShift';
+import { ShiftConfirmDialog } from './ShiftConfirmDialog';
 import {
   DEFAULT_SHIFT_PATTERNS,
   normalizeShiftPatterns,
@@ -273,10 +274,12 @@ export function ManagerShiftScreen({
     }
   }
 
-  async function confirmShift() {
+  function confirmShift(selection: { positions: string[]; dates: string[] }) {
     setShiftStatus('CONFIRMED');
-    setConfirmOpen(false);
-    showToast('シフトを確定しました。まだスタッフには公開されていません');
+    const positionsLabel = selection.positions.length === 0
+      ? 'すべてのポジション'
+      : selection.positions.join('・');
+    showToast(`${positionsLabel}・${selection.dates.length}日分を確定しました`);
   }
 
   function publishShift() {
@@ -380,14 +383,14 @@ export function ManagerShiftScreen({
         />
       )}
 
-      <Modal
+      <ShiftConfirmDialog
         open={confirmOpen}
-        title="シフト確定"
+        storeName={stores.find((s) => String(s.id) === String(storeId))?.name ?? '店舗'}
+        positions={['ホール', 'キッチン']}
+        dates={dates}
         onClose={() => setConfirmOpen(false)}
-      >
-        <p>表示期間のシフトを確定します。</p>
-        <button type="button" onClick={() => void confirmShift()}>確定する</button>
-      </Modal>
+        onConfirm={confirmShift}
+      />
 
       <Modal
         open={publishOpen}
