@@ -23,6 +23,7 @@ interface AppContextValue {
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   setDayRequest: (date: string, value: DayRequestValue) => Promise<void>;
+  bulkSetRequests: (entries: { date: string; value: DayRequestValue }[]) => Promise<void>;
   toggleAssignment: (date: string, slot: WorkSlot, staffId: string, assigned: boolean) => Promise<void>;
   setDayNote: (date: string, text: string) => Promise<void>;
   setStoreNote: (date: string, text: string) => Promise<void>;
@@ -130,6 +131,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await reloadStoreData();
   }, [reloadStoreData]);
 
+  const bulkSetRequests = useCallback(async (entries: { date: string; value: DayRequestValue }[]) => {
+    if (entries.length === 0) return;
+    await Promise.all(entries.map((e) => api.setRequest(e.date, e.value)));
+    await reloadStoreData();
+  }, [reloadStoreData]);
+
   const toggleAssignment = useCallback(
     async (date: string, slot: WorkSlot, staffId: string, assigned: boolean) => {
       if (!storeId) return;
@@ -187,9 +194,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AppContextValue>(() => ({
     me, loading, stores, staff, requests, assignments, dayNotes, storeNotes, recruitments, storeId, month,
-    setStoreId, setMonth, login, logout, setDayRequest, toggleAssignment, setDayNote, setStoreNote, setRecruitment, updateStaff, createStaff, bulkAssignRequested,
+    setStoreId, setMonth, login, logout, setDayRequest, bulkSetRequests, toggleAssignment, setDayNote, setStoreNote, setRecruitment, updateStaff, createStaff, bulkAssignRequested,
   }), [me, loading, stores, staff, requests, assignments, dayNotes, storeNotes, recruitments, storeId, month,
-       login, logout, setDayRequest, toggleAssignment, setDayNote, setStoreNote, setRecruitment, updateStaff, createStaff, bulkAssignRequested]);
+       login, logout, setDayRequest, bulkSetRequests, toggleAssignment, setDayNote, setStoreNote, setRecruitment, updateStaff, createStaff, bulkAssignRequested]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
