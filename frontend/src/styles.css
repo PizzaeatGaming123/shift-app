@@ -939,13 +939,33 @@ button.cal-cell:active {
 .shared-view--self .rk-shift-table tbody .rk-shift-cell {
   height: 56px;
 }
-/* スタッフ画面では並び替えボタンは意味がないので「自分のシフト」と表示する */
+/* スタッフ画面では並び替えボタンは意味がないので「シフト一覧」と表示する */
 .shared-view--self .rk-shift-table__staff-heading button { display: none; }
 .shared-view--self .rk-shift-table__staff-heading::before {
-  content: '自分のシフト';
+  content: 'シフト一覧';
   font-weight: 700;
   color: var(--text, #1f2933);
   font-size: 11px;
+}
+
+/* 自分の行（最上段）を薄い青で強調 */
+.shared-view--self .rk-shift-table tbody tr:first-child {
+  background: rgba(47, 128, 196, .06);
+}
+.shared-view--self .rk-shift-table tbody tr:first-child > th {
+  position: relative;
+}
+.shared-view--self .rk-shift-table tbody tr:first-child > th::after {
+  content: '自分';
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  background: var(--primary, #2f80c4);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
 }
 
 .empty,
