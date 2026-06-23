@@ -540,39 +540,108 @@ export function SectionBody({ section }: { section: ManagerSection }) {
               </article>
             </div>
           </div>
-          <div className="settings-form">
-            <label className="settings-row"><span>対象年月</span>
-              <input type="month" value={collect.targetMonth}
-                onChange={(event) => setCollect({ ...collect, targetMonth: event.target.value })} /></label>
-            <label className="settings-row"><span>シフト周期</span>
-              <select value={collect.cycle} onChange={(event) => setCollect({
-                ...collect,
-                cycle: event.target.value as 'month' | 'half-month',
-              })}>
-                <option value="month">1か月</option>
-                <option value="half-month">半月</option>
-              </select></label>
-            <label className="settings-row"><span>提出開始日時</span>
-              <input type="datetime-local" value={collect.startAt}
-                onChange={(event) => setCollect({ ...collect, startAt: event.target.value })} /></label>
-            <label className="settings-row"><span>提出期限</span>
-              <input type="datetime-local" value={collect.deadlineAt}
-                onChange={(event) => setCollect({ ...collect, deadlineAt: event.target.value })} /></label>
-            <label className="settings-row"><span>シフト公開予定日</span>
-              <input type="datetime-local" value={collect.publishAt}
-                onChange={(event) => setCollect({ ...collect, publishAt: event.target.value })} /></label>
-            <label className="settings-row"><span>受付状態</span>
-              <select value={collect.status} onChange={(event) => setCollect({
-                ...collect,
-                status: event.target.value as CollectionStatus,
-              })}>
-                <option value="BEFORE">受付開始前</option>
-                <option value="OPEN">受付中</option>
-                <option value="CLOSED">受付終了</option>
-              </select></label>
-            <label className="settings-row"><span>提出依頼の通知回数</span>
-              <input type="number" min={0} max={10} value={collect.reminders}
-                onChange={(event) => setCollect({ ...collect, reminders: Number(event.target.value) || 0 })} /></label>
+          <div className="rk-collection-form">
+            <label className="rk-field">
+              <span className="rk-field__label">対象年月</span>
+              <input
+                className="rk-field__input"
+                type="month"
+                value={collect.targetMonth}
+                onChange={(event) => setCollect({ ...collect, targetMonth: event.target.value })}
+              />
+            </label>
+
+            <fieldset className="rk-field">
+              <legend className="rk-field__label">シフト周期</legend>
+              <div className="rk-segments" role="radiogroup">
+                {([
+                  ['month', '1か月'],
+                  ['half-month', '半月'],
+                ] as const).map(([value, label]) => (
+                  <button
+                    type="button"
+                    key={value}
+                    role="radio"
+                    aria-checked={collect.cycle === value}
+                    className={`rk-segment${collect.cycle === value ? ' is-on' : ''}`}
+                    onClick={() => setCollect({ ...collect, cycle: value })}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+
+            <label className="rk-field">
+              <span className="rk-field__label">提出開始日時</span>
+              <input
+                className="rk-field__input"
+                type="datetime-local"
+                value={collect.startAt}
+                onChange={(event) => setCollect({ ...collect, startAt: event.target.value })}
+              />
+            </label>
+
+            <label className="rk-field">
+              <span className="rk-field__label">提出期限</span>
+              <input
+                className="rk-field__input"
+                type="datetime-local"
+                value={collect.deadlineAt}
+                onChange={(event) => setCollect({ ...collect, deadlineAt: event.target.value })}
+              />
+            </label>
+
+            <label className="rk-field">
+              <span className="rk-field__label">シフト公開予定日</span>
+              <input
+                className="rk-field__input"
+                type="datetime-local"
+                value={collect.publishAt}
+                onChange={(event) => setCollect({ ...collect, publishAt: event.target.value })}
+              />
+            </label>
+
+            <fieldset className="rk-field">
+              <legend className="rk-field__label">受付状態</legend>
+              <div className="rk-segments" role="radiogroup">
+                {([
+                  ['BEFORE', '受付開始前'],
+                  ['OPEN', '受付中'],
+                  ['CLOSED', '受付終了'],
+                ] as const).map(([value, label]) => (
+                  <button
+                    type="button"
+                    key={value}
+                    role="radio"
+                    aria-checked={collect.status === value}
+                    className={`rk-segment${collect.status === value ? ' is-on' : ''}`}
+                    onClick={() => setCollect({ ...collect, status: value as CollectionStatus })}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset className="rk-field">
+              <legend className="rk-field__label">提出依頼の通知回数</legend>
+              <p className="rk-field__hint">提出開始から期限までの間に、未提出スタッフへ送るリマインド数。</p>
+              <div className="rk-segments" role="radiogroup">
+                {[0, 1, 2, 3, 5].map((value) => (
+                  <button
+                    type="button"
+                    key={value}
+                    role="radio"
+                    aria-checked={collect.reminders === value}
+                    className={`rk-segment${collect.reminders === value ? ' is-on' : ''}`}
+                    onClick={() => setCollect({ ...collect, reminders: value })}
+                  >
+                    {value === 0 ? '送らない' : `${value} 回`}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
           </div>
         </div>
       );

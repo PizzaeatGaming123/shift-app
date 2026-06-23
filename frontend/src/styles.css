@@ -2053,6 +2053,83 @@ button.cal-cell:active {
 .rk-collection-preview__cards article strong { font-size: 15px; }
 .rk-collection-preview__cards article span { color: #697582; font-size: 12px; }
 
+/* シフト回収設定: 広いフィールド・セグメント選択 */
+.rk-collection-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 8px;
+}
+
+.rk-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.rk-field__label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #2b3540;
+  letter-spacing: .01em;
+}
+
+.rk-field__hint {
+  margin: -2px 0 4px;
+  font-size: 12px;
+  color: #6b7785;
+}
+
+.rk-field__input {
+  width: 100%;
+  max-width: 360px;
+  font: inherit;
+  font-size: 14px;
+  border: 1px solid #c8cfd9;
+  background: #fff;
+  border-radius: 4px;
+  padding: 10px 12px;
+  color: #1f2933;
+}
+
+.rk-field__input:focus {
+  outline: none;
+  border-color: #2f80c4;
+  box-shadow: 0 0 0 3px rgba(47, 128, 196, .18);
+}
+
+.rk-segments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.rk-segment {
+  flex: 0 0 auto;
+  min-width: 120px;
+  border: 1px solid #c8cfd9;
+  background: #fff;
+  border-radius: 6px;
+  padding: 12px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #5b6573;
+  cursor: pointer;
+  transition: background .12s, color .12s, border-color .12s, box-shadow .12s;
+}
+
+.rk-segment:hover { border-color: #2f80c4; color: #2f80c4; }
+
+.rk-segment.is-on {
+  border-color: #2f80c4;
+  background: #2f80c4;
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(47, 128, 196, .35);
+}
+
 .rk-status-metrics {
   display: grid;
   grid-template-columns: repeat(5, minmax(105px, 1fr));
