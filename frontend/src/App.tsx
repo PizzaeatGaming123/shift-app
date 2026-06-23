@@ -5,14 +5,13 @@ import { Login } from './components/Login';
 import { RequestEditor } from './components/RequestEditor';
 import { SharedView } from './components/SharedView';
 import { Skeleton } from './components/ui/Skeleton';
-import { ManagerShiftScreen } from './components/manager/ManagerShiftScreen';
+import { ManagerLayout } from './components/manager/ManagerLayout';
 
 type Tab = 'main' | 'shared';
 
 export function App() {
   const { me, loading, month, setMonth } = useApp();
   const [tab, setTab] = useState<Tab>('main');
-  const [managerHomeSignal, setManagerHomeSignal] = useState(0);
 
   if (loading) {
     return (
@@ -51,12 +50,7 @@ export function App() {
   }
 
   if (isManager) {
-    return (
-      <>
-        <TopNav onHome={() => setManagerHomeSignal((value) => value + 1)} />
-        <ManagerShiftScreen homeSignal={managerHomeSignal} />
-      </>
-    );
+    return <ManagerLayout />;
   }
 
   return (

@@ -1903,6 +1903,52 @@ button.cal-cell:active {
   font-family: var(--rk-font);
 }
 
+.rk-section-screen {
+  width: 100%;
+  min-width: 1120px;
+  min-height: calc(100vh - 48px);
+  padding: 0 0 48px;
+  background: var(--rk-bg, #f4f6fa);
+  color: var(--rk-text);
+  font-family: var(--rk-font);
+}
+
+.rk-section-screen__head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 24px;
+  background: #fff;
+  border-bottom: 1px solid var(--rk-rule, #e2e6ee);
+}
+
+.rk-section-screen__back {
+  border: 1px solid var(--rk-rule, #d4d9e3);
+  background: #fff;
+  color: var(--rk-text);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.rk-section-screen__back:hover { background: #f0f3f9; }
+
+.rk-section-screen__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.rk-section-screen__body {
+  margin: 20px auto;
+  max-width: 860px;
+  padding: 22px 26px;
+  background: #fff;
+  border: 1px solid var(--rk-rule, #e2e6ee);
+  border-radius: 10px;
+}
+
 .rk-shift-toolbar {
   border-bottom: 1px solid var(--rk-rule);
   background: #fff;
