@@ -30,7 +30,7 @@ interface ShiftTableSummaryRowsProps {
   storeNotes: StoreNote[];
   positionNotes: Record<string, string>;
   visibleItems: SummaryItemKey[];
-  requiredByBand: RequiredByBand;
+  requiredByBand: (date: string) => RequiredByBand;
   onStoreNoteChange: (date: string, text: string) => void;
   onPositionNoteChange: (date: string, text: string) => void;
 }
@@ -131,7 +131,7 @@ export function ShiftTableSummaryRows({
               <th scope="row" role="rowheader">{band.label}</th>
               {dates.map((date) => (
                 <td key={date}>
-                  {coverage(assignments, date, band.slots)}/{requiredByBand[band.key]}
+                  {coverage(assignments, date, band.slots)}/{requiredByBand(date)[band.key]}
                 </td>
               ))}
             </tr>
