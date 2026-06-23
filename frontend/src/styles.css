@@ -3182,6 +3182,8 @@ button.rk-shift-chip:focus-visible {
 .rk-attend__slot strong { font-size: 11px; }
 .rk-attend__slot small { font-size: 9px; color: #777; }
 .rk-attend__slot:hover { border-color: #2f80d8; background: #eef6ff; }
+.rk-attend__any { border-style: dashed; }
+.rk-attend__any.is-on { border-color: #2f80d8; background: #eaf3ff; color: #1f5d9e; }
 .rk-attend__save {
   border: 0;
   border-radius: 0;

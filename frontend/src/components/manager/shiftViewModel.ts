@@ -84,7 +84,7 @@ export function formatDuration(hours: number): string {
 }
 
 interface ShiftDescriptor {
-  slot: WorkSlot | 'off';
+  slot: WorkSlot | 'any' | 'off';
   label: string;
   time: string | null;
 }
@@ -127,8 +127,12 @@ export function getShiftCellModel({
     request: request
       ? {
           slot: request.slot,
-          label: request.slot === 'off' ? '休み' : SLOT_LABELS[request.slot],
-          time: request.slot === 'off'
+          label: request.slot === 'off'
+            ? '休み'
+            : request.slot === 'any'
+              ? 'どちらでも'
+              : SLOT_LABELS[request.slot],
+          time: request.slot === 'off' || request.slot === 'any'
             ? null
             : request.startTime && request.endTime
               ? `${request.startTime}-${request.endTime}`
