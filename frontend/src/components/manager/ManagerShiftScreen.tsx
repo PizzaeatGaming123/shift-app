@@ -212,10 +212,12 @@ export function ManagerShiftScreen({
 
   useEffect(() => {
     if (homeSignal === 0) return;
+    // シフト作成は通常「翌月分」を準備する運用なので、ホームに戻る際は翌月へリセットする
     const now = new Date();
-    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    setMonth(currentMonth);
-    setAnchorDate(`${currentMonth}-01`);
+    const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const nextMonth = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`;
+    setMonth(nextMonth);
+    setAnchorDate(`${nextMonth}-01`);
     setView('month');
   }, [homeSignal, setMonth]);
 
@@ -253,11 +255,13 @@ export function ManagerShiftScreen({
     setAnchorDate(nextAnchor);
   }
 
-  function goToCurrentMonth() {
+  function goToNextMonth() {
+    // シフト作成は翌月分が中心。「翌月」ボタンでは実時計の翌月へジャンプする。
     const now = new Date();
-    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    setMonth(currentMonth);
-    setAnchorDate(`${currentMonth}-01`);
+    const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const nextMonth = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`;
+    setMonth(nextMonth);
+    setAnchorDate(`${nextMonth}-01`);
   }
 
   function editStoreNote(date: string, current: string) {
@@ -311,6 +315,8 @@ export function ManagerShiftScreen({
         view={view}
         periodLabel={formatManagerPeriodLabel(view, dates)}
         deadlineLabel={`〜${collection.deadlineAt.replace('T', ' ')}`}
+        collectionMonth={collection.targetMonth}
+        viewMonth={month}
         unconfirmedCount={unconfirmedCount}
         recruitmentCount={recruitmentCount}
         shiftMode={shiftMode}
@@ -323,7 +329,7 @@ export function ManagerShiftScreen({
         }}
         onPrevious={() => moveManagerPeriod(-1)}
         onNext={() => moveManagerPeriod(1)}
-        onToday={goToCurrentMonth}
+        onToday={goToNextMonth}
         onConfirm={() => setConfirmOpen(true)}
         onPublish={() => setPublishOpen(true)}
         onPrint={() => window.print()}

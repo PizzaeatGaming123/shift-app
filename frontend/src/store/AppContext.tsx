@@ -90,7 +90,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [storeNotes, setStoreNotes] = useState<StoreNote[]>([]);
   const [recruitments, setRecruitments] = useState<Recruitment[]>([]);
   const [storeId, setStoreId] = useState<number | null>(null);
-  const [month, setMonth] = useState('2026-07');
+  const [month, setMonth] = useState(() => {
+    // シフト作成は通常「翌月分」を準備する運用なので、起動時は翌月をデフォルト表示にする。
+    const now = new Date();
+    const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`;
+  });
 
   // 初回: ログイン状態を確認
   useEffect(() => {
