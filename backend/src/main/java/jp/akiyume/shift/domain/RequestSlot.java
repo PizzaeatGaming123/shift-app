@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum RequestSlot {
     EARLY("early"),
     LATE("late"),
+    ANY("any"),
     OFF("off");
 
     private final String code;

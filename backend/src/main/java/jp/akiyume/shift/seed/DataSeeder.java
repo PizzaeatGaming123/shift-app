@@ -133,6 +133,7 @@ public class DataSeeder implements CommandLineRunner {
         return switch (slot) {
             case EARLY -> WorkSlot.EARLY;
             case LATE -> WorkSlot.LATE;
+            case ANY -> WorkSlot.EARLY;
             case OFF -> throw new IllegalArgumentException("OFF は割り当てできません");
         };
     }

@@ -41,6 +41,7 @@ public class RequestService {
         switch (value) {
             case "early" -> added.add(new ShiftRequest(staff, date, RequestSlot.EARLY));
             case "late" -> added.add(new ShiftRequest(staff, date, RequestSlot.LATE));
+            case "any" -> added.add(new ShiftRequest(staff, date, RequestSlot.ANY));
             case "off" -> added.add(new ShiftRequest(staff, date, RequestSlot.OFF));
             case "none" -> { /* 何も追加しない */ }
             default -> throw new ResponseStatusException(BAD_REQUEST, "Unknown request value");
@@ -71,14 +72,16 @@ public class RequestService {
             RequestSlot slot = switch (entry.value()) {
                 case "early" -> RequestSlot.EARLY;
                 case "late" -> RequestSlot.LATE;
+                case "any" -> RequestSlot.ANY;
                 case "off" -> RequestSlot.OFF;
                 case "none" -> null;
                 default -> throw new ResponseStatusException(BAD_REQUEST, "Unknown request value");
             };
             if (slot != null) {
-                String startTime = slot == RequestSlot.OFF ? null : normalizeTime(entry.startTime());
-                String endTime = slot == RequestSlot.OFF ? null : normalizeTime(entry.endTime());
-                if (slot != RequestSlot.OFF) validateRange(startTime, endTime);
+                boolean hasTime = slot != RequestSlot.OFF && slot != RequestSlot.ANY;
+                String startTime = hasTime ? normalizeTime(entry.startTime()) : null;
+                String endTime = hasTime ? normalizeTime(entry.endTime()) : null;
+                if (hasTime) validateRange(startTime, endTime);
                 requestRepository.save(new ShiftRequest(staff, date, slot, startTime, endTime));
             }
 

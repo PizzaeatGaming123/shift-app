@@ -26,6 +26,7 @@ export const DEFAULT_SHIFT_LAYERS: ShiftLayerVisibility = {
   visibleSlots: {
     early: true,
     late: true,
+    any: true,
     off: true,
   },
 };

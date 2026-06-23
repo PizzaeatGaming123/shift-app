@@ -25,7 +25,7 @@ interface ShiftStaffRowProps {
   ) => void;
 }
 
-function slotClass(slot: WorkSlot | 'off'): string {
+function slotClass(slot: WorkSlot | 'any' | 'off'): string {
   return `rk-shift-chip--${slot}`;
 }
 

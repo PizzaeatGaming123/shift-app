@@ -3,11 +3,11 @@ export type EmploymentType = '正社員' | 'パート' | 'アルバイト';
 /** 勤務できる時間帯 */
 export type WorkSlot = 'early' | 'late'; // 早番 / 遅番
 
-/** 希望の値（none = 未提出, off = 休み希望） */
-export type DayRequestValue = 'none' | 'early' | 'late' | 'off';
+/** 希望の値（none = 未提出, off = 休み希望, any = 早番/遅番どちらでも可） */
+export type DayRequestValue = 'none' | 'early' | 'late' | 'any' | 'off';
 
-/** 1レコードの希望スロット（off を含む） */
-export type RequestSlot = WorkSlot | 'off';
+/** 1レコードの希望スロット（off, any を含む） */
+export type RequestSlot = WorkSlot | 'any' | 'off';
 
 /** マトリクスで表示する区分のオン/オフ（シフトの種類フィルタ） */
 export type SlotVisibility = Record<RequestSlot, boolean>;

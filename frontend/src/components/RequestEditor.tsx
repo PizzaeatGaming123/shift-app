@@ -27,6 +27,7 @@ function fmtDate(date: string): string {
 
 function displayValue(v: DayRequestValue, time: { start: string; end: string }): string {
   if (v === 'off') return '休み';
+  if (v === 'any') return '出勤（どちらでも可）';
   if (v === 'early') return `出勤 ${time.start}〜${time.end}`;
   if (v === 'late') return `出勤 ${time.start}〜${time.end}`;
   return '未入力';
@@ -102,12 +103,12 @@ export function RequestEditor({ year, month }: RequestEditorProps) {
   }
   const workDays = dates.filter((d) => {
     const v = myValue(d);
-    return v === 'early' || v === 'late';
+    return v === 'early' || v === 'late' || v === 'any';
   }).length;
 
   function openDay(date: string) {
     const v = myValue(date);
-    setAttend(v === 'early' || v === 'late');
+    setAttend(v === 'early' || v === 'late' || v === 'any');
     const time = timeFor(date);
     setModalStart(time.start);
     setModalEnd(time.end);
@@ -357,6 +358,14 @@ export function RequestEditor({ year, month }: RequestEditorProps) {
               <button type="button" className="rk-attend__slot" onClick={() => { setModalStart(patterns.late.start); setModalEnd(patterns.late.end); }}>
                 <strong>{patterns.late.label}</strong><small>{patterns.late.start}〜{patterns.late.end}</small>
               </button>
+              <button
+                type="button"
+                className={`rk-attend__slot rk-attend__any${myValue(modalDate ?? '') === 'any' ? ' is-on' : ''}`}
+                onClick={() => pick(modalDate!, 'any')}
+              >
+                <strong>どちらでも可</strong>
+                <small>早番でも遅番でもOK</small>
+              </button>
               <button type="button" className="rk-attend__save" onClick={saveWorkDay}>保存</button>
             </div>
           )}
@@ -377,6 +386,9 @@ export function RequestEditor({ year, month }: RequestEditorProps) {
               </button>
               <button type="button" className="rk-attend__slot" onClick={() => bulkApply('late')}>
                 <strong>{patterns.late.label}</strong><small>{patterns.late.start}〜{patterns.late.end}</small>
+              </button>
+              <button type="button" className="rk-attend__slot rk-attend__any" onClick={() => bulkApply('any')}>
+                <strong>どちらでも可</strong><small>早番でも遅番でもOK</small>
               </button>
             </div>
           )}
