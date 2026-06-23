@@ -3340,3 +3340,133 @@ button.rk-shift-chip:focus-visible {
     min-height: 100vh;
   }
 }
+
+/* シフト確定ダイアログ（らくしふ4 準拠） */
+.rk-confirm-form { display: flex; flex-direction: column; gap: 18px; min-width: 520px; }
+.rk-confirm-form__lead { margin: 0; color: #4a5563; font-size: 13px; }
+
+.rk-confirm-block {
+  border: 1px solid #dfe3ea;
+  background: #fff;
+}
+.rk-confirm-block header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: #f6f8fb;
+  border-bottom: 1px solid #dfe3ea;
+}
+.rk-confirm-block header strong { font-size: 13px; }
+.rk-confirm-all {
+  border: 0;
+  background: transparent;
+  color: #2f80c4;
+  font-size: 12px;
+  cursor: pointer;
+}
+.rk-confirm-all:hover { text-decoration: underline; }
+
+.rk-confirm-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.rk-confirm-list--dates {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px 12px;
+}
+.rk-confirm-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 2px;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.rk-confirm-item:hover { background: #f2f6fb; }
+.rk-confirm-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #2f80c4;
+}
+
+.rk-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+.rk-confirm-actions__ghost {
+  border: 1px solid #c8cfd9;
+  background: #fff;
+  color: #5b6573;
+  padding: 9px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.rk-confirm-actions__primary {
+  border: 0;
+  background: #2f80c4;
+  color: #fff;
+  padding: 9px 24px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.rk-confirm-actions__primary:disabled { background: #aab5c2; cursor: not-allowed; }
+.rk-confirm-actions__primary:not(:disabled):hover { background: #2670b3; }
+
+.rk-confirm-done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 24px 8px;
+  min-width: 360px;
+  text-align: center;
+}
+.rk-confirm-done__icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #2eb872;
+  color: #fff;
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1;
+}
+.rk-confirm-done h3 { margin: 0; font-size: 16px; }
+.rk-confirm-done ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.rk-confirm-done ul li {
+  background: #e7f1fb;
+  color: #1f5d9e;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.rk-confirm-done__note {
+  margin: 0;
+  color: #6b7785;
+  font-size: 12px;
+  line-height: 1.6;
+}
