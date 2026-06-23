@@ -20,7 +20,8 @@ describe('SharedView', () => {
   it('shows existing confirmed shifts created before publication status was introduced', () => {
     render(<SharedView year={2026} month={7} />);
 
-    expect(screen.getByText('田中太郎')).toBeInTheDocument();
+    // 姓だけのコンパクト表示で他スタッフが描画される（縦長を抑制するため）
+    expect(screen.getByText('田中')).toBeInTheDocument();
     expect(screen.queryByText('店長が確定したシフトは、公開後に表示されます。')).not.toBeInTheDocument();
   });
 
@@ -29,6 +30,6 @@ describe('SharedView', () => {
     render(<SharedView year={2026} month={7} />);
 
     expect(screen.getByText('店長が確定したシフトは、公開後に表示されます。')).toBeInTheDocument();
-    expect(screen.queryByText('田中太郎')).not.toBeInTheDocument();
+    expect(screen.queryByText('田中')).not.toBeInTheDocument();
   });
 });
