@@ -45,11 +45,14 @@ export function SharedView({ year, month }: SharedViewProps) {
     );
   }
 
+  // 自分を最上段に固定し、その下に他のスタッフ（社員・バイト・パート）を並べる
+  const others = staff.filter((person) => person.role === 'STAFF' && person.id !== myId);
+
   return (
     <section className="shared-view shared-view--self">
       <ShiftTable
         dates={dates}
-        staff={[mySelf]}
+        staff={[mySelf, ...others]}
         requests={requests}
         assignments={assignments}
         notes={dayNotes}
