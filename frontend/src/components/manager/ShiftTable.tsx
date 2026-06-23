@@ -31,7 +31,7 @@ interface ShiftTableProps {
   density: ShiftTableDensity;
   sortMode: StaffSortMode;
   salesTarget: number;
-  requiredByBand: RequiredByBand;
+  requiredByBand: (date: string) => RequiredByBand;
   visibleSummaryItems?: SummaryItemKey[];
   onToggleAssignment: (
     date: string,

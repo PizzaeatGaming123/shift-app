@@ -17,6 +17,7 @@ import { ShiftTable } from './ShiftTable';
 import type { SummaryItemKey } from './ShiftTableSummaryRows';
 import { ShiftToolbar } from './ShiftToolbar';
 import { getManagerDateWindow } from './shiftViewModel';
+import { DEFAULT_WEEKDAY_REQUIRED, requiredForDate } from './modelShift';
 import {
   DEFAULT_SHIFT_LAYERS,
   type ManagerView,
@@ -137,10 +138,11 @@ export function ManagerShiftScreen({
     `akiyume-position-notes:${storeId}:${position}`,
     {},
   );
-  const [requiredByBand] = useSetting(
-    `akiyume-required:${storeId}:${position}`,
-    { morning: 2, afternoon: 2, night: 2 },
+  const [weekdayModel] = useSetting(
+    `akiyume-model:${storeId}:${position}`,
+    DEFAULT_WEEKDAY_REQUIRED,
   );
+  const requiredByBand = (date: string) => requiredForDate(weekdayModel, date);
   const [salesTarget] = useSetting(
     `akiyume-sales:${storeId}`,
     DAILY_SALES_TARGET,

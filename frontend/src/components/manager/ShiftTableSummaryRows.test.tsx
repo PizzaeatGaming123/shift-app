@@ -23,7 +23,7 @@ it('資料と同じ順序で集計行を表示する', () => {
             'storeNote',
             'positionNote',
           ]}
-          requiredByBand={{ morning: 2, afternoon: 2, night: 2 }}
+          requiredByBand={() => ({ morning: 2, afternoon: 2, night: 2 })}
           onStoreNoteChange={() => {}}
           onPositionNoteChange={() => {}}
         />
@@ -60,7 +60,7 @@ it('非表示にした集計項目は描画しない', () => {
           storeNotes={[]}
           positionNotes={{}}
           visibleItems={['sales', 'workHours']}
-          requiredByBand={{ morning: 2, afternoon: 2, night: 2 }}
+          requiredByBand={() => ({ morning: 2, afternoon: 2, night: 2 })}
           onStoreNoteChange={() => {}}
           onPositionNoteChange={() => {}}
         />

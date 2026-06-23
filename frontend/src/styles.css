@@ -1903,6 +1903,222 @@ button.cal-cell:active {
   font-family: var(--rk-font);
 }
 
+.rk-section-screen {
+  width: 100%;
+  min-width: 1120px;
+  min-height: calc(100vh - 48px);
+  background: var(--rk-bg, #eef1f6);
+  color: var(--rk-text);
+  font-family: var(--rk-font);
+}
+
+.rk-section-screen__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 24px;
+  height: 46px;
+  background: #fff;
+  border-bottom: 1px solid var(--rk-rule, #dfe3ea);
+}
+
+.rk-section-screen__back {
+  border: 1px solid var(--rk-rule, #d4d9e3);
+  background: #fff;
+  color: var(--rk-muted, #5b6573);
+  border-radius: 4px;
+  padding: 5px 11px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.rk-section-screen__back:hover { background: #f0f3f9; color: var(--rk-text); }
+
+.rk-section-screen__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: .01em;
+}
+
+/* 業務SaaS風: 全幅・左寄せ・密度高め。中央寄せの浮いたカードにしない */
+.rk-section-screen__body {
+  margin: 16px;
+  padding: 20px 22px;
+  background: #fff;
+  border: 1px solid var(--rk-rule, #dfe3ea);
+  border-radius: 4px;
+  min-height: calc(100vh - 48px - 46px - 32px);
+}
+
+/* 設定系フォームは読みやすい幅に抑える（ただし左寄せ） */
+.rk-section-screen__body .settings-form { max-width: 520px; }
+.rk-section-screen__body .modal-list { max-width: 640px; }
+
+/* モデルシフト 編集グリッド */
+.rk-model-editor__pos { max-width: 320px; }
+
+.rk-model-grid {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 14px;
+  font-size: 13px;
+}
+
+.rk-model-grid th,
+.rk-model-grid td {
+  border: 1px solid var(--rk-rule, #e2e6ee);
+  text-align: center;
+  padding: 6px 4px;
+}
+
+.rk-model-grid thead th {
+  background: #f3f6fb;
+  font-weight: 700;
+  width: 64px;
+}
+
+.rk-model-grid tbody th {
+  background: #fafbfd;
+  text-align: left;
+  padding-left: 10px;
+  white-space: nowrap;
+}
+
+.rk-model-grid th.is-sun { color: var(--c-sun, #d83a3a); }
+.rk-model-grid th.is-sat { color: var(--c-sat, #2f72c4); }
+
+.rk-model-grid input {
+  width: 46px;
+  text-align: center;
+  border: 1px solid var(--rk-rule, #d4d9e3);
+  border-radius: 6px;
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+/* ランク・スキル一覧 */
+.rk-ranks__tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--rk-rule, #e2e6ee);
+  margin-bottom: 14px;
+}
+
+.rk-ranks__tabs button {
+  border: none;
+  background: transparent;
+  padding: 9px 22px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted, #6b7785);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+}
+
+.rk-ranks__tabs button[aria-selected="true"] {
+  color: var(--primary, #2f80c4);
+  border-bottom-color: var(--primary, #2f80c4);
+}
+
+.rk-ranks__search input {
+  width: 100%;
+  max-width: 420px;
+  border: 1px solid var(--rk-rule, #d4d9e3);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.rk-ranks__table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.rk-ranks__table th,
+.rk-ranks__table td {
+  border-bottom: 1px solid var(--rk-rule, #eceff4);
+  padding: 10px 8px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.rk-ranks__table thead th {
+  background: #f3f6fb;
+  font-weight: 700;
+  border-bottom: 1px solid var(--rk-rule, #e2e6ee);
+}
+
+.rk-ranks__name {
+  font-weight: 700;
+  width: 120px;
+}
+
+.rk-ranks__del-col { width: 70px; text-align: center; }
+
+.rk-ranks__holders {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.rk-ranks__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--primary-soft, #e7f1fb);
+  color: var(--primary-dark, #246aa6);
+  border-radius: 14px;
+  padding: 3px 6px 3px 10px;
+  font-size: 12px;
+}
+
+.rk-ranks__chip button {
+  border: none;
+  background: rgba(0, 0, 0, .12);
+  color: #fff;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  line-height: 1;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.rk-ranks__add {
+  border: 1px dashed var(--primary, #2f80c4);
+  background: #fff;
+  color: var(--primary, #2f80c4);
+  border-radius: 14px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.rk-ranks__count { color: var(--muted, #6b7785); font-size: 12px; margin-left: 2px; }
+
+.rk-ranks__del {
+  border: none;
+  background: transparent;
+  color: var(--low, #d64545);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.rk-ranks__new {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  max-width: 420px;
+}
+
+.rk-ranks__new .text-input { flex: 1; }
+
 .rk-shift-toolbar {
   border-bottom: 1px solid var(--rk-rule);
   background: #fff;
@@ -2404,5 +2620,327 @@ button.rk-shift-chip:focus-visible {
   .rk-manager {
     padding-right: 10px;
     padding-left: 10px;
+  }
+}
+
+/* ===== スタッフ向け スマホ／LINE風シェル ===== */
+:root {
+  --line-green: #06c755;
+  --line-green-dark: #05a648;
+  --line-bubble: #e9fce9;
+}
+
+.line-stage {
+  min-height: 100vh;
+  background: #c5dbd0;
+  background-image: radial-gradient(circle at 30% 20%, #d8ece0, #b6cfc4);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 18px 12px 40px;
+}
+
+.line-phone {
+  width: 100%;
+  max-width: 430px;
+  background: #fff;
+  border: 1px solid var(--line, #dfe3ea);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, .14);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 58px);
+}
+
+.line-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #fff;
+  color: var(--text);
+  border-bottom: 1px solid var(--line, #e2e6ee);
+}
+
+.line-head__title {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.line-head__logout {
+  border: 1px solid var(--line, #c8cfd9);
+  background: #fff;
+  color: var(--muted, #5b6573);
+  padding: 5px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.line-head__logout:hover { background: #f2f4f8; }
+
+.line-body {
+  padding: 14px 14px 26px;
+  flex: 1;
+}
+
+.line-bubble {
+  position: relative;
+  margin: 4px 0 14px 44px;
+  padding: 11px 13px;
+  background: #fff;
+  border-radius: 4px 14px 14px 14px;
+  box-shadow: var(--sh-sm);
+  font-size: 13px;
+  color: var(--text);
+}
+
+.line-bubble::before {
+  content: '';
+  position: absolute;
+  left: -42px;
+  top: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--line-green) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M12 3C7 3 3 6.4 3 10.6c0 2.5 1.6 4.7 4 6-.2.7-.7 2-1 2.6 1.4-.5 2.9-1.3 3.7-1.8.7.1 1.5.2 2.3.2 5 0 9-3.4 9-7.6S17 3 12 3z'/%3E%3C/svg%3E") center/20px no-repeat;
+}
+
+.line-segment {
+  display: flex;
+  width: 100%;
+}
+
+.line-segment button {
+  flex: 1;
+}
+
+.line-segment button.active {
+  color: var(--line-green-dark);
+}
+
+/* スタッフ希望提出（らくしふLINE準拠：日ごとの縦リスト・無着色・フラット） */
+.rk-staff-submit { position: relative; }
+
+.rk-staff-period {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 2px 12px;
+  border-bottom: 1px solid var(--line, #e2e6ee);
+  margin-bottom: 10px;
+}
+.rk-staff-period__label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--line-green-dark, #05a648);
+  border-radius: 4px;
+  padding: 2px 8px;
+}
+.rk-staff-period__range { font-size: 14px; font-weight: 700; }
+
+.rk-staff-submit__done {
+  background: #e9fbef;
+  border: 1px solid #79d79a;
+  color: #1f7a44;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.rk-staff-submit__tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 10px;
+}
+
+.rk-staff-submit__bulk {
+  border: 1px solid var(--line, #c8cfd9);
+  background: #fff;
+  color: var(--text);
+  border-radius: 6px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rk-staff-submit__clear {
+  border: 1px solid var(--low, #d64545);
+  color: var(--low, #d64545);
+  background: #fff;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.rk-staff-submit__list {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 70px;
+  border-top: 1px solid var(--line, #e6e9ee);
+}
+
+.rk-staff-day {
+  background: #fff;
+  border-bottom: 1px solid var(--line, #e6e9ee);
+  padding: 10px 2px 12px;
+}
+
+.rk-staff-day__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 2px 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.rk-staff-day__date {
+  font-weight: 700;
+  font-size: 14px;
+  min-width: 70px;
+}
+
+.rk-staff-day__value {
+  flex: 1;
+  border: 1px solid var(--line, #d8dde3);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  background: #fff;
+  color: var(--text);
+}
+.rk-staff-day__value.is-empty { color: #aab1bc; font-weight: 400; }
+
+.rk-staff-day__chevron { color: #b9c0cb; font-size: 18px; }
+
+.rk-staff-day__memo {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid var(--line, #eceff3);
+  padding: 7px 2px;
+  font-size: 13px;
+  margin-top: 8px;
+}
+.rk-staff-day__memo:focus { outline: none; border-bottom-color: var(--line-green, #06c755); }
+
+.rk-staff-day__status {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--muted, #8a93a0);
+}
+
+.rk-staff-submit__bar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  margin: 0 -14px -26px;
+  background: #fff;
+  border-top: 1px solid var(--line, #e2e6ee);
+}
+
+.rk-staff-submit__count {
+  display: flex;
+  flex-direction: column;
+  font-weight: 700;
+  font-size: 14px;
+}
+.rk-staff-submit__count small { font-size: 11px; font-weight: 400; color: var(--muted); }
+
+.rk-staff-submit__go {
+  border: none;
+  background: var(--line-green, #06c755);
+  color: #fff;
+  border-radius: 6px;
+  padding: 11px 22px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* 中央モーダルの出勤/休み・早番/遅番セレクタ */
+.rk-attend { display: flex; flex-direction: column; gap: 14px; }
+.rk-attend__row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.rk-attend__btn {
+  border: 1px solid var(--line, #d8dde3);
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.rk-attend__btn.is-on { border-color: var(--line-green, #06c755); background: #ebfbf0; color: var(--line-green-dark, #05a648); }
+.rk-attend__off.is-on { border-color: var(--off, #9aa4b0); background: var(--off-soft, #eef1f4); color: var(--off, #6b7682); }
+.rk-attend__slots { display: flex; flex-direction: column; gap: 10px; }
+.rk-attend__hint { margin: 0; font-size: 12px; color: var(--muted); }
+.rk-attend__slot {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  border: 1px solid var(--line, #d8dde3);
+  background: #fff;
+  border-radius: 8px;
+  padding: 13px 16px;
+  cursor: pointer;
+  text-align: left;
+}
+.rk-attend__slot strong { font-size: 15px; }
+.rk-attend__slot small { font-size: 12px; color: var(--muted); }
+.rk-attend__slot:hover { border-color: var(--line-green, #06c755); background: #f4fdf7; }
+
+/* 角丸をやめて四角に統一（スタッフ画面） */
+.line-phone,
+.rk-staff-submit__done,
+.rk-staff-submit__bulk,
+.rk-staff-submit__clear,
+.rk-staff-submit__go,
+.rk-staff-period__label,
+.rk-staff-day__value,
+.rk-attend__btn,
+.rk-attend__slot,
+.line-segment,
+.line-segment button,
+.line-body .month-nav button,
+.line-head__logout { border-radius: 0 !important; }
+
+/* シフト提出バーを常に画面下に固定表示 */
+.rk-staff-submit__bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  box-shadow: 0 -2px 8px rgba(15, 23, 42, .06);
+}
+
+/* スマホ実機ではフレームを外して全画面 */
+@media (max-width: 480px) {
+  .line-stage {
+    padding: 0;
+    background: #f7f8fa;
+  }
+  .line-phone {
+    max-width: none;
+    border-radius: 0;
+    box-shadow: none;
+    min-height: 100vh;
   }
 }
