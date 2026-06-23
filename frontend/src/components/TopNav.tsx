@@ -16,7 +16,7 @@ import {
 type ModalKind =
   | null | 'staff' | 'regStaff' | 'regAdmin' | 'rank' | 'skills' | 'sales' | 'cost' | 'sph'
   | 'laborStatus' | 'attendance' | 'hoursAlert' | 'stores' | 'dept' | 'perm'
-  | 'import' | 'integ' | 'hours' | 'collect' | 'notify' | 'display' | 'help' | 'account' | 'model';
+  | 'import' | 'integ' | 'hours' | 'collect' | 'notify' | 'display' | 'help' | 'account' | 'model' | 'recruit';
 
 const TITLES: Record<Exclude<ModalKind, null>, string> = {
   staff: 'スタッフ一覧', regStaff: 'スタッフ登録', regAdmin: '管理者登録',
@@ -25,7 +25,7 @@ const TITLES: Record<Exclude<ModalKind, null>, string> = {
   hoursAlert: '労働時間アラート', stores: '店舗管理', dept: '部門', perm: '権限設定',
   import: 'CSVインポート', integ: '連携設定', hours: '営業時間', collect: 'シフト回収設定',
   notify: '通知設定', display: '表示設定', help: '使い方', account: 'アカウント設定',
-  model: 'モデルシフト',
+  model: 'モデルシフト', recruit: '追加募集',
 };
 
 const FONT_SIZES: { value: 'small' | 'standard' | 'large'; label: string }[] = [
@@ -63,6 +63,7 @@ const ENABLED_SECTIONS = new Set<ManagerSection>([
   'collection-settings',
   'notification-settings',
   'model-shift',
+  'recruitment',
 ]);
 
 function yen(n: number): string { return `¥${n.toLocaleString('ja-JP')}`; }
@@ -71,7 +72,7 @@ function assignedDays(assignments: ReturnType<typeof useApp>['assignments'], sta
 }
 
 export function TopNav({ onHome }: { onHome?: () => void }) {
-  const { me, logout, stores, staff, assignments, storeId, month, updateStaff, createStaff } = useApp();
+  const { me, logout, stores, staff, assignments, storeId, month, updateStaff, createStaff, recruitments, setRecruitment } = useApp();
   const { showToast } = useToast();
   const [modal, setModal] = useState<ModalKind>(null);
   const [importInfo, setImportInfo] = useState<{ count: number; sample: string[] } | null>(null);
@@ -103,8 +104,21 @@ export function TopNav({ onHome }: { onHome?: () => void }) {
     `akiyume-required:${storeId}:${modelPos}`,
     { morning: 2, afternoon: 2, night: 2 },
   );
+  const [recruitDate, setRecruitDate] = useState('');
+  const [recruitMsg, setRecruitMsg] = useState('');
 
   const dates = getMonthDates(Number(month.slice(0, 4)), Number(month.slice(5, 7)));
+  const mdLabel = (date: string) => `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`;
+  const activeRecruitDate = recruitDate || dates[0] || '';
+
+  async function addRecruit() {
+    const msg = recruitMsg.trim();
+    if (!activeRecruitDate) { showToast('募集日を選択してください'); return; }
+    if (!msg) { showToast('募集メッセージを入力してください'); return; }
+    await setRecruitment(activeRecruitDate, msg);
+    showToast(`${mdLabel(activeRecruitDate)} の追加募集を登録しました ✓`);
+    setRecruitMsg('');
+  }
   const storeName = stores.find((s) => String(s.id) === String(storeId))?.name ?? '店舗';
   const totalHours = dates.reduce((s, d) => s + dailyWorkHours(assignments, d), 0);
   const totalCost = dates.reduce((s, d) => s + dailyLaborCost(assignments, d), 0);
@@ -154,6 +168,7 @@ export function TopNav({ onHome }: { onHome?: () => void }) {
       'collection-settings': 'collect',
       'notification-settings': 'notify',
       'model-shift': 'model',
+      recruitment: 'recruit',
     };
 
     if (section === 'shift-table' || section === 'confirmed-shifts') {
@@ -504,6 +519,61 @@ export function TopNav({ onHome }: { onHome?: () => void }) {
                 />
               </label>
             ))}
+          </div>
+        )}
+
+        {modal === 'recruit' && (
+          <div className="settings-form">
+            <p className="muted-sm">
+              人手が足りない日にメッセージ付きで追加募集を出します。シフト表ツールバーの「追加募集◯件」に反映されます。
+            </p>
+            <label className="settings-row">
+              <span>募集日</span>
+              <select
+                aria-label="募集日"
+                value={activeRecruitDate}
+                onChange={(e) => setRecruitDate(e.target.value)}
+              >
+                {dates.map((d) => <option key={d} value={d}>{mdLabel(d)}</option>)}
+              </select>
+            </label>
+            <label className="settings-row">
+              <span>メッセージ</span>
+              <input
+                className="text-input"
+                aria-label="募集メッセージ"
+                placeholder="例：18時以降ホール1名募集"
+                value={recruitMsg}
+                onChange={(e) => setRecruitMsg(e.target.value)}
+              />
+            </label>
+            <button type="button" className="btn btn-primary" onClick={() => void addRecruit()}>
+              募集を追加
+            </button>
+
+            <ul className="modal-list">
+              {recruitments.filter((r) => r.message.trim()).length === 0 ? (
+                <li><span className="muted-sm">現在この月の追加募集はありません。</span></li>
+              ) : (
+                recruitments
+                  .filter((r) => r.message.trim())
+                  .sort((a, b) => a.date.localeCompare(b.date))
+                  .map((r) => (
+                    <li key={r.date}>
+                      <span className="staff-li-name">
+                        {mdLabel(r.date)}　{r.message}
+                      </span>
+                      <button
+                        type="button"
+                        className="tb-btn sm"
+                        onClick={() => void setRecruitment(r.date, '')}
+                      >
+                        削除
+                      </button>
+                    </li>
+                  ))
+              )}
+            </ul>
           </div>
         )}
       </Modal>
