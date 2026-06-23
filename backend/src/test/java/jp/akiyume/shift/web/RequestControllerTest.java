@@ -20,17 +20,11 @@ class RequestControllerTest {
 
     @Test
     @WithMockUser(username = "nakashima-1")
-    void putRequest_mid_thenGet_showsMid() throws Exception {
+    void putRequest_mid_isRejected() throws Exception {
         mvc.perform(put("/api/requests")
                 .contentType("application/json")
                 .content("{\"date\":\"2026-07-01\",\"value\":\"mid\"}"))
-           .andExpect(status().isOk());
-
-        // 中島店(id=1) の7月希望に中番が含まれる
-        mvc.perform(get("/api/stores/1/requests?month=2026-07"))
-           .andExpect(status().isOk())
-           .andExpect(jsonPath("$.length()").value(1))
-           .andExpect(jsonPath("$[0].slot").value("mid"));
+           .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -44,5 +38,30 @@ class RequestControllerTest {
            .andExpect(status().isOk())
            .andExpect(jsonPath("$.length()").value(1))
            .andExpect(jsonPath("$[0].slot").value("off"));
+    }
+
+    @Test
+    @WithMockUser(username = "nakashima-1")
+    void submitRequests_savesRequestsAndNotesTogether() throws Exception {
+        mvc.perform(put("/api/requests/submission")
+                .contentType("application/json")
+                .content("""
+                    {"entries":[
+                      {"date":"2026-07-10","value":"early","startTime":"10:00","endTime":"18:30","note":"午前希望です"},
+                      {"date":"2026-07-11","value":"off","note":""}
+                    ]}
+                    """))
+           .andExpect(status().isOk());
+
+        mvc.perform(get("/api/stores/1/requests?month=2026-07"))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$[?(@.date == '2026-07-10')].slot").value("early"))
+           .andExpect(jsonPath("$[?(@.date == '2026-07-10')].startTime").value("10:00"))
+           .andExpect(jsonPath("$[?(@.date == '2026-07-10')].endTime").value("18:30"))
+           .andExpect(jsonPath("$[?(@.date == '2026-07-11')].slot").value("off"));
+
+        mvc.perform(get("/api/stores/1/day-notes?month=2026-07"))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$[?(@.date == '2026-07-10')].text").value("午前希望です"));
     }
 }

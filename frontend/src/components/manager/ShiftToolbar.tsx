@@ -9,9 +9,14 @@ interface ShiftToolbarProps {
   view: ManagerView;
   periodLabel: string;
   deadlineLabel: string;
+  /** シフト回収設定の対象月（"YYYY-MM"）。シフト表で表示中の月と異なる場合に注意ヒントを出すために使う。 */
+  collectionMonth?: string;
+  /** シフト表で現在表示中の月（"YYYY-MM"）。 */
+  viewMonth?: string;
   unconfirmedCount: number;
   recruitmentCount: number;
   shiftMode: 'assignment' | 'confirmed';
+  shiftStatus: 'DRAFT' | 'ADJUSTING' | 'CONFIRMED' | 'PUBLISHED' | 'CHANGING' | 'REPUBLISHED';
   onStoreChange: (storeId: string) => void;
   onPositionChange: (position: string) => void;
   onViewChange: (view: ManagerView) => void;
@@ -19,6 +24,7 @@ interface ShiftToolbarProps {
   onNext: () => void;
   onToday: () => void;
   onConfirm: () => void;
+  onPublish: () => void;
   onPrint: () => void;
   onOpenShiftTypes: () => void;
   onOpenDisplayItems: () => void;
@@ -41,9 +47,12 @@ export function ShiftToolbar({
   view,
   periodLabel,
   deadlineLabel,
+  collectionMonth,
+  viewMonth,
   unconfirmedCount,
   recruitmentCount,
   shiftMode,
+  shiftStatus,
   onStoreChange,
   onPositionChange,
   onViewChange,
@@ -51,6 +60,7 @@ export function ShiftToolbar({
   onNext,
   onToday,
   onConfirm,
+  onPublish,
   onPrint,
   onOpenShiftTypes,
   onOpenDisplayItems,
@@ -95,6 +105,14 @@ export function ShiftToolbar({
             ? <span className="rk-shift-toolbar__warning">未確定あり {unconfirmedCount}件</span>
             : <span className="rk-shift-toolbar__confirmed">確定済み</span>}
         </button>
+        <button
+          type="button"
+          className="rk-shift-toolbar__publish"
+          disabled={shiftStatus !== 'CONFIRMED' && shiftStatus !== 'REPUBLISHED'}
+          onClick={onPublish}
+        >
+          {shiftStatus === 'PUBLISHED' ? '公開済み' : 'スタッフへ公開'}
+        </button>
         <button type="button" onClick={onPrint}>印刷</button>
         <button type="button" onClick={onOpenShiftTypes}>シフトの種類</button>
         <div className="rk-shift-mode-switch" aria-label="シフト表示">
@@ -132,8 +150,13 @@ export function ShiftToolbar({
         <button type="button" aria-label="前へ" onClick={onPrevious}>‹</button>
         <button type="button" aria-label="次へ" onClick={onNext}>›</button>
         <span className="rk-shift-toolbar__period">{periodLabel}</span>
-        <button type="button" onClick={onToday}>今月</button>
+        <button type="button" onClick={onToday}>翌月</button>
         <span className="rk-shift-toolbar__deadline">提出期間 {deadlineLabel}</span>
+        {collectionMonth && viewMonth && collectionMonth !== viewMonth && (
+          <span className="rk-shift-toolbar__collection-hint">
+            回収中：{collectionMonth.replace('-', '年')}月（表示中の月とは異なります）
+          </span>
+        )}
         <button type="button" onClick={onOpenDisplayItems}>表示項目設定</button>
         <button type="button" onClick={onOpenRecruitment}>
           追加募集中 {recruitmentCount}件

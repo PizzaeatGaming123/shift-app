@@ -1,36 +1,82 @@
 import { useApp } from '../store/AppContext';
-import { MonthCalendar } from './MonthCalendar';
-import { WORK_SLOTS, SLOT_LABELS } from '../constants';
+import { getMonthDates } from '../lib/date';
+import { useSetting } from '../lib/settings';
+import { shiftStatusSettingKey, type ShiftPlanStatus } from '../lib/shiftStatus';
+import { ShiftTable } from './manager/ShiftTable';
+import { DEFAULT_WEEKDAY_REQUIRED, requiredForDate } from './manager/modelShift';
 
 interface SharedViewProps { year: number; month: number; }
 
+/** スタッフ画面の「確定シフト」。店長と同じマトリクスを、自分1人分・サマリ行なしで表示する。 */
 export function SharedView({ year, month }: SharedViewProps) {
-  const { staff, assignments } = useApp();
-  const nameOf = (id: string) => staff.find((s) => s.id === id)?.name ?? '';
-  const hasAny = assignments.some((assignment) => assignment.staffIds.length > 0);
+  const { me, staff, assignments, requests, dayNotes, storeId } = useApp();
+  const monthKey = `${year}-${String(month).padStart(2, '0')}`;
+  const statusKey = shiftStatusSettingKey(storeId, monthKey);
+  const hasExplicitStatus = localStorage.getItem(statusKey) !== null;
+  const [shiftStatus] = useSetting<ShiftPlanStatus>(statusKey, 'DRAFT');
+  const myId = me ? String(me.id) : '';
+  const mySelf = staff.find((s) => s.id === myId);
+  const published = !hasExplicitStatus
+    ? assignments.some((assignment) => assignment.staffIds.length > 0)
+    : shiftStatus === 'PUBLISHED' || shiftStatus === 'REPUBLISHED';
+  const hasAny = published && assignments.some((assignment) => assignment.staffIds.length > 0);
+
+  const dates = getMonthDates(year, month);
+
+  if (!published) {
+    return (
+      <section className="shared-view">
+        <div className="empty-inline">店長が確定したシフトは、公開後に表示されます。</div>
+      </section>
+    );
+  }
+  if (!hasAny) {
+    return (
+      <section className="shared-view">
+        <div className="empty-inline">公開済みの勤務予定はありません。</div>
+      </section>
+    );
+  }
+  if (!mySelf) {
+    return (
+      <section className="shared-view">
+        <div className="empty-inline">あなたのシフトデータが見つかりません。</div>
+      </section>
+    );
+  }
+
+  // 自分を最上段に固定し、その下に他のスタッフ（社員・バイト・パート）を並べる
+  const others = staff.filter((person) => person.role === 'STAFF' && person.id !== myId);
 
   return (
-    <section className="shared-view">
-      <p className="hint">確定したシフトです。各日の出勤者を確認できます。</p>
-      {!hasAny && <div className="empty-inline">まだ確定したシフトがありません。</div>}
-      <MonthCalendar
-        year={year}
-        month={month}
-        renderCell={(date) => (
-          <>
-            {WORK_SLOTS.map((slot) => {
-              const a = assignments.find((x) => x.date === date && x.slot === slot);
-              const names = (a?.staffIds ?? []).map(nameOf).filter(Boolean);
-              if (names.length === 0) return null;
-              return (
-                <div key={slot} className="shared-slot">
-                  <span className={`chip ${slot}`}>{SLOT_LABELS[slot]}</span>
-                  <span className="shared-names">{names.join('、')}</span>
-                </div>
-              );
-            })}
-          </>
-        )}
+    <section className="shared-view shared-view--self">
+      <ShiftTable
+        dates={dates}
+        staff={[mySelf, ...others]}
+        requests={requests}
+        assignments={assignments}
+        notes={dayNotes}
+        storeNotes={[]}
+        positionNotes={{}}
+        layers={{
+          showSummary: false,
+          pinHeader: false,
+          onlyAssigned: false,
+          showPatterns: true,
+          showRequests: true,
+          showTasks: true,
+          showNotes: true,
+          visibleSlots: { early: true, late: true, any: true, off: true },
+        }}
+        density="small"
+        sortMode="default"
+        salesTarget={0}
+        requiredByBand={(date) => requiredForDate(DEFAULT_WEEKDAY_REQUIRED, date)}
+        visibleSummaryItems={[]}
+        onToggleAssignment={() => { /* read-only */ }}
+        onStoreNoteChange={() => { /* read-only */ }}
+        onPositionNoteChange={() => { /* read-only */ }}
+        onSortChange={() => { /* read-only */ }}
       />
     </section>
   );

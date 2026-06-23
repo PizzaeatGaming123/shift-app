@@ -27,13 +27,13 @@ it('モデルシフト: 曜日ごとの必要人数を変更すると akiyume-mo
   const user = userEvent.setup();
   renderSection('model-shift');
 
-  const monMorning = await screen.findByLabelText('09:00 - 14:00 月曜の必要人数');
-  await user.clear(monMorning);
-  await user.type(monMorning, '5');
+  const monEarly = await screen.findByLabelText('早番 7:00〜16:00 月曜の必要人数');
+  await user.clear(monEarly);
+  await user.type(monEarly, '5');
 
   const saved = JSON.parse(localStorage.getItem('akiyume-model:1:ホール')!);
   // 月曜 = getDay 1
-  expect(saved.morning[1]).toBe(5);
+  expect(saved.early[1]).toBe(5);
 });
 
 it('追加募集: メッセージを入力して追加すると recruitments へPUTされる', async () => {
@@ -70,4 +70,39 @@ it('ランク・スキル: タブとランク階層S〜Dを表示し、保有者
   // スキルタブへ
   await user.click(screen.getByRole('tab', { name: 'スキル' }));
   expect(await screen.findByRole('rowheader', { name: 'キッチン' })).toBeInTheDocument();
+});
+
+it('シフトパターン: 早番と遅番の時刻を店舗ごとに保存する', async () => {
+  const user = userEvent.setup();
+  renderSection('shift-patterns');
+
+  const earlyStart = await screen.findByLabelText('早番の開始時刻');
+  expect(earlyStart).toHaveValue('07:00');
+  await user.clear(earlyStart);
+  await user.type(earlyStart, '06:30');
+
+  const saved = JSON.parse(localStorage.getItem('akiyume-shift-patterns:1')!);
+  expect(saved.early.start).toBe('06:30');
+  expect(saved.late.end).toBe('24:00');
+});
+
+it('回収状況: 提出済みと未提出を集計して表示する', async () => {
+  renderSection('collection');
+
+  expect(await screen.findByText('対象スタッフ')).toBeInTheDocument();
+  expect(screen.getAllByText('未提出')).toHaveLength(2);
+  expect(screen.getByRole('button', { name: '未提出者へ一括通知' })).toBeInTheDocument();
+});
+
+it('固定シフト: 曜日ルールを店舗設定へ保存する', async () => {
+  const user = userEvent.setup();
+  renderSection('fixed-shifts');
+
+  await user.selectOptions(await screen.findByLabelText('スタッフ'), '2');
+  await user.selectOptions(screen.getByLabelText('曜日'), '6');
+  await user.click(screen.getByRole('button', { name: '固定シフトを追加' }));
+
+  const saved = JSON.parse(localStorage.getItem('akiyume-fixed-shifts:1')!);
+  expect(saved).toHaveLength(1);
+  expect(saved[0]).toMatchObject({ staffId: '2', weekday: 6, value: 'early' });
 });

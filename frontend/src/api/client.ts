@@ -8,8 +8,21 @@ export interface Me {
 }
 export interface ApiStore { id: number; name: string; }
 export interface ApiStaff { id: number; name: string; employmentType: string; role: string; rank?: number | null; skills?: string | null; }
-export interface ApiRequest { staffId: number; date: string; slot: 'early' | 'mid' | 'late' | 'off'; }
-export interface ApiAssignment { date: string; slot: 'early' | 'mid' | 'late'; staffId: number; }
+export interface ApiRequest {
+  staffId: number;
+  date: string;
+  slot: 'early' | 'late' | 'off';
+  startTime?: string | null;
+  endTime?: string | null;
+}
+export interface ApiAssignment { date: string; slot: 'early' | 'late'; staffId: number; }
+export interface RequestSubmissionEntry {
+  date: string;
+  value: DayRequestValue;
+  startTime?: string | null;
+  endTime?: string | null;
+  note: string;
+}
 export interface ApiDayNote { staffId: number; date: string; text: string; }
 export interface ApiStoreNote { date: string; text: string; }
 export interface ApiRecruitment { date: string; message: string; }
@@ -81,11 +94,21 @@ export const api = {
     return json<ApiRequest[]>(res);
   },
 
+  async submitRequests(entries: RequestSubmissionEntry[]): Promise<void> {
+    const res = await fetch('/api/requests/submission', {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entries }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  },
+
   async assignments(storeId: number, month: string): Promise<ApiAssignment[]> {
     return json<ApiAssignment[]>(await fetch(`/api/stores/${storeId}/assignments?month=${month}`, { credentials: 'include' }));
   },
 
-  async assign(storeId: number, date: string, slot: 'early' | 'mid' | 'late', staffId: number): Promise<void> {
+  async assign(storeId: number, date: string, slot: 'early' | 'late', staffId: number): Promise<void> {
     await fetch('/api/assignments', {
       method: 'POST',
       credentials: 'include',
@@ -94,7 +117,7 @@ export const api = {
     });
   },
 
-  async unassign(storeId: number, date: string, slot: 'early' | 'mid' | 'late', staffId: number): Promise<void> {
+  async unassign(storeId: number, date: string, slot: 'early' | 'late', staffId: number): Promise<void> {
     await fetch('/api/assignments', {
       method: 'DELETE',
       credentials: 'include',

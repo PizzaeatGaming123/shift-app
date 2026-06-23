@@ -22,16 +22,32 @@ public class ShiftRequest {
     @Column(nullable = false)
     private RequestSlot slot;
 
+    @Column(length = 5)
+    private String startTime;
+
+    @Column(length = 5)
+    private String endTime;
+
     protected ShiftRequest() {}
 
     public ShiftRequest(Staff staff, LocalDate date, RequestSlot slot) {
+        this(staff, date, slot,
+                slot == RequestSlot.EARLY ? "07:00" : slot == RequestSlot.LATE ? "15:00" : null,
+                slot == RequestSlot.EARLY ? "16:00" : slot == RequestSlot.LATE ? "24:00" : null);
+    }
+
+    public ShiftRequest(Staff staff, LocalDate date, RequestSlot slot, String startTime, String endTime) {
         this.staff = staff;
         this.date = date;
         this.slot = slot;
+        this.startTime = startTime;
+        this.endTime = endTime;
     }
 
     public Long getId() { return id; }
     public Staff getStaff() { return staff; }
     public LocalDate getDate() { return date; }
     public RequestSlot getSlot() { return slot; }
+    public String getStartTime() { return startTime; }
+    public String getEndTime() { return endTime; }
 }

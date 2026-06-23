@@ -10,10 +10,6 @@ describe('getDayRequest', () => {
     const reqs: ShiftRequest[] = [{ staffId: 'p1', date: '2026-06-01', slot: 'early' }];
     expect(getDayRequest(reqs, 'p1', '2026-06-01')).toBe('early');
   });
-  it('returns mid for a single mid slot', () => {
-    const reqs: ShiftRequest[] = [{ staffId: 'p1', date: '2026-06-01', slot: 'mid' }];
-    expect(getDayRequest(reqs, 'p1', '2026-06-01')).toBe('mid');
-  });
   it('returns off for a holiday request', () => {
     const reqs: ShiftRequest[] = [{ staffId: 'p1', date: '2026-06-01', slot: 'off' }];
     expect(getDayRequest(reqs, 'p1', '2026-06-01')).toBe('off');
@@ -26,8 +22,8 @@ describe('setDayRequest', () => {
       { staffId: 'p1', date: '2026-06-01', slot: 'early' },
       { staffId: 'p2', date: '2026-06-01', slot: 'late' },
     ];
-    const next = setDayRequest(reqs, 'p1', '2026-06-01', 'mid');
-    expect(getDayRequest(next, 'p1', '2026-06-01')).toBe('mid');
+    const next = setDayRequest(reqs, 'p1', '2026-06-01', 'late');
+    expect(getDayRequest(next, 'p1', '2026-06-01')).toBe('late');
     // p2 は影響を受けない
     expect(getDayRequest(next, 'p2', '2026-06-01')).toBe('late');
   });

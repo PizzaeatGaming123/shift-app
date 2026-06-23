@@ -84,7 +84,7 @@ export function formatDuration(hours: number): string {
 }
 
 interface ShiftDescriptor {
-  slot: WorkSlot | 'off';
+  slot: WorkSlot | 'any' | 'off';
   label: string;
   time: string | null;
 }
@@ -127,8 +127,16 @@ export function getShiftCellModel({
     request: request
       ? {
           slot: request.slot,
-          label: request.slot === 'off' ? '休み' : SLOT_LABELS[request.slot],
-          time: request.slot === 'off' ? null : SLOT_TIMES[request.slot],
+          label: request.slot === 'off'
+            ? '休み'
+            : request.slot === 'any'
+              ? 'どちらでも'
+              : SLOT_LABELS[request.slot],
+          time: request.slot === 'off' || request.slot === 'any'
+            ? null
+            : request.startTime && request.endTime
+              ? `${request.startTime}-${request.endTime}`
+              : SLOT_TIMES[request.slot],
         }
       : null,
     assignment: assignment
@@ -156,14 +164,16 @@ export function getDailySummary({
   assignments,
   staff,
   salesTarget,
+  slotHours,
 }: {
   date: string;
   assignments: Assignment[];
   staff: Staff[];
   salesTarget: number;
+  slotHours?: Record<WorkSlot, number>;
 }): DailySummary {
-  const workHours = dailyWorkHours(assignments, date);
-  const laborCost = dailyLaborCost(assignments, date);
+  const workHours = dailyWorkHours(assignments, date, slotHours);
+  const laborCost = dailyLaborCost(assignments, date, slotHours);
   return {
     sales: salesTarget,
     workHours,

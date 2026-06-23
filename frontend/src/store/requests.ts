@@ -9,8 +9,8 @@ export function getDayRequest(
     .filter((r) => r.staffId === staffId && r.date === date)
     .map((r) => r.slot);
   if (slots.includes('off')) return 'off';
+  if (slots.includes('any')) return 'any';
   if (slots.includes('early')) return 'early';
-  if (slots.includes('mid')) return 'mid';
   if (slots.includes('late')) return 'late';
   return 'none';
 }
@@ -25,8 +25,8 @@ export function setDayRequest(
   const others = requests.filter((r) => !(r.staffId === staffId && r.date === date));
   const added: ShiftRequest[] = [];
   if (value === 'early') added.push({ staffId, date, slot: 'early' });
-  if (value === 'mid') added.push({ staffId, date, slot: 'mid' });
   if (value === 'late') added.push({ staffId, date, slot: 'late' });
+  if (value === 'any') added.push({ staffId, date, slot: 'any' });
   if (value === 'off') added.push({ staffId, date, slot: 'off' });
   return [...others, ...added];
 }

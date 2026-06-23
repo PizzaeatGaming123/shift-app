@@ -17,9 +17,8 @@ export type SummaryItemKey =
   | 'positionNote';
 
 export interface RequiredByBand {
-  morning: number;
-  afternoon: number;
-  night: number;
+  early: number;
+  late: number;
 }
 
 interface ShiftTableSummaryRowsProps {
@@ -33,6 +32,7 @@ interface ShiftTableSummaryRowsProps {
   requiredByBand: (date: string) => RequiredByBand;
   onStoreNoteChange: (date: string, text: string) => void;
   onPositionNoteChange: (date: string, text: string) => void;
+  slotHours?: Record<WorkSlot, number>;
 }
 
 const BANDS: {
@@ -40,9 +40,8 @@ const BANDS: {
   label: string;
   slots: WorkSlot[];
 }[] = [
-  { key: 'morning', label: '09:00 - 14:00', slots: ['early', 'mid'] },
-  { key: 'afternoon', label: '14:00 - 19:00', slots: ['early', 'mid', 'late'] },
-  { key: 'night', label: '19:00 - 23:00', slots: ['mid', 'late'] },
+  { key: 'early', label: '早番 7:00〜16:00', slots: ['early'] },
+  { key: 'late', label: '遅番 15:00〜24:00', slots: ['late'] },
 ];
 
 function yen(value: number): string {
@@ -69,12 +68,13 @@ export function ShiftTableSummaryRows({
   requiredByBand,
   onStoreNoteChange,
   onPositionNoteChange,
+  slotHours,
 }: ShiftTableSummaryRowsProps) {
   const visible = new Set(visibleItems);
   const summaries = new Map(
     dates.map((date) => [
       date,
-      getDailySummary({ date, assignments, staff, salesTarget }),
+      getDailySummary({ date, assignments, staff, salesTarget, slotHours }),
     ]),
   );
 

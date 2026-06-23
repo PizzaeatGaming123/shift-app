@@ -5,7 +5,6 @@ export interface RequestSummary {
   total: number;
   submitted: number;
   early: number;
-  mid: number;
   late: number;
   off: number;
 }
@@ -17,7 +16,6 @@ export function summarizeRequests(
 ): RequestSummary {
   let submitted = 0;
   let early = 0;
-  let mid = 0;
   let late = 0;
   let off = 0;
 
@@ -27,11 +25,10 @@ export function summarizeRequests(
 
     submitted += 1;
     if (value === 'early') early += 1;
-    else if (value === 'mid') mid += 1;
     else if (value === 'late') late += 1;
     else if (value === 'off') off += 1;
   }
 
-  return { total: dates.length, submitted, early, mid, late, off };
+  return { total: dates.length, submitted, early, late, off };
 }
 
