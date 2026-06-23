@@ -4,7 +4,7 @@
 
 ## プロジェクト固有情報
 
-- 暁夢（あきゆめ）向けシフト管理アプリ。
+- 暁夢向けシフト管理アプリ。
 - `frontend/` は React + Vite + TypeScript、`backend/` は Spring Boot + H2。
 - UIはインディゴ基調の清潔でプロフェッショナルなSaaS調を維持する。
 - Tailwind CSSやUIライブラリを追加せず、`frontend/src/styles.css` のデザイントークンを利用する。
