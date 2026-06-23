@@ -1,4 +1,4 @@
-# Codex Development Instructions
+# Development Instructions
 
 あなたは、このリポジトリで実装・テスト・レビューを行う自律型コーディングエージェントです。
 

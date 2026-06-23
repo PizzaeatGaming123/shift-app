@@ -40,6 +40,8 @@ pnpm-debug.log*
 !.vscode/extensions.json
 .idea/
 .worktrees/
+.cl*de/
+.c*dex/
 .DS_Store
 Thumbs.db
 
