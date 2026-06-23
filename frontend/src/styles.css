@@ -1907,8 +1907,7 @@ button.cal-cell:active {
   width: 100%;
   min-width: 1120px;
   min-height: calc(100vh - 48px);
-  padding: 0 0 48px;
-  background: var(--rk-bg, #f4f6fa);
+  background: var(--rk-bg, #eef1f6);
   color: var(--rk-text);
   font-family: var(--rk-font);
 }
@@ -1916,38 +1915,45 @@ button.cal-cell:active {
 .rk-section-screen__head {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px 24px;
+  gap: 12px;
+  padding: 0 24px;
+  height: 46px;
   background: #fff;
-  border-bottom: 1px solid var(--rk-rule, #e2e6ee);
+  border-bottom: 1px solid var(--rk-rule, #dfe3ea);
 }
 
 .rk-section-screen__back {
   border: 1px solid var(--rk-rule, #d4d9e3);
   background: #fff;
-  color: var(--rk-text);
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-size: 13px;
+  color: var(--rk-muted, #5b6573);
+  border-radius: 4px;
+  padding: 5px 11px;
+  font-size: 12px;
   cursor: pointer;
 }
 
-.rk-section-screen__back:hover { background: #f0f3f9; }
+.rk-section-screen__back:hover { background: #f0f3f9; color: var(--rk-text); }
 
 .rk-section-screen__title {
   margin: 0;
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 700;
+  letter-spacing: .01em;
 }
 
+/* 業務SaaS風: 全幅・左寄せ・密度高め。中央寄せの浮いたカードにしない */
 .rk-section-screen__body {
-  margin: 20px auto;
-  max-width: 860px;
-  padding: 22px 26px;
+  margin: 16px;
+  padding: 20px 22px;
   background: #fff;
-  border: 1px solid var(--rk-rule, #e2e6ee);
-  border-radius: 10px;
+  border: 1px solid var(--rk-rule, #dfe3ea);
+  border-radius: 4px;
+  min-height: calc(100vh - 48px - 46px - 32px);
 }
+
+/* 設定系フォームは読みやすい幅に抑える（ただし左寄せ） */
+.rk-section-screen__body .settings-form { max-width: 520px; }
+.rk-section-screen__body .modal-list { max-width: 640px; }
 
 /* モデルシフト 編集グリッド */
 .rk-model-editor__pos { max-width: 320px; }
