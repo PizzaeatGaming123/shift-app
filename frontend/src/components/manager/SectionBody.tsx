@@ -19,6 +19,12 @@ import {
   DAILY_SALES_TARGET,
 } from '../../constants';
 import type { ManagerSection } from './GlobalNav';
+import {
+  DEFAULT_WEEKDAY_REQUIRED,
+  MODEL_BANDS,
+  WEEKDAY_COLUMNS,
+  type WeekdayRequired,
+} from './modelShift';
 
 /** 各セクション画面のタイトル（GlobalNav のラベルと一致） */
 export const SECTION_TITLES: Partial<Record<ManagerSection, string>> = {
@@ -98,10 +104,17 @@ export function SectionBody({ section }: { section: ManagerSection }) {
     submit: true, viewOwn: true, viewOthers: false, postMemo: true, viewCost: false,
   });
   const [modelPos, setModelPos] = useState<string>(positions[0] ?? 'ホール');
-  const [modelRequired, setModelRequired] = useSetting(
-    `akiyume-required:${storeId}:${modelPos}`,
-    { morning: 2, afternoon: 2, night: 2 },
+  const [modelRequired, setModelRequired] = useSetting<WeekdayRequired>(
+    `akiyume-model:${storeId}:${modelPos}`,
+    DEFAULT_WEEKDAY_REQUIRED,
   );
+
+  function setModelCell(band: keyof WeekdayRequired, weekday: number, value: number) {
+    const next = Math.min(20, Math.max(0, value || 0));
+    const column = [...modelRequired[band]];
+    column[weekday] = next;
+    setModelRequired({ ...modelRequired, [band]: column });
+  }
 
   const dates = getMonthDates(Number(month.slice(0, 4)), Number(month.slice(5, 7)));
   const mdLabel = (date: string) => `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`;
@@ -492,35 +505,52 @@ export function SectionBody({ section }: { section: ManagerSection }) {
 
     case 'model-shift':
       return (
-        <div className="settings-form">
+        <div className="rk-model-editor">
           <p className="muted-sm">
-            時間帯ごとの必要人数を設定します。シフト表の「全体モデルシフト」に必要数として反映されます。
+            指定の時間帯に、曜日ごとの必要人数を事前設定します。シフト表の「全体モデルシフト」に
+            各日の必要数（x/<strong>y</strong>）として反映されます。
           </p>
-          <label className="settings-row">
+          <label className="settings-row rk-model-editor__pos">
             <span>ポジション</span>
             <select value={modelPos} onChange={(e) => setModelPos(e.target.value)}>
               {positions.map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
           </label>
-          {([
-            ['morning', '09:00 - 14:00'],
-            ['afternoon', '14:00 - 19:00'],
-            ['night', '19:00 - 23:00'],
-          ] as const).map(([key, label]) => (
-            <label key={key} className="settings-row">
-              <span>{label}</span>
-              <input
-                type="number"
-                min={0}
-                max={20}
-                value={modelRequired[key]}
-                onChange={(e) => setModelRequired({
-                  ...modelRequired,
-                  [key]: Math.min(20, Math.max(0, Number(e.target.value) || 0)),
-                })}
-              />
-            </label>
-          ))}
+          <table className="rk-model-grid">
+            <thead>
+              <tr>
+                <th scope="col">時間帯</th>
+                {WEEKDAY_COLUMNS.map((col) => (
+                  <th
+                    scope="col"
+                    key={col.index}
+                    className={col.index === 0 ? 'is-sun' : col.index === 6 ? 'is-sat' : ''}
+                  >
+                    {col.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {MODEL_BANDS.map((band) => (
+                <tr key={band.key}>
+                  <th scope="row">{band.label}</th>
+                  {WEEKDAY_COLUMNS.map((col) => (
+                    <td key={col.index}>
+                      <input
+                        type="number"
+                        min={0}
+                        max={20}
+                        aria-label={`${band.label} ${col.label}曜の必要人数`}
+                        value={modelRequired[band.key][col.index]}
+                        onChange={(e) => setModelCell(band.key, col.index, Number(e.target.value))}
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       );
 

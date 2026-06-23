@@ -23,16 +23,17 @@ function renderSection(section: ManagerSection) {
   );
 }
 
-it('モデルシフト: 必要人数を変更すると akiyume-required に保存される', async () => {
+it('モデルシフト: 曜日ごとの必要人数を変更すると akiyume-model に保存される', async () => {
   const user = userEvent.setup();
   renderSection('model-shift');
 
-  const morning = await screen.findByLabelText('09:00 - 14:00');
-  await user.clear(morning);
-  await user.type(morning, '5');
+  const monMorning = await screen.findByLabelText('09:00 - 14:00 月曜の必要人数');
+  await user.clear(monMorning);
+  await user.type(monMorning, '5');
 
-  const saved = JSON.parse(localStorage.getItem('akiyume-required:1:ホール')!);
-  expect(saved.morning).toBe(5);
+  const saved = JSON.parse(localStorage.getItem('akiyume-model:1:ホール')!);
+  // 月曜 = getDay 1
+  expect(saved.morning[1]).toBe(5);
 });
 
 it('追加募集: メッセージを入力して追加すると recruitments へPUTされる', async () => {
