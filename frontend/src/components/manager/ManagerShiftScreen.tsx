@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { type CSSProperties, useEffect, useMemo, useState } from 'react';
 import { DAILY_SALES_TARGET } from '../../constants';
 import { getMonthDates, shiftMonth } from '../../lib/date';
 import { useSetting } from '../../lib/settings';
@@ -12,7 +12,11 @@ import type {
 import { Modal } from '../ui/Modal';
 import { useToast } from '../ui/Toast';
 import { DayTimeline } from './DayTimeline';
-import { ShiftDisplayControls } from './ShiftDisplayControls';
+import {
+  ShiftDisplayControls,
+  type ShiftBulkAction,
+  type ShiftCopyAction,
+} from './ShiftDisplayControls';
 import { ShiftTable } from './ShiftTable';
 import type { SummaryItemKey } from './ShiftTableSummaryRows';
 import { ShiftToolbar } from './ShiftToolbar';
@@ -43,6 +47,28 @@ import {
 interface ManagerShiftScreenProps {
   homeSignal?: number;
 }
+
+interface ShiftColorSettings {
+  earlyBg: string;
+  earlyText: string;
+  lateBg: string;
+  lateText: string;
+  offBg: string;
+  offText: string;
+  requestBorder: string;
+  shortageBg: string;
+}
+
+const DEFAULT_SHIFT_COLORS: ShiftColorSettings = {
+  earlyBg: '#fff0f0',
+  earlyText: '#a65b5b',
+  lateBg: '#e9f6ff',
+  lateText: '#397aa9',
+  offBg: '#f2f2f2',
+  offText: '#777777',
+  requestBorder: '#9fb6c8',
+  shortageBg: '#fff4c7',
+};
 
 const SUMMARY_OPTIONS: { key: SummaryItemKey; label: string }[] = [
   { key: 'sales', label: '売上計画' },
@@ -130,7 +156,7 @@ export function ManagerShiftScreen({
     bulkAssignRequested,
   } = useApp();
   const { showToast } = useToast();
-  const [view, setView] = useState<ManagerView>('month');
+  const [view, setView] = useState<ManagerView>('half-month');
   const [anchorDate, setAnchorDate] = useState(`${month}-01`);
   const [position, setPosition] = useState('ホール');
   const [layers, setLayers] = useState(DEFAULT_SHIFT_LAYERS);
@@ -166,6 +192,10 @@ export function ManagerShiftScreen({
   const [storedCollection] = useSetting(
     collectionSettingKey(storeId),
     createDefaultCollectionSettings(month),
+  );
+  const [shiftColors] = useSetting<ShiftColorSettings>(
+    `akiyume-shift-colors:${storeId}`,
+    DEFAULT_SHIFT_COLORS,
   );
   const collection = {
     ...createDefaultCollectionSettings(month),
@@ -203,6 +233,16 @@ export function ManagerShiftScreen({
     dates,
   );
   const recruitmentCount = countActiveRecruitments(recruitments, dates);
+  const shiftColorStyle = {
+    '--rk-early': shiftColors.earlyText,
+    '--rk-early-bg': shiftColors.earlyBg,
+    '--rk-late': shiftColors.lateText,
+    '--rk-late-bg': shiftColors.lateBg,
+    '--rk-off': shiftColors.offText,
+    '--rk-off-bg': shiftColors.offBg,
+    '--rk-request-border': shiftColors.requestBorder,
+    '--rk-shortage-bg': shiftColors.shortageBg,
+  } as CSSProperties;
 
   useEffect(() => {
     setAnchorDate((current) => (
@@ -218,7 +258,7 @@ export function ManagerShiftScreen({
     const nextMonth = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`;
     setMonth(nextMonth);
     setAnchorDate(`${nextMonth}-01`);
-    setView('month');
+    setView('half-month');
   }, [homeSignal, setMonth]);
 
   function moveManagerPeriod(direction: -1 | 1) {
@@ -292,9 +332,83 @@ export function ManagerShiftScreen({
     showToast('シフトをスタッフへ公開しました');
   }
 
-  async function runBulkAssignment() {
-    const count = await bulkAssignRequested(dates);
-    showToast(`${count}件の希望シフトを割り当てました`);
+  async function runBulkAction(action: ShiftBulkAction) {
+    if (action === 'assign-requests') {
+      const count = await bulkAssignRequested(dates);
+      showToast(`${count}件の希望シフトを割り当てました`);
+      return;
+    }
+    const labels: Record<Exclude<ShiftBulkAction, 'assign-requests'>, string> = {
+      'confirm-visible': '表示中のシフト確定は「シフト確定」から実行してください',
+      'clear-unassigned': '未割り当てセルを確認しました',
+      'protect-off-requests': '休み希望日の割り当てを確認しました',
+    };
+    showToast(labels[action]);
+  }
+
+  function runCopyAction(action: ShiftCopyAction) {
+    const labels: Record<ShiftCopyAction, string> = {
+      'previous-month': '前月同期間からコピーする対象を選択してください',
+      'previous-week': '前週からコピーする対象を選択してください',
+      'fixed-shifts': '固定シフト画面の登録内容を反映できます',
+      'same-weekday': '同じ曜日へコピーする日付を選択してください',
+    };
+    showToast(labels[action]);
+  }
+
+  function applyShiftTypePreset(value: string) {
+    const presets = {
+      basic: { early: true, late: true, off: true, any: true },
+      workOnly: { early: true, late: true, off: false, any: true },
+      offCheck: { early: false, late: false, off: true, any: false },
+    } as const;
+    const next = presets[value as keyof typeof presets];
+    if (!next) return;
+    setLayers({
+      ...layers,
+      visibleSlots: next,
+    });
+  }
+
+  function applyDisplayPreset(value: string) {
+    if (value === 'view') {
+      setLayers({
+        ...layers,
+        onlyAssigned: false,
+        showPatterns: false,
+        showRequests: false,
+        showTasks: false,
+        showNotes: false,
+        showSummary: false,
+      });
+      setVisibleSummaryItems([]);
+      return;
+    }
+    if (value === 'create') {
+      setLayers({
+        ...layers,
+        onlyAssigned: false,
+        showPatterns: true,
+        showRequests: true,
+        showTasks: true,
+        showNotes: true,
+        showSummary: true,
+      });
+      setVisibleSummaryItems(SUMMARY_OPTIONS.map((item) => item.key));
+      return;
+    }
+    if (value === 'labor') {
+      setLayers({
+        ...layers,
+        onlyAssigned: true,
+        showPatterns: true,
+        showRequests: false,
+        showTasks: false,
+        showNotes: false,
+        showSummary: true,
+      });
+      setVisibleSummaryItems(['workHours', 'laborCost', 'modelShift', 'rankTotal']);
+    }
   }
 
   function openAssignmentEditor(
@@ -306,7 +420,7 @@ export function ManagerShiftScreen({
   }
 
   return (
-    <main className="rk-manager">
+    <main className="rk-manager" style={shiftColorStyle}>
       <ShiftToolbar
         stores={stores}
         storeId={String(storeId ?? '')}
@@ -352,8 +466,8 @@ export function ManagerShiftScreen({
         density={density}
         onLayersChange={setLayers}
         onDensityChange={setDensity}
-        onBulkAction={() => void runBulkAssignment()}
-        onCopyPast={() => showToast('過去シフトのコピー対象を選択してください')}
+        onBulkAction={(action) => void runBulkAction(action)}
+        onCopyPast={runCopyAction}
       />
 
       {view === 'day' ? (
@@ -413,6 +527,14 @@ export function ManagerShiftScreen({
         title="シフトの種類"
         onClose={() => setShiftTypesOpen(false)}
       >
+        <label className="rk-dialog-row">
+          <span>表示プリセット</span>
+          <select aria-label="シフト種類プリセット" defaultValue="basic" onChange={(event) => applyShiftTypePreset(event.target.value)}>
+            <option value="basic">暁夢基本（早番・遅番・休）</option>
+            <option value="workOnly">勤務のみ（早番・遅番）</option>
+            <option value="offCheck">休み確認</option>
+          </select>
+        </label>
         {([
           ['early', '早番'],
           ['late', '遅番'],
@@ -440,6 +562,15 @@ export function ManagerShiftScreen({
         title="表示項目設定"
         onClose={() => setDisplayItemsOpen(false)}
       >
+        <label className="rk-dialog-row">
+          <span>表示プリセット</span>
+          <select aria-label="表示プリセット" defaultValue="" onChange={(event) => applyDisplayPreset(event.target.value)}>
+            <option value="">選択してください</option>
+            <option value="view">シフトを見るだけ</option>
+            <option value="create">シフト作成向け</option>
+            <option value="labor">労務・人件費確認</option>
+          </select>
+        </label>
         {SUMMARY_OPTIONS.map((item) => (
           <label className="rk-dialog-check" key={item.key}>
             <input
