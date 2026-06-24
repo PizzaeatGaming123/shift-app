@@ -37,4 +37,13 @@ class StoreControllerTest {
            .andExpect(status().isOk())
            .andExpect(jsonPath("$.length()").value(5));
     }
+
+    @Test
+    @WithMockUser(username = "nakashima-mgr")
+    void managerCanReadOtherStoreStaff() throws Exception {
+        mvc.perform(get("/api/stores/2/staff"))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.length()").value(5))
+           .andExpect(jsonPath("$[0].name").exists());
+    }
 }

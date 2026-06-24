@@ -9,10 +9,6 @@ interface ShiftToolbarProps {
   view: ManagerView;
   periodLabel: string;
   deadlineLabel: string;
-  /** シフト回収設定の対象月（"YYYY-MM"）。シフト表で表示中の月と異なる場合に注意ヒントを出すために使う。 */
-  collectionMonth?: string;
-  /** シフト表で現在表示中の月（"YYYY-MM"）。 */
-  viewMonth?: string;
   unconfirmedCount: number;
   recruitmentCount: number;
   shiftMode: 'assignment' | 'confirmed';
@@ -47,8 +43,6 @@ export function ShiftToolbar({
   view,
   periodLabel,
   deadlineLabel,
-  collectionMonth,
-  viewMonth,
   unconfirmedCount,
   recruitmentCount,
   shiftMode,
@@ -152,11 +146,6 @@ export function ShiftToolbar({
         <span className="rk-shift-toolbar__period">{periodLabel}</span>
         <button type="button" onClick={onToday}>翌月</button>
         <span className="rk-shift-toolbar__deadline">提出期間 {deadlineLabel}</span>
-        {collectionMonth && viewMonth && collectionMonth !== viewMonth && (
-          <span className="rk-shift-toolbar__collection-hint">
-            回収中：{collectionMonth.replace('-', '年')}月（表示中の月とは異なります）
-          </span>
-        )}
         <button type="button" onClick={onOpenDisplayItems}>表示項目設定</button>
         <button type="button" onClick={onOpenRecruitment}>
           追加募集中 {recruitmentCount}件

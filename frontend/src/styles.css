@@ -2265,6 +2265,75 @@ button.cal-cell:active {
   gap: 4px;
 }
 
+.rk-staff-registration {
+  width: min(720px, 100%);
+}
+
+.rk-staff-registration__metrics {
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
+  margin-bottom: 14px;
+}
+
+.rk-registration-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 16px 22px;
+  padding: 22px 24px;
+  border: 2px solid #9e9e9e;
+  background: #fff;
+}
+
+.rk-registration-form__title,
+.rk-registration-form__wide,
+.rk-registration-form__submit {
+  grid-column: 1 / -1;
+}
+
+.rk-registration-form__title h3 {
+  margin: 0;
+  color: #303942;
+  font-size: 16px;
+}
+
+.rk-registration-form__title p {
+  margin: 6px 0 0;
+  color: #6d7780;
+  font-size: 12px;
+}
+
+.rk-registration-form label {
+  display: grid;
+  gap: 6px;
+  color: #4d5964;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.rk-registration-form input,
+.rk-registration-form select {
+  width: 100%;
+  min-height: 34px;
+  border: 1px solid #cbd8c9;
+  border-radius: 0;
+  background: #fff;
+  color: #303942;
+  font-size: 13px;
+  padding: 6px 9px;
+}
+
+.rk-registration-form input[readonly] {
+  background: #f3f6f8;
+  color: #56616c;
+}
+
+.rk-registration-form__submit {
+  justify-self: center;
+  min-width: 180px;
+  border-color: #b7dcb6;
+  color: #3f8b42;
+  background: #fff;
+}
+
 .rk-collection-settings__metrics,
 .rk-fixed-shifts__metrics {
   grid-template-columns: repeat(4, minmax(120px, 1fr));
@@ -3026,7 +3095,7 @@ button.cal-cell:active {
 .rk-staff-message {
   min-height: calc(100vh - 43px - 36px - 70px);
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
   background: #f1f4f7;
   color: #313b45;
   font-family: Arial, "Yu Gothic", Meiryo, sans-serif;
@@ -3066,12 +3135,16 @@ button.cal-cell:active {
   display: flex;
   gap: 0;
   overflow-x: auto;
+  overflow-y: hidden;
   border-bottom: 1px solid #d8dee6;
   background: #fff;
+  -webkit-overflow-scrolling: touch;
 }
 
 .rk-staff-message__contacts button {
-  min-width: 104px;
+  flex: 0 0 124px;
+  min-width: 124px;
+  max-width: 124px;
   border: 0;
   border-right: 1px solid #e2e6eb;
   border-radius: 0;
@@ -3079,6 +3152,7 @@ button.cal-cell:active {
   color: #52616c;
   padding: 8px 10px;
   text-align: left;
+  white-space: nowrap;
   cursor: pointer;
 }
 
@@ -3091,6 +3165,10 @@ button.cal-cell:active {
 .rk-staff-message__contacts span,
 .rk-staff-message__contacts small {
   display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .rk-staff-message__contacts span {
