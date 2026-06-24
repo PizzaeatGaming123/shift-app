@@ -20,7 +20,20 @@ export function mockManagerShiftApi(vi: SpyApi) {
       });
     }
     if (url.endsWith('/api/stores')) {
-      return response([{ id: 1, name: '中島店' }]);
+      return response([
+        { id: 1, name: '中島店' },
+        { id: 2, name: '新田店' },
+      ]);
+    }
+    if (url.includes('/api/stores/2/staff')) {
+      return response([{
+        id: 12,
+        name: '新田一郎',
+        employmentType: '正社員',
+        role: 'STAFF',
+        rank: 4,
+        skills: 'ホール',
+      }]);
     }
     if (url.includes('/staff')) {
       return response([{

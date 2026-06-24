@@ -21,6 +21,7 @@ class DataSeederTest {
                 .contains("中島店", "新田店", "早島店");
         // 各店に最低1名の店長
         for (var store : storeRepository.findAll()) {
+            assertThat(staffRepository.findByStoreId(store.getId()).size()).isGreaterThanOrEqualTo(5);
             long managers = staffRepository.findByStoreId(store.getId()).stream()
                     .filter(s -> s.getRole() == Role.MANAGER).count();
             assertThat(managers).isGreaterThanOrEqualTo(1);

@@ -135,7 +135,10 @@ export function ManagerShiftScreen({
   const [view, setView] = useState<ManagerView>('half-month');
   const [anchorDate, setAnchorDate] = useState(`${month}-01`);
   const [position, setPosition] = useState('ホール');
-  const [layers, setLayers] = useState(DEFAULT_SHIFT_LAYERS);
+  const [layers, setLayers] = useSetting(
+    'akiyume-shift-layers',
+    DEFAULT_SHIFT_LAYERS,
+  );
   const [density, setDensity] = useSetting<ShiftTableDensity>(
     'akiyume-display-density',
     'standard',
@@ -401,8 +404,6 @@ export function ManagerShiftScreen({
         view={view}
         periodLabel={formatManagerPeriodLabel(view, dates)}
         deadlineLabel={`〜${collection.deadlineAt.replace('T', ' ')}`}
-        collectionMonth={collection.targetMonth}
-        viewMonth={month}
         unconfirmedCount={unconfirmedCount}
         recruitmentCount={recruitmentCount}
         shiftMode={shiftMode}

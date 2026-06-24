@@ -166,7 +166,6 @@ export function SectionBody({ section }: { section: ManagerSection }) {
   const [importInfo, setImportInfo] = useState<{ count: number; sample: string[] } | null>(null);
   const [regName, setRegName] = useState('');
   const [regType, setRegType] = useState('パート');
-  const [regRole, setRegRole] = useState<'STAFF' | 'MANAGER'>('STAFF');
   const [staffSearch, setStaffSearch] = useState('');
   const [staffRoleFilter, setStaffRoleFilter] = useState<'all' | 'STAFF' | 'MANAGER'>('all');
   const [newDept, setNewDept] = useState('');
@@ -453,7 +452,6 @@ export function SectionBody({ section }: { section: ManagerSection }) {
 
   function renderStaffManagement(initialRole: 'all' | 'STAFF' | 'MANAGER') {
     const effectiveRole = initialRole === 'all' ? staffRoleFilter : initialRole;
-    const registerRole = initialRole === 'all' ? regRole : initialRole;
     const query = staffSearch.trim().toLowerCase();
     const visibleMembers = staff.filter((person) => {
       const matchesRole = effectiveRole === 'all' || person.role === effectiveRole;
@@ -497,42 +495,6 @@ export function SectionBody({ section }: { section: ManagerSection }) {
               <option value="MANAGER">管理者</option>
             </select>
           </label>
-          <label>
-            <span>登録区分</span>
-            <select
-              aria-label="登録する権限"
-              value={registerRole}
-              disabled={initialRole !== 'all'}
-              onChange={(event) => setRegRole(event.target.value as typeof regRole)}
-            >
-              <option value="STAFF">スタッフ</option>
-              <option value="MANAGER">管理者</option>
-            </select>
-          </label>
-          <label>
-            <span>雇用形態</span>
-            <select aria-label="登録する雇用形態" value={regType} onChange={(event) => setRegType(event.target.value)}>
-              <option value="正社員">正社員</option>
-              <option value="パート">パート</option>
-              <option value="アルバイト">アルバイト</option>
-            </select>
-          </label>
-          <label className="rk-filter-card__wide">
-            <span>氏名</span>
-            <input
-              aria-label="登録する氏名"
-              value={regName}
-              placeholder="例：山田太郎"
-              onChange={(event) => setRegName(event.target.value)}
-            />
-          </label>
-          <button
-            type="button"
-            className="tb-btn rk-filter-card__submit"
-            onClick={() => void submitRegister(registerRole)}
-          >
-            {registerRole === 'MANAGER' ? '管理者を登録' : 'スタッフを登録'}
-          </button>
         </div>
 
         <div className="rk-table-scroll">
@@ -581,6 +543,68 @@ export function SectionBody({ section }: { section: ManagerSection }) {
     );
   }
 
+  function renderStaffRegistration(role: 'STAFF' | 'MANAGER') {
+    const title = role === 'MANAGER' ? '管理者登録' : 'スタッフ登録';
+    const roleLabel = role === 'MANAGER' ? '管理者' : 'スタッフ';
+    const registeredCount = staff.filter((person) => person.role === role).length;
+    return (
+      <div className="rk-reference-panel rk-staff-registration">
+        <div className="rk-status-metrics rk-staff-registration__metrics">
+          <article><span>登録先店舗</span><strong>{storeName}</strong></article>
+          <article><span>登録区分</span><strong>{roleLabel}</strong></article>
+          <article><span>登録済み</span><strong>{registeredCount}</strong></article>
+        </div>
+
+        <form
+          className="rk-registration-form"
+          aria-label={title}
+          onSubmit={(event) => {
+            event.preventDefault();
+            void submitRegister(role);
+          }}
+        >
+          <div className="rk-registration-form__title">
+            <h3>{title}</h3>
+            <p>新しく登録する人の情報だけを入力してください。</p>
+          </div>
+
+          <label>
+            <span>登録区分</span>
+            <input aria-label="登録区分" value={roleLabel} readOnly />
+          </label>
+
+          <label>
+            <span>雇用形態</span>
+            <select
+              aria-label="登録する雇用形態"
+              value={regType}
+              onChange={(event) => setRegType(event.target.value)}
+            >
+              <option value="正社員">正社員</option>
+              <option value="パート">パート</option>
+              <option value="アルバイト">アルバイト</option>
+            </select>
+          </label>
+
+          <label className="rk-registration-form__wide">
+            <span>氏名</span>
+            <input
+              aria-label="登録する氏名"
+              value={regName}
+              placeholder="例：山田太郎"
+              onChange={(event) => setRegName(event.target.value)}
+              autoComplete="name"
+            />
+          </label>
+
+          <button type="submit" className="tb-btn rk-registration-form__submit">
+            {role === 'MANAGER' ? '管理者を登録' : 'スタッフを登録'}
+          </button>
+        </form>
+      </div>
+    );
+  }
+
   async function onImportFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -596,10 +620,10 @@ export function SectionBody({ section }: { section: ManagerSection }) {
       return renderStaffManagement('all');
 
     case 'staff-registration':
-      return renderStaffManagement('STAFF');
+      return renderStaffRegistration('STAFF');
 
     case 'manager-registration':
-      return renderStaffManagement('MANAGER');
+      return renderStaffRegistration('MANAGER');
 
     case 'rank-settings':
       return <RankSkillScreen initialTab="rank" />;
