@@ -25,6 +25,8 @@ export interface Staff {
   role: 'STAFF' | 'MANAGER';
   rank: number | null;
   skills: string[];
+  /** 時給（円）。一般スタッフのビューでは権限分離のため null/省略。 */
+  hourlyWage?: number | null;
 }
 
 export interface ShiftRequest {

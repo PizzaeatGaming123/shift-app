@@ -8,6 +8,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -21,7 +22,7 @@ class RequestControllerTest {
     @Test
     @WithMockUser(username = "nakashima-1")
     void putRequest_mid_isRejected() throws Exception {
-        mvc.perform(put("/api/requests")
+        mvc.perform(put("/api/requests").with(csrf())
                 .contentType("application/json")
                 .content("{\"date\":\"2026-07-01\",\"value\":\"mid\"}"))
            .andExpect(status().isBadRequest());
@@ -30,10 +31,10 @@ class RequestControllerTest {
     @Test
     @WithMockUser(username = "nakashima-1")
     void putRequest_off_replacesPrevious() throws Exception {
-        mvc.perform(put("/api/requests").contentType("application/json")
+        mvc.perform(put("/api/requests").with(csrf()).contentType("application/json")
                 .content("{\"date\":\"2026-07-02\",\"value\":\"early\"}"))
            .andExpect(status().isOk());
-        mvc.perform(put("/api/requests").contentType("application/json")
+        mvc.perform(put("/api/requests").with(csrf()).contentType("application/json")
                 .content("{\"date\":\"2026-07-02\",\"value\":\"off\"}"))
            .andExpect(status().isOk())
            .andExpect(jsonPath("$.length()").value(1))
@@ -43,7 +44,7 @@ class RequestControllerTest {
     @Test
     @WithMockUser(username = "nakashima-1")
     void submitRequests_savesRequestsAndNotesTogether() throws Exception {
-        mvc.perform(put("/api/requests/submission")
+        mvc.perform(put("/api/requests/submission").with(csrf())
                 .contentType("application/json")
                 .content("""
                     {"entries":[

@@ -1,6 +1,7 @@
 package jp.akiyume.shift.web;
 
 import jp.akiyume.shift.repo.service.NoteService;
+import jp.akiyume.shift.security.StoreAccessGuard;
 import jp.akiyume.shift.web.dto.DayNoteDto;
 import jp.akiyume.shift.web.dto.RecruitmentDto;
 import jp.akiyume.shift.web.dto.SetDayNoteBody;
@@ -19,42 +20,54 @@ import java.util.List;
 public class NoteController {
 
     private final NoteService noteService;
+    private final StoreAccessGuard guard;
 
-    public NoteController(NoteService noteService) {
+    public NoteController(NoteService noteService, StoreAccessGuard guard) {
         this.noteService = noteService;
+        this.guard = guard;
     }
 
     @PutMapping("/day-notes")
     public void setDayNote(@RequestBody SetDayNoteBody body, Authentication auth) {
-        noteService.setDayNote(auth.getName(), LocalDate.parse(body.date()), body.text());
+        noteService.setDayNote(guard.requireSelf(auth).getUsername(), LocalDate.parse(body.date()), body.text());
     }
 
     @GetMapping("/stores/{storeId}/day-notes")
-    public List<DayNoteDto> dayNotes(@PathVariable Long storeId, @RequestParam String month) {
+    public List<DayNoteDto> dayNotes(@PathVariable Long storeId, @RequestParam String month,
+                                     Authentication auth) {
+        guard.requireStoreAccess(auth, storeId);
         YearMonth ym = YearMonth.parse(month);
         return noteService.findDayNotesByStoreMonth(storeId, ym.atDay(1), ym.atEndOfMonth())
                 .stream().map(DayNoteDto::from).toList();
     }
 
     @PutMapping("/stores/{storeId}/store-notes")
-    public void setStoreNote(@PathVariable Long storeId, @RequestBody SetStoreNoteBody body) {
+    public void setStoreNote(@PathVariable Long storeId, @RequestBody SetStoreNoteBody body,
+                             Authentication auth) {
+        guard.requireStoreAccess(auth, storeId);
         noteService.setStoreNote(storeId, LocalDate.parse(body.date()), body.text());
     }
 
     @GetMapping("/stores/{storeId}/store-notes")
-    public List<StoreNoteDto> storeNotes(@PathVariable Long storeId, @RequestParam String month) {
+    public List<StoreNoteDto> storeNotes(@PathVariable Long storeId, @RequestParam String month,
+                                         Authentication auth) {
+        guard.requireStoreAccess(auth, storeId);
         YearMonth ym = YearMonth.parse(month);
         return noteService.findStoreNotesByMonth(storeId, ym.atDay(1), ym.atEndOfMonth())
                 .stream().map(StoreNoteDto::from).toList();
     }
 
     @PutMapping("/stores/{storeId}/recruitments")
-    public void setRecruitment(@PathVariable Long storeId, @RequestBody SetRecruitmentBody body) {
+    public void setRecruitment(@PathVariable Long storeId, @RequestBody SetRecruitmentBody body,
+                               Authentication auth) {
+        guard.requireStoreAccess(auth, storeId);
         noteService.setRecruitment(storeId, LocalDate.parse(body.date()), body.message());
     }
 
     @GetMapping("/stores/{storeId}/recruitments")
-    public List<RecruitmentDto> recruitments(@PathVariable Long storeId, @RequestParam String month) {
+    public List<RecruitmentDto> recruitments(@PathVariable Long storeId, @RequestParam String month,
+                                             Authentication auth) {
+        guard.requireStoreAccess(auth, storeId);
         YearMonth ym = YearMonth.parse(month);
         return noteService.findRecruitmentsByMonth(storeId, ym.atDay(1), ym.atEndOfMonth())
                 .stream().map(RecruitmentDto::from).toList();

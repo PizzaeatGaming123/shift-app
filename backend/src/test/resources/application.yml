@@ -8,3 +8,6 @@ spring:
 # テストではデモのシフト/メモを投入しない（コントローラの件数検証を壊さないため）
 app:
   seed-demo-shifts: false
+  # ログインテストで使う既知パスワード。
+  seed-password: "password"
+  h2-console-enabled: false

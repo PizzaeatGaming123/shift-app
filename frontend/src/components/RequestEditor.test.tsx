@@ -5,6 +5,7 @@ import { RequestEditor } from './RequestEditor';
 const mocks = vi.hoisted(() => ({
   submitRequests: vi.fn(),
   showToast: vi.fn(),
+  setMonth: vi.fn(),
 }));
 
 vi.mock('../store/AppContext', () => ({
@@ -13,9 +14,12 @@ vi.mock('../store/AppContext', () => ({
     stores: [{ id: '1', name: '中島店' }],
     storeId: 1,
     requests: [{ staffId: '2', date: '2026-07-01', slot: 'early' }],
+    assignments: [],
     dayNotes: [],
+    shiftPlanStatus: 'DRAFT',
+    setShiftPlanStatus: vi.fn(),
     submitRequests: mocks.submitRequests,
-    setMonth: vi.fn(),
+    setMonth: mocks.setMonth,
   }),
 }));
 
@@ -28,6 +32,7 @@ describe('RequestEditor', () => {
     localStorage.clear();
     mocks.submitRequests.mockReset().mockResolvedValue(undefined);
     mocks.showToast.mockReset();
+    mocks.setMonth.mockReset();
   });
 
   it('keeps submission available when a legacy browser setting says collection is closed', () => {
@@ -73,5 +78,21 @@ describe('RequestEditor', () => {
       date: '2026-07-02',
       value: 'off',
     });
+  });
+
+  it('staff month navigation stays within the current year', () => {
+    const allowedYear = new Date().getFullYear();
+    const { rerender } = render(<RequestEditor year={allowedYear} month={1} />);
+
+    const previous = screen.getByRole('button', { name: '前の提出期間' });
+    expect(previous).toBeDisabled();
+    fireEvent.click(previous);
+    expect(mocks.setMonth).not.toHaveBeenCalled();
+
+    rerender(<RequestEditor year={allowedYear} month={12} />);
+    const next = screen.getByRole('button', { name: '次の提出期間' });
+    expect(next).toBeDisabled();
+    fireEvent.click(next);
+    expect(mocks.setMonth).not.toHaveBeenCalled();
   });
 });

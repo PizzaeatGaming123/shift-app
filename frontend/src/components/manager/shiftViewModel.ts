@@ -29,6 +29,8 @@ export interface SortShiftStaffInput {
   assignments: Assignment[];
   dates: string[];
   mode: StaffSortMode;
+  /** 店舗ごとの slot あたりの時間。未指定なら既定の早9h・遅9h で集計する。 */
+  slotHours?: Record<WorkSlot, number>;
 }
 
 function mondayIndex(date: string): number {
@@ -60,6 +62,7 @@ export function sortShiftStaff({
   assignments,
   dates,
   mode,
+  slotHours,
 }: SortShiftStaffInput): Staff[] {
   const next = [...staff];
   if (mode === 'default') return next;
@@ -71,8 +74,8 @@ export function sortShiftStaff({
   }
   return next.sort(
     (a, b) =>
-      staffMonthlyHours(assignments, b.id, dates)
-      - staffMonthlyHours(assignments, a.id, dates),
+      staffMonthlyHours(assignments, b.id, dates, slotHours)
+      - staffMonthlyHours(assignments, a.id, dates, slotHours),
   );
 }
 
@@ -173,7 +176,7 @@ export function getDailySummary({
   slotHours?: Record<WorkSlot, number>;
 }): DailySummary {
   const workHours = dailyWorkHours(assignments, date, slotHours);
-  const laborCost = dailyLaborCost(assignments, date, slotHours);
+  const laborCost = dailyLaborCost(assignments, date, slotHours, staff);
   return {
     sales: salesTarget,
     workHours,

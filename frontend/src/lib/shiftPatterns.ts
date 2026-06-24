@@ -13,7 +13,10 @@ export const DEFAULT_SHIFT_PATTERNS: ShiftPatterns = {
   late: { label: '遅番', start: '15:00', end: '24:00' },
 };
 
-const TIME_PATTERN = /^(?:[01]\d|2[0-3]):[0-5]\d$|^24:00$/;
+/** 開始時刻は 00:00〜23:59 のみ許可（24:00 は日付境界マーカーであり、勤務開始時刻には不適）。 */
+const TIME_START_PATTERN = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+/** 終了時刻は 00:00〜23:59 と、日付境界の 24:00 を許可。 */
+const TIME_END_PATTERN = /^(?:[01]\d|2[0-3]):[0-5]\d$|^24:00$/;
 
 function toMinutes(value: string): number {
   if (value === '24:00') return 24 * 60;
@@ -23,9 +26,8 @@ function toMinutes(value: string): number {
 
 export function isValidShiftPattern(pattern: ShiftPattern): boolean {
   return pattern.label.trim().length > 0
-    && TIME_PATTERN.test(pattern.start)
-    && TIME_PATTERN.test(pattern.end)
-    && pattern.start !== '24:00'
+    && TIME_START_PATTERN.test(pattern.start)
+    && TIME_END_PATTERN.test(pattern.end)
     && toMinutes(pattern.end) > toMinutes(pattern.start);
 }
 

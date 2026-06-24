@@ -59,11 +59,6 @@ const COPY_ACTIONS: { action: ShiftCopyAction; label: string; detail: string }[]
   { action: 'same-weekday', label: '同じ曜日へコピー', detail: '曜日パターンを展開' },
 ];
 
-function nextValue<T>(values: T[], current: T): T {
-  const index = values.indexOf(current);
-  return values[(index + 1) % values.length];
-}
-
 export function ShiftDisplayControls({
   position,
   layers,
@@ -102,13 +97,22 @@ export function ShiftDisplayControls({
         </label>
       ))}
 
-      <button
-        type="button"
+      <div
         className="rk-shift-display-controls__density"
-        onClick={() => onDensityChange(nextValue(DENSITY_ORDER, density))}
+        role="group"
+        aria-label="縮小/拡大"
       >
-        縮小/拡大 {DENSITY_LABEL[density]}
-      </button>
+        {DENSITY_ORDER.map((item) => (
+          <button
+            type="button"
+            key={item}
+            aria-pressed={density === item}
+            onClick={() => onDensityChange(item)}
+          >
+            {DENSITY_LABEL[item]}
+          </button>
+        ))}
+      </div>
       <div className="rk-inline-menu">
         <button
           type="button"
