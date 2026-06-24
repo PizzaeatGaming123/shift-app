@@ -8,11 +8,26 @@ spring:
     hibernate:
       ddl-auto: update
     open-in-view: false
+    defer-datasource-initialization: true
     properties:
       hibernate.dialect: org.hibernate.dialect.H2Dialect
+  sql:
+    init:
+      mode: always
+      continue-on-error: true
+  # ローカル開発のデフォルトでは H2 console を有効にして /h2-console から DB を確認できる。
   h2:
     console:
       enabled: true
       path: /h2-console
 server:
   port: 8080
+
+# ローカル開発デフォルト：デモ投入あり / 既知パスワード "password" / H2 console 有効。
+# 本番では SPRING_PROFILES_ACTIVE=prod を必ず指定すること（application-prod.yml で締める）。
+# 個別に上書きしたい場合は環境変数で：
+#   APP_SEED_DEMO_SHIFTS=false APP_SEED_PASSWORD=<secret> APP_H2_CONSOLE_ENABLED=false
+app:
+  seed-demo-shifts: true
+  seed-password: "${APP_SEED_PASSWORD:password}"
+  h2-console-enabled: true

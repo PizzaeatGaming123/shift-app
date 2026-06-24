@@ -8,6 +8,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -21,7 +22,7 @@ class NoteControllerTest {
     @Test
     @WithMockUser(username = "nakashima-1", roles = {"STAFF"})
     void staff_setsDayNote_thenItAppearsInStoreList() throws Exception {
-        mvc.perform(put("/api/day-notes").contentType("application/json")
+        mvc.perform(put("/api/day-notes").with(csrf()).contentType("application/json")
                 .content("{\"date\":\"2026-07-05\",\"text\":\"変わってくれませんか？\"}"))
            .andExpect(status().isOk());
 
@@ -34,10 +35,10 @@ class NoteControllerTest {
     @Test
     @WithMockUser(username = "nakashima-1", roles = {"STAFF"})
     void emptyText_deletesDayNote() throws Exception {
-        mvc.perform(put("/api/day-notes").contentType("application/json")
+        mvc.perform(put("/api/day-notes").with(csrf()).contentType("application/json")
                 .content("{\"date\":\"2026-07-06\",\"text\":\"応援お願いします\"}"))
            .andExpect(status().isOk());
-        mvc.perform(put("/api/day-notes").contentType("application/json")
+        mvc.perform(put("/api/day-notes").with(csrf()).contentType("application/json")
                 .content("{\"date\":\"2026-07-06\",\"text\":\"\"}"))
            .andExpect(status().isOk());
 
@@ -48,7 +49,7 @@ class NoteControllerTest {
     @Test
     @WithMockUser(username = "nakashima-mgr", roles = {"MANAGER"})
     void manager_setsStoreNote_thenGet() throws Exception {
-        mvc.perform(put("/api/stores/1/store-notes").contentType("application/json")
+        mvc.perform(put("/api/stores/1/store-notes").with(csrf()).contentType("application/json")
                 .content("{\"date\":\"2026-07-07\",\"text\":\"ポイント2倍\"}"))
            .andExpect(status().isOk());
 
@@ -61,7 +62,7 @@ class NoteControllerTest {
     @Test
     @WithMockUser(username = "nakashima-1", roles = {"STAFF"})
     void staff_cannotSetStoreNote_returns403() throws Exception {
-        mvc.perform(put("/api/stores/1/store-notes").contentType("application/json")
+        mvc.perform(put("/api/stores/1/store-notes").with(csrf()).contentType("application/json")
                 .content("{\"date\":\"2026-07-07\",\"text\":\"だめ\"}"))
            .andExpect(status().isForbidden());
     }

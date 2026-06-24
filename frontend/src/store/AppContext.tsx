@@ -1,10 +1,11 @@
 import {
   createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode,
 } from 'react';
-import { api, type Me, type ApiStore, type ApiStaff, type ApiRequest, type ApiAssignment, type ApiDayNote, type ApiStoreNote, type ApiRecruitment } from '../api/client';
+import { api, type Me, type ApiStore, type ApiStaff, type ApiRequest, type ApiAssignment, type ApiDayNote, type ApiStoreNote, type ApiRecruitment, type ApiShiftPlanStatus } from '../api/client';
 import { getDayRequest } from './requests';
 import { isAssigned } from './assignments';
 import type { ShiftRequest, Assignment, Staff, Store, DayRequestValue, DayNote, StoreNote, Recruitment, WorkSlot } from '../types';
+import type { ShiftPlanStatus } from '../lib/shiftStatus';
 
 interface AppContextValue {
   me: Me | null;
@@ -18,6 +19,9 @@ interface AppContextValue {
   recruitments: Recruitment[];
   storeId: number | null;
   month: string; // 'YYYY-MM'
+  /** AGENTS.md §必須機能9 のシフト計画状態。backend 永続化済み。 */
+  shiftPlanStatus: ShiftPlanStatus;
+  setShiftPlanStatus: (status: ShiftPlanStatus) => Promise<void>;
   setStoreId: (id: number) => void;
   setMonth: (month: string) => void;
   login: (username: string, password: string) => Promise<void>;
@@ -35,7 +39,7 @@ interface AppContextValue {
   setDayNote: (date: string, text: string) => Promise<void>;
   setStoreNote: (date: string, text: string) => Promise<void>;
   setRecruitment: (date: string, message: string) => Promise<void>;
-  updateStaff: (id: string, rank: number | null, skills: string[]) => Promise<void>;
+  updateStaff: (id: string, rank: number | null, skills: string[], hourlyWage?: number | null) => Promise<void>;
   createStaff: (name: string, employmentType: string, role: string) => Promise<void>;
   bulkAssignRequested: (dates: string[]) => Promise<number>;
 }
@@ -55,6 +59,7 @@ function toStaff(s: ApiStaff, storeId: number): Staff {
     role: s.role === 'MANAGER' ? 'MANAGER' : 'STAFF',
     rank: s.rank ?? null,
     skills: s.skills ? s.skills.split(',').map((t) => t.trim()).filter(Boolean) : [],
+    hourlyWage: s.hourlyWage ?? null,
   };
 }
 function toRecruitment(r: ApiRecruitment): Recruitment {
@@ -90,6 +95,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [storeNotes, setStoreNotes] = useState<StoreNote[]>([]);
   const [recruitments, setRecruitments] = useState<Recruitment[]>([]);
   const [storeId, setStoreId] = useState<number | null>(null);
+  const [shiftPlanStatus, setShiftPlanStatusState] = useState<ShiftPlanStatus>('DRAFT');
   const [month, setMonth] = useState(() => {
     // シフト作成は通常「翌月分」を準備する運用なので、起動時は翌月をデフォルト表示にする。
     const now = new Date();
@@ -113,6 +119,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const reloadStoreData = useCallback(async () => {
     if (!storeId) return;
+    // コア取得：これらが落ちると画面が成立しないので Promise.all で待つ。
     const [st, rq, as, dn, sn, rc] = await Promise.all([
       api.staff(storeId),
       api.requests(storeId, month),
@@ -127,6 +134,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setDayNotes(dn.map(toDayNote));
     setStoreNotes(sn.map(toStoreNote));
     setRecruitments(rc.map(toRecruitment));
+    // ShiftPlan は補助情報。古い DB スキーマで失敗しても他の表示は止めない。
+    try {
+      const plan = await api.shiftPlan(storeId, month);
+      setShiftPlanStatusState(plan.status as ShiftPlanStatus);
+    } catch (error) {
+      console.warn('shiftPlan fetch failed, falling back to DRAFT', error);
+      setShiftPlanStatusState('DRAFT');
+    }
   }, [storeId, month]);
 
   useEffect(() => {
@@ -145,6 +160,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setStores([]); setStaff([]); setRequests([]); setAssignments([]);
     setDayNotes([]); setStoreNotes([]); setRecruitments([]);
     setStoreId(null);
+    setShiftPlanStatusState('DRAFT');
   }, []);
 
   const setDayRequest = useCallback(async (date: string, value: DayRequestValue) => {
@@ -154,8 +170,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const bulkSetRequests = useCallback(async (entries: { date: string; value: DayRequestValue }[]) => {
     if (entries.length === 0) return;
-    await Promise.all(entries.map((e) => api.setRequest(e.date, e.value)));
-    await reloadStoreData();
+    // 1 件失敗しても残りはサーバ側に書かれている可能性があるため、片方失敗時は必ず reload して
+    // 部分反映を画面に反映する。
+    try {
+      await Promise.all(entries.map((e) => api.setRequest(e.date, e.value)));
+    } finally {
+      await reloadStoreData();
+    }
   }, [reloadStoreData]);
 
   const submitRequests = useCallback(async (
@@ -196,8 +217,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await reloadStoreData();
   }, [storeId, reloadStoreData]);
 
-  const updateStaff = useCallback(async (id: string, rank: number | null, skills: string[]) => {
-    await api.updateStaff(Number(id), rank, skills.join(','));
+  const updateStaff = useCallback(async (id: string, rank: number | null, skills: string[], hourlyWage?: number | null) => {
+    await api.updateStaff(Number(id), rank, skills.join(','), hourlyWage);
     await reloadStoreData();
   }, [reloadStoreData]);
 
@@ -207,15 +228,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await reloadStoreData();
   }, [storeId, reloadStoreData]);
 
-  // 希望（早/中/遅）が出ていて未割り当てのセルを一括で割り当てる。割り当てた件数を返す。
+  const setShiftPlanStatus = useCallback(async (next: ShiftPlanStatus) => {
+    if (!storeId) return;
+    const plan = await api.setShiftPlanStatus(storeId, month, next as ApiShiftPlanStatus);
+    setShiftPlanStatusState(plan.status as ShiftPlanStatus);
+  }, [storeId, month]);
+
+  // 希望（早/遅/どちらでも可）が出ていて未割り当てのセルを一括で割り当てる。割り当てた件数を返す。
+  // - STAFF ロールだけが対象（店長は自分の希望で勝手に割り当てない）
+  // - 'any'（どちらでも可）は既定で 'early' に解決する。サーバの WorkSlot は early/late のみのため
+  //   キャストで 'any' を渡すと 400 になるので、ここで決定する。
   const bulkAssignRequested = useCallback(async (targetDates: string[]): Promise<number> => {
     if (!storeId) return 0;
     const tasks: Promise<void>[] = [];
     for (const person of staff) {
+      if (person.role !== 'STAFF') continue;
       for (const date of targetDates) {
         const v = getDayRequest(requests, person.id, date);
         if (v === 'off' || v === 'none') continue;
-        const slot = v as WorkSlot;
+        const slot: WorkSlot = v === 'late' ? 'late' : 'early';
         if (!isAssigned(assignments, date, slot, person.id)) {
           tasks.push(api.assign(storeId, date, slot, Number(person.id)));
         }
@@ -228,8 +259,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AppContextValue>(() => ({
     me, loading, stores, staff, requests, assignments, dayNotes, storeNotes, recruitments, storeId, month,
+    shiftPlanStatus, setShiftPlanStatus,
     setStoreId, setMonth, login, logout, setDayRequest, bulkSetRequests, submitRequests, toggleAssignment, setDayNote, setStoreNote, setRecruitment, updateStaff, createStaff, bulkAssignRequested,
   }), [me, loading, stores, staff, requests, assignments, dayNotes, storeNotes, recruitments, storeId, month,
+       shiftPlanStatus, setShiftPlanStatus,
        login, logout, setDayRequest, bulkSetRequests, submitRequests, toggleAssignment, setDayNote, setStoreNote, setRecruitment, updateStaff, createStaff, bulkAssignRequested]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

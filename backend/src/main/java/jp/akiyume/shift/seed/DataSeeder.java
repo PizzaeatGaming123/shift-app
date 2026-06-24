@@ -29,11 +29,15 @@ public class DataSeeder implements CommandLineRunner {
     /** テストでは false にしてデモのシフト/メモを投入しない（件数検証を壊さないため）。 */
     private final boolean seedDemoShifts;
 
+    /** シード時の初期パスワード。application.yml から注入し、本番では必ず環境変数で上書きする。 */
+    private final String seedPassword;
+
     public DataSeeder(StoreRepository storeRepository, StaffRepository staffRepository,
                       ShiftRequestRepository requestRepository, ShiftAssignmentRepository assignmentRepository,
                       DayNoteRepository dayNoteRepository, StoreNoteRepository storeNoteRepository,
                       PasswordEncoder passwordEncoder,
-                      @Value("${app.seed-demo-shifts:true}") boolean seedDemoShifts) {
+                      @Value("${app.seed-demo-shifts:false}") boolean seedDemoShifts,
+                      @Value("${app.seed-password:change-me-on-deploy}") String seedPassword) {
         this.storeRepository = storeRepository;
         this.staffRepository = staffRepository;
         this.requestRepository = requestRepository;
@@ -42,6 +46,7 @@ public class DataSeeder implements CommandLineRunner {
         this.storeNoteRepository = storeNoteRepository;
         this.passwordEncoder = passwordEncoder;
         this.seedDemoShifts = seedDemoShifts;
+        this.seedPassword = seedPassword;
     }
 
     private record Person(String username, String name, EmploymentType type, Role role) {}
@@ -76,7 +81,7 @@ public class DataSeeder implements CommandLineRunner {
 
     private void seedStore(String storeName, List<Person> people) {
         Store store = storeRepository.save(new Store(storeName));
-        String hash = passwordEncoder.encode("password");
+        String hash = passwordEncoder.encode(seedPassword);
         List<Staff> saved = new ArrayList<>();
         int idx = 0;
         for (Person p : people) {
@@ -85,6 +90,12 @@ public class DataSeeder implements CommandLineRunner {
             staff.setSkills(p.role() == Role.MANAGER
                     ? "ホール,キッチン,新人教育"
                     : SKILL_POOL[idx % SKILL_POOL.length] + "," + SKILL_POOL[(idx + 2) % SKILL_POOL.length]);
+            // デモ用の時給。雇用形態でばらつかせる。
+            staff.setHourlyWage(switch (p.type()) {
+                case FULL_TIME -> 1800;
+                case PART_TIME -> 1100;
+                case ARUBAITO -> 1050;
+            });
             saved.add(staffRepository.save(staff));
             idx++;
         }

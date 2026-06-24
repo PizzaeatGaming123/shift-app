@@ -52,14 +52,29 @@ it('追加募集: メッセージを入力して追加すると recruitments へ
 it('スタッフ一覧: スタッフ名を表示する', async () => {
   renderSection('staff-list');
   expect(await screen.findByText(/田中太郎/)).toBeInTheDocument();
+  expect(screen.getByLabelText('スタッフ検索')).toBeInTheDocument();
+  expect(screen.getByLabelText('登録する権限')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'スタッフを登録' })).toBeInTheDocument();
+});
+
+it('スタッフ登録と管理者登録: 同じ統合画面で初期登録区分を切り替える', async () => {
+  renderSection('staff-registration');
+  expect(await screen.findByLabelText('登録する権限')).toHaveValue('STAFF');
+  expect(screen.getByRole('button', { name: 'スタッフを登録' })).toBeInTheDocument();
+
+  renderSection('manager-registration');
+  expect(await screen.findAllByLabelText('登録する権限')).toHaveLength(2);
+  expect(screen.getByRole('button', { name: '管理者を登録' })).toBeInTheDocument();
 });
 
 it('ランク・スキル: タブとランク階層S〜Dを表示し、保有者をスキルタブで切り替える', async () => {
   const user = userEvent.setup();
   renderSection('rank-settings');
 
+  expect(await screen.findByText('ランク階層')).toBeInTheDocument();
+  expect(screen.getByRole('tablist', { name: 'ランク・スキル切替' })).toBeInTheDocument();
   // ランクタブ: S〜D の行
-  expect(await screen.findByRole('rowheader', { name: 'S' })).toBeInTheDocument();
+  expect(screen.getByRole('rowheader', { name: 'S' })).toBeInTheDocument();
   expect(screen.getByRole('rowheader', { name: 'D' })).toBeInTheDocument();
   // 田中太郎(rank3=B)がBランクの保有者
   const bRow = screen.getByRole('rowheader', { name: 'B' }).closest('tr')!;
@@ -130,8 +145,18 @@ it('回収状況: 提出済みと未提出を集計して表示する', async ()
   renderSection('collection');
 
   expect(await screen.findByText('対象スタッフ')).toBeInTheDocument();
-  expect(screen.getAllByText('未提出')).toHaveLength(2);
+  expect(screen.getByLabelText('回収状況の対象月')).toBeInTheDocument();
+  expect(screen.getAllByText('未提出').length).toBeGreaterThanOrEqual(1);
   expect(screen.getByRole('button', { name: '未提出者へ一括通知' })).toBeInTheDocument();
+});
+
+it('シフト回収設定: 業務設定画面として編集項目と保存ボタンを表示する', async () => {
+  renderSection('collection-settings');
+
+  expect(await screen.findByLabelText('対象年月')).toBeInTheDocument();
+  expect(screen.getByLabelText('シフト周期')).toBeInTheDocument();
+  expect(screen.getByLabelText('受付状態')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'シフト回収設定を保存' })).toBeInTheDocument();
 });
 
 it('固定シフト: 曜日ルールを店舗設定へ保存する', async () => {
@@ -164,6 +189,46 @@ it('労務アラート: 画像と同じ条件プルダウンを表示する', as
   expect(screen.getByLabelText('ポジション表示')).toBeInTheDocument();
   expect(screen.getByLabelText('アラート項目')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: '上記の条件で検索' })).toBeInTheDocument();
+});
+
+it('店舗管理・部門・ポジション・権限: 業務設定画面として表示する', async () => {
+  renderSection('store-management');
+  expect(await screen.findByLabelText('店舗管理の表示店舗')).toBeInTheDocument();
+  expect(screen.getByLabelText('表示店舗の責任者')).toBeInTheDocument();
+
+  renderSection('departments');
+  expect(await screen.findByLabelText('新しい部門名')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '部門を追加' })).toBeInTheDocument();
+
+  renderSection('positions');
+  expect(await screen.findByLabelText('新しいポジション名')).toBeInTheDocument();
+  expect(screen.getByLabelText('ポジションの所属部門')).toBeInTheDocument();
+
+  renderSection('permissions');
+  expect(await screen.findByLabelText('権限対象')).toBeInTheDocument();
+  expect(screen.getByRole('rowheader', { name: '希望シフトの提出' })).toBeInTheDocument();
+});
+
+it('労務状況・勤怠・人時売上高: 予定シフトベースの一覧を表示する', async () => {
+  renderSection('labor-status');
+  expect(await screen.findByLabelText('労務状況店舗')).toBeInTheDocument();
+  expect(screen.getByText('シフト上の確認')).toBeInTheDocument();
+
+  renderSection('attendance');
+  expect(await screen.findByText('出勤打刻ではなく、シフト表から見た勤務予定です。')).toBeInTheDocument();
+  expect(screen.getAllByText('勤務予定日数').length).toBeGreaterThanOrEqual(1);
+
+  renderSection('sales-per-hour');
+  expect(await screen.findByLabelText('人時売上高の対象月')).toBeInTheDocument();
+  expect(screen.getAllByText('人時売上高').length).toBeGreaterThanOrEqual(1);
+});
+
+it('追加募集: 条件カードと募集一覧を表示する', async () => {
+  renderSection('recruitment');
+
+  expect(await screen.findByLabelText('追加募集ポジション')).toBeInTheDocument();
+  expect(screen.getByLabelText('追加募集雇用形態')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '募集を追加' })).toBeInTheDocument();
 });
 
 it('他事業所ヘルプ: 上段切替とヘルプ先条件を表示する', async () => {

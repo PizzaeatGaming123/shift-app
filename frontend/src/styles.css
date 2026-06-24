@@ -2245,6 +2245,41 @@ button.cal-cell:active {
   color: #b54d4d;
 }
 
+.rk-staff-management {
+  width: min(1080px, 100%);
+}
+
+.rk-staff-management__metrics,
+.rk-ranks__metrics {
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  margin-bottom: 14px;
+}
+
+.rk-staff-management__filters {
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+}
+
+.rk-staff-management__skills {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.rk-collection-settings__metrics,
+.rk-fixed-shifts__metrics {
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  margin-bottom: 14px;
+}
+
+.rk-collection-settings__form,
+.rk-fixed-shifts__form {
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+}
+
+.rk-fixed-shifts__copy {
+  margin-top: 12px;
+}
+
 .rk-shift-toolbar__publish:disabled {
   color: #9199a2;
   background: #eceff2;
@@ -2493,8 +2528,42 @@ button.cal-cell:active {
   font-weight: 400;
 }
 
+.rk-filter-card__wide {
+  grid-column: 1 / -1;
+}
+
+.rk-filter-card__wide input {
+  width: min(520px, 100%);
+}
+
 .rk-settings-table {
   margin-top: 12px;
+}
+
+.rk-compact-table th,
+.rk-compact-table td {
+  padding: 9px 12px;
+}
+
+.rk-compact-table .is-attention-row th,
+.rk-compact-table .is-attention-row td,
+.rk-reference-table .is-attention-row th,
+.rk-reference-table .is-attention-row td {
+  background: #fff7d7;
+}
+
+.rk-store-management,
+.rk-master-page,
+.rk-permission-page,
+.rk-labor-status,
+.rk-attendance-plan,
+.rk-sales-per-hour,
+.rk-recruitment-page {
+  width: min(1040px, 100%);
+}
+
+.rk-permission-table td:last-child {
+  width: 150px;
 }
 
 .rk-settings-table input[type="color"] {
@@ -2859,8 +2928,7 @@ button.cal-cell:active {
   margin: 12px 0;
 }
 
-.rk-message-bubble-row.is-self,
-.rk-message-bubble-row.is-manager {
+.rk-message-bubble-row.is-self {
   justify-content: end;
 }
 
@@ -2991,6 +3059,48 @@ button.cal-cell:active {
 
 .rk-staff-message__head small {
   color: #6c7a86;
+  font-size: 10px;
+}
+
+.rk-staff-message__contacts {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  border-bottom: 1px solid #d8dee6;
+  background: #fff;
+}
+
+.rk-staff-message__contacts button {
+  min-width: 104px;
+  border: 0;
+  border-right: 1px solid #e2e6eb;
+  border-radius: 0;
+  background: #fff;
+  color: #52616c;
+  padding: 8px 10px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rk-staff-message__contacts button.is-active {
+  background: #edf6ff;
+  color: #2078ca;
+  box-shadow: inset 0 -2px 0 #2f80d8;
+}
+
+.rk-staff-message__contacts span,
+.rk-staff-message__contacts small {
+  display: block;
+}
+
+.rk-staff-message__contacts span {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.rk-staff-message__contacts small {
+  margin-top: 2px;
+  color: #7b8792;
   font-size: 10px;
 }
 
@@ -3145,59 +3255,46 @@ button.cal-cell:active {
 }
 
 /* ランク・スキル一覧 */
+.rk-ranks {
+  width: min(1080px, 100%);
+}
+
+.rk-ranks__head {
+  align-items: stretch;
+}
+
 .rk-ranks__tabs {
   display: flex;
   gap: 0;
-  border-bottom: 2px solid var(--rk-rule, #e2e6ee);
-  margin-bottom: 14px;
+  border: 1px solid #cbd8c9;
+  margin-bottom: 0;
+  background: #fff;
 }
 
 .rk-ranks__tabs button {
-  border: none;
+  border: 0;
+  border-right: 1px solid #dfe6dc;
   background: transparent;
-  padding: 9px 22px;
-  font-size: 14px;
+  padding: 7px 20px;
+  font-size: 12px;
   font-weight: 700;
-  color: var(--muted, #6b7785);
+  color: #5d6873;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
 }
+
+.rk-ranks__tabs button:last-child { border-right: 0; }
 
 .rk-ranks__tabs button[aria-selected="true"] {
-  color: var(--primary, #2f80c4);
-  border-bottom-color: var(--primary, #2f80c4);
+  color: #2f80c4;
+  background: #edf6fc;
 }
 
-.rk-ranks__search input {
-  width: 100%;
-  max-width: 420px;
-  border: 1px solid var(--rk-rule, #d4d9e3);
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 13px;
-  margin-bottom: 6px;
+.rk-ranks__head input {
+  width: 210px;
 }
 
 .rk-ranks__table {
-  width: 100%;
-  border-collapse: collapse;
   margin-top: 10px;
-  font-size: 13px;
-}
-
-.rk-ranks__table th,
-.rk-ranks__table td {
-  border-bottom: 1px solid var(--rk-rule, #eceff4);
-  padding: 10px 8px;
-  text-align: left;
-  vertical-align: middle;
-}
-
-.rk-ranks__table thead th {
-  background: #f3f6fb;
-  font-weight: 700;
-  border-bottom: 1px solid var(--rk-rule, #e2e6ee);
 }
 
 .rk-ranks__name {
@@ -3218,18 +3315,19 @@ button.cal-cell:active {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  background: var(--primary-soft, #e7f1fb);
-  color: var(--primary-dark, #246aa6);
-  border-radius: 14px;
-  padding: 3px 6px 3px 10px;
+  border: 1px solid #c9d8e4;
+  background: #f5f9fc;
+  color: #246aa6;
+  border-radius: 0;
+  padding: 3px 6px 3px 8px;
   font-size: 12px;
 }
 
 .rk-ranks__chip button {
-  border: none;
-  background: rgba(0, 0, 0, .12);
-  color: #fff;
-  border-radius: 50%;
+  border: 1px solid #d5dce4;
+  background: #fff;
+  color: #66737e;
+  border-radius: 0;
   width: 16px;
   height: 16px;
   line-height: 1;
@@ -3238,10 +3336,10 @@ button.cal-cell:active {
 }
 
 .rk-ranks__add {
-  border: 1px dashed var(--primary, #2f80c4);
+  border: 1px dashed #2f80c4;
   background: #fff;
-  color: var(--primary, #2f80c4);
-  border-radius: 14px;
+  color: #2f80c4;
+  border-radius: 0;
   padding: 4px 10px;
   font-size: 12px;
   cursor: pointer;
@@ -3250,11 +3348,12 @@ button.cal-cell:active {
 .rk-ranks__count { color: var(--muted, #6b7785); font-size: 12px; margin-left: 2px; }
 
 .rk-ranks__del {
-  border: none;
+  border: 1px solid #e6c3c3;
   background: transparent;
-  color: var(--low, #d64545);
+  color: #d64545;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
+  padding: 3px 8px;
 }
 
 .rk-ranks__new {
@@ -3435,6 +3534,25 @@ button.cal-cell:active {
 
 .rk-shift-display-controls__density {
   margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+}
+
+.rk-shift-display-controls__density button {
+  min-width: 34px;
+  border-radius: 0;
+}
+
+.rk-shift-display-controls__density button + button {
+  margin-left: -1px;
+}
+
+.rk-shift-display-controls__density button[aria-pressed="true"] {
+  border-color: #8fa8bf;
+  background: #eef4f9;
+  color: #244f73;
+  font-weight: 700;
 }
 
 .rk-inline-menu {
@@ -3621,6 +3739,42 @@ button.cal-cell:active {
   height: 72px;
 }
 
+.rk-shift-table--small {
+  font-size: 9px;
+}
+
+.rk-shift-table--small tr > :first-child {
+  width: 126px;
+}
+
+.rk-shift-table--small th,
+.rk-shift-table--small td {
+  padding: 2px 3px;
+}
+
+.rk-shift-table--small thead th {
+  height: 22px;
+  font-size: 9px;
+}
+
+.rk-shift-table--large {
+  font-size: 12px;
+}
+
+.rk-shift-table--large tr > :first-child {
+  width: 168px;
+}
+
+.rk-shift-table--large th,
+.rk-shift-table--large td {
+  padding: 5px 6px;
+}
+
+.rk-shift-table--large thead th {
+  height: 30px;
+  font-size: 11px;
+}
+
 .rk-shift-staff {
   position: relative;
   padding: 7px 8px !important;
@@ -3651,6 +3805,18 @@ button.cal-cell:active {
 
 .rk-shift-staff-row--large .rk-shift-staff__hours {
   font-size: 11px;
+}
+
+.rk-shift-staff-row--small .rk-shift-staff {
+  padding: 5px 6px !important;
+}
+
+.rk-shift-staff-row--small .rk-shift-staff__name {
+  font-size: 10px;
+}
+
+.rk-shift-staff-row--small .rk-shift-staff__hours {
+  font-size: 8px;
 }
 
 .rk-shift-staff__warning {
@@ -3699,6 +3865,20 @@ button.rk-shift-chip:focus-visible {
   border-width: 1px;
   border-style: dashed;
   background: #fff;
+}
+
+.rk-shift-table--small .rk-shift-chip {
+  min-height: 15px;
+  margin-bottom: 1px;
+  padding: 0 2px;
+  font-size: 8px;
+}
+
+.rk-shift-table--large .rk-shift-chip {
+  min-height: 22px;
+  margin-bottom: 3px;
+  padding: 2px 3px;
+  font-size: 11px;
 }
 
 .rk-shift-chip--assigned {
@@ -3811,6 +3991,44 @@ button.rk-shift-chip:focus-visible {
   border: 1px solid var(--rk-early);
   background: var(--rk-early-bg);
   color: var(--rk-early);
+}
+
+.rk-shift-cell__pattern,
+.rk-shift-cell__task {
+  display: block;
+  margin-top: 1px;
+  color: #6d7479;
+  font-size: 8px;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rk-shift-cell__task {
+  color: #8a6f42;
+}
+
+.rk-shift-table--small .rk-shift-cell__pattern,
+.rk-shift-table--small .rk-shift-cell__task,
+.rk-shift-table--small .rk-shift-cell__note {
+  font-size: 7px;
+  line-height: 1.15;
+}
+
+.rk-shift-table--small .rk-shift-cell__note {
+  -webkit-line-clamp: 1;
+}
+
+.rk-shift-table--large .rk-shift-cell__pattern,
+.rk-shift-table--large .rk-shift-cell__task {
+  font-size: 9px;
+}
+
+.rk-shift-table--large .rk-shift-cell__note {
+  font-size: 9px;
+  -webkit-line-clamp: 3;
 }
 
 .rk-day-timeline__bar--late {
@@ -4428,6 +4646,20 @@ button.rk-shift-chip:focus-visible {
 .line-segment button,
 .line-body .month-nav button,
 .line-head__logout { border-radius: 0 !important; }
+
+.rk-period-arrow:disabled,
+.rk-period-card:disabled,
+.rk-period-card.is-disabled {
+  color: #a3abb3;
+  background: #f0f2f4;
+  border-color: #d6dce3;
+  cursor: not-allowed;
+}
+
+.rk-period-card.is-disabled span {
+  background: #dce2e8;
+  color: #7f8992;
+}
 
 /* シフト提出バーを常に画面下に固定表示 */
 .rk-staff-submit__bar {

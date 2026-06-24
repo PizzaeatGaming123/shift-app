@@ -57,12 +57,19 @@ public class RequestService {
         }
         Staff staff = staffRepository.findByUsername(username).orElseThrow();
         Set<LocalDate> seen = new HashSet<>();
+        // 一応の sanity check のみ（明らかに不正な極端年だけ弾く）。
+        // 厳しい期間バリデーションはサーバ時計に依存して誤検知するため、提出期間管理は別レイヤに任せる。
+        LocalDate minDate = LocalDate.of(2000, 1, 1);
+        LocalDate maxDate = LocalDate.of(2099, 12, 31);
         for (SubmitRequestEntry entry : entries) {
             LocalDate date;
             try {
                 date = LocalDate.parse(entry.date());
             } catch (RuntimeException ex) {
                 throw new ResponseStatusException(BAD_REQUEST, "Invalid date");
+            }
+            if (date.isBefore(minDate) || date.isAfter(maxDate)) {
+                throw new ResponseStatusException(BAD_REQUEST, "Date out of allowed range");
             }
             if (!seen.add(date)) {
                 throw new ResponseStatusException(BAD_REQUEST, "Duplicate date");
@@ -82,7 +89,9 @@ public class RequestService {
                 String startTime = hasTime ? normalizeTime(entry.startTime()) : null;
                 String endTime = hasTime ? normalizeTime(entry.endTime()) : null;
                 if (hasTime) validateRange(startTime, endTime);
-                requestRepository.save(new ShiftRequest(staff, date, slot, startTime, endTime));
+                ShiftRequest request = new ShiftRequest(staff, date, slot, startTime, endTime);
+                request.setStatus(RequestStatus.SUBMITTED);
+                requestRepository.save(request);
             }
 
             var existingNote = dayNoteRepository.findByStaff_IdAndDate(staff.getId(), date);

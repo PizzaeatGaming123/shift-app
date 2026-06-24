@@ -1,0 +1,11 @@
+# 本番プロファイル：H2 console を完全に閉じ、シードを止め、初期パスワードを環境変数必須化する。
+# 起動時に SPRING_PROFILES_ACTIVE=prod を必ず指定すること。
+spring:
+  h2:
+    console:
+      enabled: false
+app:
+  seed-demo-shifts: false
+  # APP_SEED_PASSWORD 未設定だと "change-me-on-deploy" になり、すぐ気付ける形にしている。
+  seed-password: "${APP_SEED_PASSWORD:change-me-on-deploy}"
+  h2-console-enabled: false

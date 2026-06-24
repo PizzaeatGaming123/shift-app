@@ -9,7 +9,8 @@ function escapeCell(value: string): string {
 
 /** スタッフ×日付の割り当てシフトをCSV文字列にする（割り当てがある区分のラベルを出力） */
 export function buildScheduleCsv(staff: Staff[], dates: string[], assignments: Assignment[]): string {
-  const header = ['スタッフ', ...dates.map((d) => d.slice(5))];
+  // 年情報を残しておかないと、CSV を後日単体で開いたときに年がわからなくなる。
+  const header = ['スタッフ', ...dates];
   const rows = staff.map((person) => {
     const cells = dates.map((date) => {
       const slot = WORK_SLOTS.find((s) => isAssigned(assignments, date, s, person.id));

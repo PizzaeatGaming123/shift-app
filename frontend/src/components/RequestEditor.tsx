@@ -14,7 +14,7 @@ import {
   createDefaultCollectionSettings,
   daysUntilDeadline,
 } from '../lib/collectionSettings';
-import { shiftStatusSettingKey, type ShiftPlanStatus } from '../lib/shiftStatus';
+import { isLockedStatus, useEffectiveShiftStatus } from '../lib/shiftStatus';
 import { Modal } from './ui/Modal';
 import { useToast } from './ui/Toast';
 import type { DayRequestValue } from '../types';
@@ -24,6 +24,17 @@ const WD = ['日', '月', '火', '水', '木', '金', '土'];
 function fmtDate(date: string): string {
   const d = new Date(`${date}T00:00:00`);
   return `${d.getMonth() + 1}/${d.getDate()}(${WD[d.getDay()]})`;
+}
+
+/** 'HH:MM' / 'H:MM' を分に変換。'24:00' は 1440 分。不正値は null。 */
+function parseHHMM(value: string): number | null {
+  if (value === '24:00') return 24 * 60;
+  const match = value.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return null;
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+  return hour * 60 + minute;
 }
 
 function displayValue(v: DayRequestValue, time: { start: string; end: string }): string {
@@ -37,7 +48,7 @@ function displayValue(v: DayRequestValue, time: { start: string; end: string }):
 interface RequestEditorProps { year: number; month: number; }
 
 export function RequestEditor({ year, month }: RequestEditorProps) {
-  const { me, stores, storeId, requests, dayNotes, submitRequests, setMonth } = useApp();
+  const { me, stores, storeId, requests, assignments, dayNotes, submitRequests, setMonth } = useApp();
   const { showToast } = useToast();
   const [storedPatterns] = useSetting(
     shiftPatternSettingKey(storeId),
@@ -53,13 +64,8 @@ export function RequestEditor({ year, month }: RequestEditorProps) {
     ...storedCollection,
   };
   const monthKey = `${year}-${String(month).padStart(2, '0')}`;
-  const [shiftStatus] = useSetting<ShiftPlanStatus>(
-    shiftStatusSettingKey(storeId, monthKey),
-    'DRAFT',
-  );
-  const locked = shiftStatus === 'CONFIRMED'
-    || shiftStatus === 'PUBLISHED'
-    || shiftStatus === 'REPUBLISHED';
+  const [shiftStatus] = useEffectiveShiftStatus(storeId, monthKey, assignments);
+  const locked = isLockedStatus(shiftStatus);
   const myId = me ? String(me.id) : '';
   const dates = getMonthDates(year, month);
 
@@ -183,7 +189,8 @@ export function RequestEditor({ year, month }: RequestEditorProps) {
       setMemoDrafts({});
       setSubmitted(true);
       showToast('シフトを提出しました');
-    } catch {
+    } catch (error) {
+      console.error('submitRequests failed', error);
       showToast('提出できませんでした。もう一度お試しください');
     } finally {
       setSubmitting(false);
@@ -191,10 +198,12 @@ export function RequestEditor({ year, month }: RequestEditorProps) {
   }
   function saveWorkDay() {
     if (!modalDate) return;
-    const startMinutes = Number(modalStart.slice(0, 2)) * 60 + Number(modalStart.slice(3));
-    const endMinutes = modalEnd === '24:00'
-      ? 24 * 60
-      : Number(modalEnd.slice(0, 2)) * 60 + Number(modalEnd.slice(3));
+    const startMinutes = parseHHMM(modalStart);
+    const endMinutes = parseHHMM(modalEnd);
+    if (startMinutes === null || endMinutes === null) {
+      showToast('時刻は HH:MM 形式で入力してください');
+      return;
+    }
     if (endMinutes <= startMinutes) {
       showToast('終了時刻は開始時刻より後にしてください');
       return;
@@ -215,8 +224,12 @@ export function RequestEditor({ year, month }: RequestEditorProps) {
     ? `${fmtDate(dates[0])} 〜 ${fmtDate(dates[dates.length - 1])}`
     : '';
   const storeName = stores.find((store) => store.id === String(storeId))?.name ?? '中島店';
+  const allowedYear = new Date().getFullYear();
+  const canGoPrevious = year === allowedYear && month > 1;
+  const canGoNext = year === allowedYear && month < 12;
   function changeMonth(delta: number) {
     const next = new Date(year, month - 1 + delta, 1);
+    if (next.getFullYear() !== allowedYear) return;
     setMonth(`${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`);
   }
   function periodCard(delta: number) {
@@ -226,6 +239,7 @@ export function RequestEditor({ year, month }: RequestEditorProps) {
       key: `${value.getFullYear()}-${value.getMonth() + 1}`,
       short: `${value.getMonth() + 1}/1〜`,
       end: `${value.getMonth() + 1}/${last.getDate()}`,
+      inRange: value.getFullYear() === allowedYear,
     };
   }
   const periods = [-1, 0, 1].map(periodCard);
@@ -235,13 +249,14 @@ export function RequestEditor({ year, month }: RequestEditorProps) {
       <div className="rk-staff-period-picker">
         <p className="rk-staff-period-picker__lead">提出したいシフト期間を選択してください</p>
         <div className="rk-staff-period-picker__carousel">
-          <button type="button" className="rk-period-arrow" onClick={() => changeMonth(-1)} aria-label="前の提出期間">‹</button>
+          <button type="button" className="rk-period-arrow" onClick={() => changeMonth(-1)} aria-label="前の提出期間" disabled={!canGoPrevious}>‹</button>
           {periods.map((period, index) => (
             <button
               type="button"
               key={period.key}
-              className={`rk-period-card${index === 1 ? ' is-selected' : ''}`}
+              className={`rk-period-card${index === 1 ? ' is-selected' : ''}${!period.inRange ? ' is-disabled' : ''}`}
               onClick={() => changeMonth(index - 1)}
+              disabled={!period.inRange}
               aria-current={index === 1 ? 'date' : undefined}
             >
               <strong>{period.short}</strong>
@@ -249,7 +264,7 @@ export function RequestEditor({ year, month }: RequestEditorProps) {
               {index === 1 && <span>選択中</span>}
             </button>
           ))}
-          <button type="button" className="rk-period-arrow" onClick={() => changeMonth(1)} aria-label="次の提出期間">›</button>
+          <button type="button" className="rk-period-arrow" onClick={() => changeMonth(1)} aria-label="次の提出期間" disabled={!canGoNext}>›</button>
         </div>
         <div className="rk-staff-period-picker__detail">
           <strong>{periodLabel}</strong>

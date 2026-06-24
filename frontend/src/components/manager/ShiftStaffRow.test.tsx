@@ -37,6 +37,8 @@ describe('ShiftStaffRow', () => {
 
     expect(screen.getByText('田中太郎')).toBeInTheDocument();
     expect(screen.getByText('9:00')).toBeInTheDocument();
+    expect(screen.getByText('07:00-16:00')).toBeInTheDocument();
+    expect(screen.getByText('開店作業')).toBeInTheDocument();
     expect(screen.getByText('早番大丈夫です！')).toBeInTheDocument();
     expect(screen.getByText('早番', { selector: '.rk-shift-chip--request' }))
       .toBeInTheDocument();
@@ -68,6 +70,58 @@ describe('ShiftStaffRow', () => {
 
     expect(screen.queryByText('早番大丈夫です！')).not.toBeInTheDocument();
     expect(screen.queryByText('早番')).not.toBeInTheDocument();
+  });
+
+  it('シフトパターンとタスクを個別に非表示にできる', () => {
+    render(
+      <table>
+        <tbody>
+          <ShiftStaffRow
+            person={person}
+            dates={[date]}
+            requests={[]}
+            assignments={[{ date, slot: 'late', staffIds: ['1'] }]}
+            notes={[]}
+            layers={{
+              ...DEFAULT_SHIFT_LAYERS,
+              showPatterns: false,
+              showTasks: false,
+            }}
+            density="standard"
+            onToggleAssignment={() => {}}
+          />
+        </tbody>
+      </table>,
+    );
+
+    expect(screen.getByText('遅番')).toBeInTheDocument();
+    expect(screen.queryByText('15:00-24:00')).not.toBeInTheDocument();
+    expect(screen.queryByText('閉店作業')).not.toBeInTheDocument();
+  });
+
+  it('店舗のシフトパターン設定を表示時間に反映する', () => {
+    render(
+      <table>
+        <tbody>
+          <ShiftStaffRow
+            person={person}
+            dates={[date]}
+            requests={[]}
+            assignments={[{ date, slot: 'early', staffIds: ['1'] }]}
+            notes={[]}
+            layers={DEFAULT_SHIFT_LAYERS}
+            density="standard"
+            shiftPatterns={{
+              early: { label: '朝番', start: '06:30', end: '15:30' },
+              late: { label: '夜番', start: '15:00', end: '24:00' },
+            }}
+            onToggleAssignment={() => {}}
+          />
+        </tbody>
+      </table>,
+    );
+
+    expect(screen.getByText('06:30-15:30')).toBeInTheDocument();
   });
 
   it('確定シフトのボタンから割り当て解除を実行する', async () => {

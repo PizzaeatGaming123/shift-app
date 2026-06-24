@@ -7,13 +7,16 @@ export interface Me {
   storeId: number;
 }
 export interface ApiStore { id: number; name: string; }
-export interface ApiStaff { id: number; name: string; employmentType: string; role: string; rank?: number | null; skills?: string | null; }
+export interface ApiStaff { id: number; name: string; employmentType: string; role: string; rank?: number | null; skills?: string | null; hourlyWage?: number | null; }
+export type ApiRequestStatus =
+  | 'DRAFT' | 'SUBMITTED' | 'CHANGE_REQUESTED' | 'CHANGE_APPROVED' | 'CHANGE_REJECTED' | 'CLOSED';
 export interface ApiRequest {
   staffId: number;
   date: string;
-  slot: 'early' | 'late' | 'off';
+  slot: 'early' | 'late' | 'off' | 'any';
   startTime?: string | null;
   endTime?: string | null;
+  status?: ApiRequestStatus;
 }
 export interface ApiAssignment { date: string; slot: 'early' | 'late'; staffId: number; }
 export interface RequestSubmissionEntry {
@@ -26,10 +29,37 @@ export interface RequestSubmissionEntry {
 export interface ApiDayNote { staffId: number; date: string; text: string; }
 export interface ApiStoreNote { date: string; text: string; }
 export interface ApiRecruitment { date: string; message: string; }
+export type ApiShiftPlanStatus =
+  | 'DRAFT' | 'ADJUSTING' | 'CONFIRMED' | 'PUBLISHED' | 'CHANGING' | 'REPUBLISHED';
+export interface ApiShiftPlan {
+  storeId: number;
+  month: string;
+  status: ApiShiftPlanStatus;
+  createdAt: string;
+  updatedAt: string;
+}
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json() as Promise<T>;
+}
+
+/** Spring が Set-Cookie で配る XSRF-TOKEN を読んで X-XSRF-TOKEN ヘッダにする。 */
+function readXsrfToken(): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+/** 状態変更系の fetch。CSRF トークンと credentials を自動付与する。 */
+async function mutate(input: string, init: RequestInit): Promise<Response> {
+  const headers = new Headers(init.headers);
+  if (init.body !== undefined && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+  const token = readXsrfToken();
+  if (token) headers.set('X-XSRF-TOKEN', token);
+  return fetch(input, { ...init, credentials: 'include', headers });
 }
 
 export const api = {
@@ -40,6 +70,7 @@ export const api = {
   },
 
   async login(username: string, password: string): Promise<Me> {
+    // ログイン前は CSRF トークンを持っていないので mutate ではなく素の fetch を使う。
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       credentials: 'include',
@@ -51,7 +82,7 @@ export const api = {
   },
 
   async logout(): Promise<void> {
-    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    await mutate('/api/auth/logout', { method: 'POST' });
   },
 
   async stores(): Promise<ApiStore[]> {
@@ -62,20 +93,16 @@ export const api = {
     return json<ApiStaff[]>(await fetch(`/api/stores/${storeId}/staff`, { credentials: 'include' }));
   },
 
-  async updateStaff(id: number, rank: number | null, skills: string): Promise<void> {
-    await fetch(`/api/staff/${id}`, {
+  async updateStaff(id: number, rank: number | null, skills: string, hourlyWage?: number | null): Promise<void> {
+    await mutate(`/api/staff/${id}`, {
       method: 'PUT',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rank, skills }),
+      body: JSON.stringify({ rank, skills, hourlyWage }),
     });
   },
 
   async createStaff(storeId: number, name: string, employmentType: string, role: string): Promise<void> {
-    await fetch(`/api/stores/${storeId}/staff`, {
+    await mutate(`/api/stores/${storeId}/staff`, {
       method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, employmentType, role }),
     });
   },
@@ -85,20 +112,16 @@ export const api = {
   },
 
   async setRequest(date: string, value: DayRequestValue): Promise<ApiRequest[]> {
-    const res = await fetch('/api/requests', {
+    const res = await mutate('/api/requests', {
       method: 'PUT',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ date, value }),
     });
     return json<ApiRequest[]>(res);
   },
 
   async submitRequests(entries: RequestSubmissionEntry[]): Promise<void> {
-    const res = await fetch('/api/requests/submission', {
+    const res = await mutate('/api/requests/submission', {
       method: 'PUT',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ entries }),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -109,19 +132,15 @@ export const api = {
   },
 
   async assign(storeId: number, date: string, slot: 'early' | 'late', staffId: number): Promise<void> {
-    await fetch('/api/assignments', {
+    await mutate('/api/assignments', {
       method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ storeId, date, slot, staffId }),
     });
   },
 
   async unassign(storeId: number, date: string, slot: 'early' | 'late', staffId: number): Promise<void> {
-    await fetch('/api/assignments', {
+    await mutate('/api/assignments', {
       method: 'DELETE',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ storeId, date, slot, staffId }),
     });
   },
@@ -131,10 +150,8 @@ export const api = {
   },
 
   async setDayNote(date: string, text: string): Promise<void> {
-    await fetch('/api/day-notes', {
+    await mutate('/api/day-notes', {
       method: 'PUT',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ date, text }),
     });
   },
@@ -144,10 +161,8 @@ export const api = {
   },
 
   async setStoreNote(storeId: number, date: string, text: string): Promise<void> {
-    await fetch(`/api/stores/${storeId}/store-notes`, {
+    await mutate(`/api/stores/${storeId}/store-notes`, {
       method: 'PUT',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ date, text }),
     });
   },
@@ -157,11 +172,21 @@ export const api = {
   },
 
   async setRecruitment(storeId: number, date: string, message: string): Promise<void> {
-    await fetch(`/api/stores/${storeId}/recruitments`, {
+    await mutate(`/api/stores/${storeId}/recruitments`, {
       method: 'PUT',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ date, message }),
     });
+  },
+
+  async shiftPlan(storeId: number, month: string): Promise<ApiShiftPlan> {
+    return json<ApiShiftPlan>(await fetch(`/api/stores/${storeId}/shift-plans/${month}`, { credentials: 'include' }));
+  },
+
+  async setShiftPlanStatus(storeId: number, month: string, status: ApiShiftPlanStatus): Promise<ApiShiftPlan> {
+    const res = await mutate(`/api/stores/${storeId}/shift-plans/${month}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+    return json<ApiShiftPlan>(res);
   },
 };

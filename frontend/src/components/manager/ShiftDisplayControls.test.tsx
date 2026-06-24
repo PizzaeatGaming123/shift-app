@@ -51,11 +51,14 @@ describe('ShiftDisplayControls', () => {
     });
   });
 
-  it('表示サイズを循環する', async () => {
+  it('表示サイズを直接切り替える', async () => {
     const user = userEvent.setup();
     const props = renderControls();
 
-    await user.click(screen.getByRole('button', { name: '縮小/拡大 標準' }));
+    expect(screen.getByRole('group', { name: '縮小/拡大' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '標準' })).toHaveAttribute('aria-pressed', 'true');
+
+    await user.click(screen.getByRole('button', { name: '大' }));
 
     expect(props.onDensityChange).toHaveBeenCalledWith('large');
   });
