@@ -4,8 +4,9 @@ import { Modal } from './ui/Modal';
 import { AccountSettingsForm } from './AccountSettingsForm';
 import { RequestEditor } from './RequestEditor';
 import { SharedView } from './SharedView';
+import { StaffMessages } from './StaffMessages';
 
-type Tab = 'main' | 'shared';
+type Tab = 'main' | 'shared' | 'messages';
 
 /** スタッフ向けのスマホシェル。資料の提出画面と同じ単一カラムで表示する。 */
 export function StaffApp() {
@@ -30,7 +31,7 @@ export function StaffApp() {
             ‹
           </button>
           <span className="line-head__title">
-            {tab === 'main' ? 'シフト提出＆確認' : '確定シフト'}
+            {tab === 'main' ? 'シフト提出＆確認' : tab === 'shared' ? '確定シフト' : 'メッセージ'}
           </span>
           <div className="line-head__actions">
             <button
@@ -52,16 +53,22 @@ export function StaffApp() {
         </header>
 
         <div className="line-body">
-          <main className="screen">
-            {tab === 'shared'
-              ? <SharedView year={year} month={monthNum} />
-              : <RequestEditor year={year} month={monthNum} />}
-          </main>
-          {tab === 'main' && (
-            <button type="button" className="line-confirmed-link" onClick={() => setTab('shared')}>
-              確定シフトを確認する
+          <nav className="line-staff-nav" aria-label="スタッフメニュー">
+            <button type="button" aria-current={tab === 'main'} onClick={() => setTab('main')}>
+              シフト提出
             </button>
-          )}
+            <button type="button" aria-current={tab === 'shared'} onClick={() => setTab('shared')}>
+              確定シフト
+            </button>
+            <button type="button" aria-current={tab === 'messages'} onClick={() => setTab('messages')}>
+              メッセージ
+            </button>
+          </nav>
+          <main className="screen">
+            {tab === 'shared' && <SharedView year={year} month={monthNum} />}
+            {tab === 'messages' && <StaffMessages />}
+            {tab === 'main' && <RequestEditor year={year} month={monthNum} />}
+          </main>
         </div>
       </div>
 
