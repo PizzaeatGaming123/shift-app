@@ -1,5 +1,5 @@
 import {
-  createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode,
+  createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode,
 } from 'react';
 import { api, type Me, type ApiStore, type ApiStaff, type ApiRequest, type ApiAssignment, type ApiDayNote, type ApiStoreNote, type ApiRecruitment, type ApiShiftPlanStatus } from '../api/client';
 import { getDayRequest } from './requests';
@@ -96,6 +96,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [recruitments, setRecruitments] = useState<Recruitment[]>([]);
   const [storeId, setStoreId] = useState<number | null>(null);
   const [shiftPlanStatus, setShiftPlanStatusState] = useState<ShiftPlanStatus>('DRAFT');
+  const reloadSeq = useRef(0);
   const [month, setMonth] = useState(() => {
     // シフト作成は通常「翌月分」を準備する運用なので、起動時は翌月をデフォルト表示にする。
     const now = new Date();
@@ -119,16 +120,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const reloadStoreData = useCallback(async () => {
     if (!storeId) return;
+    const requestSeq = ++reloadSeq.current;
+    const activeStoreId = storeId;
+    setStaff([]);
+    setRequests([]);
+    setAssignments([]);
+    setDayNotes([]);
+    setStoreNotes([]);
+    setRecruitments([]);
+    setShiftPlanStatusState('DRAFT');
     // コア取得：これらが落ちると画面が成立しないので Promise.all で待つ。
     const [st, rq, as, dn, sn, rc] = await Promise.all([
-      api.staff(storeId),
-      api.requests(storeId, month),
-      api.assignments(storeId, month),
-      api.dayNotes(storeId, month),
-      api.storeNotes(storeId, month),
-      api.recruitments(storeId, month),
+      api.staff(activeStoreId),
+      api.requests(activeStoreId, month),
+      api.assignments(activeStoreId, month),
+      api.dayNotes(activeStoreId, month),
+      api.storeNotes(activeStoreId, month),
+      api.recruitments(activeStoreId, month),
     ]);
-    setStaff(st.map((s) => toStaff(s, storeId)));
+    if (requestSeq !== reloadSeq.current) return;
+    setStaff(st.map((s) => toStaff(s, activeStoreId)));
     setRequests(rq.map(toRequest));
     setAssignments(as.map(toAssignment));
     setDayNotes(dn.map(toDayNote));
@@ -136,9 +147,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setRecruitments(rc.map(toRecruitment));
     // ShiftPlan は補助情報。古い DB スキーマで失敗しても他の表示は止めない。
     try {
-      const plan = await api.shiftPlan(storeId, month);
+      const plan = await api.shiftPlan(activeStoreId, month);
+      if (requestSeq !== reloadSeq.current) return;
       setShiftPlanStatusState(plan.status as ShiftPlanStatus);
     } catch (error) {
+      if (requestSeq !== reloadSeq.current) return;
       console.warn('shiftPlan fetch failed, falling back to DRAFT', error);
       setShiftPlanStatusState('DRAFT');
     }

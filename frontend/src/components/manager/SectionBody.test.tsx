@@ -53,17 +53,24 @@ it('スタッフ一覧: スタッフ名を表示する', async () => {
   renderSection('staff-list');
   expect(await screen.findByText(/田中太郎/)).toBeInTheDocument();
   expect(screen.getByLabelText('スタッフ検索')).toBeInTheDocument();
-  expect(screen.getByLabelText('登録する権限')).toBeInTheDocument();
+  expect(screen.queryByLabelText('登録する氏名')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'スタッフを登録' })).not.toBeInTheDocument();
+});
+
+it('スタッフ登録: 検索欄を出さず登録入力だけを表示する', async () => {
+  renderSection('staff-registration');
+  expect(await screen.findByRole('form', { name: 'スタッフ登録' })).toBeInTheDocument();
+  expect(screen.queryByLabelText('スタッフ検索')).not.toBeInTheDocument();
+  expect(screen.getByLabelText('登録区分')).toHaveValue('スタッフ');
+  expect(screen.getByLabelText('登録する雇用形態')).toBeInTheDocument();
+  expect(screen.getByLabelText('登録する氏名')).toHaveAttribute('placeholder', '例：山田太郎');
   expect(screen.getByRole('button', { name: 'スタッフを登録' })).toBeInTheDocument();
 });
 
-it('スタッフ登録と管理者登録: 同じ統合画面で初期登録区分を切り替える', async () => {
-  renderSection('staff-registration');
-  expect(await screen.findByLabelText('登録する権限')).toHaveValue('STAFF');
-  expect(screen.getByRole('button', { name: 'スタッフを登録' })).toBeInTheDocument();
-
+it('管理者登録: 管理者登録だけの入力画面を表示する', async () => {
   renderSection('manager-registration');
-  expect(await screen.findAllByLabelText('登録する権限')).toHaveLength(2);
+  expect(await screen.findByRole('form', { name: '管理者登録' })).toBeInTheDocument();
+  expect(screen.getByLabelText('登録区分')).toHaveValue('管理者');
   expect(screen.getByRole('button', { name: '管理者を登録' })).toBeInTheDocument();
 });
 

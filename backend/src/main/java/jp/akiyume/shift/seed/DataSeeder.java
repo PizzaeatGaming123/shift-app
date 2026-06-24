@@ -53,8 +53,6 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (storeRepository.count() > 0) return; // 既にseed済みなら何もしない
-
         seedStore("中島店", List.of(
                 new Person("nakashima-mgr", "西村健一", EmploymentType.FULL_TIME, Role.MANAGER),
                 new Person("nakashima-1", "田中太郎", EmploymentType.FULL_TIME, Role.STAFF),
@@ -80,12 +78,14 @@ public class DataSeeder implements CommandLineRunner {
     private static final String[] SKILL_POOL = { "ホール", "キッチン", "レジ", "新人教育", "多言語対応" };
 
     private void seedStore(String storeName, List<Person> people) {
-        Store store = storeRepository.save(new Store(storeName));
+        Store store = storeRepository.findByName(storeName)
+                .orElseGet(() -> storeRepository.save(new Store(storeName)));
         String hash = passwordEncoder.encode(seedPassword);
         List<Staff> saved = new ArrayList<>();
         int idx = 0;
         for (Person p : people) {
-            Staff staff = new Staff(p.username(), hash, p.name(), store, p.type(), p.role());
+            Staff staff = staffRepository.findByUsername(p.username())
+                    .orElseGet(() -> new Staff(p.username(), hash, p.name(), store, p.type(), p.role()));
             staff.setRank(p.role() == Role.MANAGER ? 5 : (idx % 4) + 2); // 店長は5、スタッフは2〜5
             staff.setSkills(p.role() == Role.MANAGER
                     ? "ホール,キッチン,新人教育"
@@ -99,7 +99,11 @@ public class DataSeeder implements CommandLineRunner {
             saved.add(staffRepository.save(staff));
             idx++;
         }
-        if (seedDemoShifts) {
+        LocalDate from = LocalDate.of(DEMO_YEAR, DEMO_MONTH, 1);
+        LocalDate to = from.withDayOfMonth(from.lengthOfMonth());
+        boolean hasDemoShifts = !requestRepository.findByStaff_Store_IdAndDateBetween(store.getId(), from, to).isEmpty()
+                || !assignmentRepository.findByStore_IdAndDateBetween(store.getId(), from, to).isEmpty();
+        if (seedDemoShifts && !hasDemoShifts) {
             seedDemoShifts(store, saved);
         }
     }

@@ -24,10 +24,16 @@ public class StoreAccessGuard {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
     }
 
-    /** 自分の所属店舗以外の storeId を弾く。 */
+    /** 管理者は複数店舗を閲覧可。スタッフは自分の所属店舗以外の storeId を弾く。 */
     public Staff requireStoreAccess(Authentication auth, Long storeId) {
         Staff self = requireSelf(auth);
-        if (storeId == null || !storeId.equals(self.getStore().getId())) {
+        if (storeId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "storeId required");
+        }
+        if (self.getRole().name().equals("MANAGER")) {
+            return self;
+        }
+        if (!storeId.equals(self.getStore().getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "cross-store access denied");
         }
         return self;

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type SetStateAction } from 'react';
 
 const EVENT = 'akiyume-setting-changed';
 
@@ -18,7 +18,7 @@ export function setSetting<T>(key: string, value: T): void {
 }
 
 /** localStorage に保存し、同一タブ内の他コンポーネントへも反映する設定フック。 */
-export function useSetting<T>(key: string, fallback: T): [T, (v: T) => void] {
+export function useSetting<T>(key: string, fallback: T): [T, (v: SetStateAction<T>) => void] {
   const [value, setValue] = useState<T>(() => getSetting(key, fallback));
 
   useEffect(() => {
@@ -32,6 +32,12 @@ export function useSetting<T>(key: string, fallback: T): [T, (v: T) => void] {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
-  const set = useCallback((v: T) => setSetting(key, v), [key]);
+  const set = useCallback((v: SetStateAction<T>) => {
+    const current = getSetting(key, fallback);
+    const next = typeof v === 'function'
+      ? (v as (previous: T) => T)(current)
+      : v;
+    setSetting(key, next);
+  }, [fallback, key]);
   return [value, set];
 }
