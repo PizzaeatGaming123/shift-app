@@ -59,4 +59,19 @@ describe('ShiftDisplayControls', () => {
 
     expect(props.onDensityChange).toHaveBeenCalledWith('large');
   });
+
+  it('一括操作と過去コピーのプルダウン内容を表示して実行する', async () => {
+    const user = userEvent.setup();
+    const props = renderControls();
+
+    await user.click(screen.getByRole('button', { name: '一括操作' }));
+    expect(screen.getByRole('menu', { name: '一括操作メニュー' })).toBeInTheDocument();
+    await user.click(screen.getByRole('menuitem', { name: /希望シフトを自動割り当て/ }));
+    expect(props.onBulkAction).toHaveBeenCalledWith('assign-requests');
+
+    await user.click(screen.getByRole('button', { name: '過去コピー' }));
+    expect(screen.getByRole('menu', { name: '過去コピーメニュー' })).toBeInTheDocument();
+    await user.click(screen.getByRole('menuitem', { name: /固定シフトを反映/ }));
+    expect(props.onCopyPast).toHaveBeenCalledWith('fixed-shifts');
+  });
 });
