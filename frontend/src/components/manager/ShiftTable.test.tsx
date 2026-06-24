@@ -65,6 +65,17 @@ describe('ShiftTable', () => {
     expect(screen.queryByText('売上計画')).not.toBeInTheDocument();
   });
 
+  it('縮小拡大の表示サイズをテーブルへ反映する', () => {
+    const { container } = render(
+      <ShiftTable
+        {...baseProps}
+        density="large"
+      />,
+    );
+
+    expect(container.querySelector('.rk-shift-table')).toHaveClass('rk-shift-table--large');
+  });
+
   it('出勤者のみの表示とスタッフ並び替え操作を反映する', async () => {
     const user = userEvent.setup();
     const onSortChange = vi.fn();

@@ -6,6 +6,7 @@ import type {
   StoreNote,
   WorkSlot,
 } from '../../types';
+import type { ShiftPatterns } from '../../lib/shiftPatterns';
 import { ShiftStaffRow } from './ShiftStaffRow';
 import {
   type RequiredByBand,
@@ -43,6 +44,7 @@ interface ShiftTableProps {
   onPositionNoteChange: (date: string, text: string) => void;
   onSortChange: (mode: StaffSortMode) => void;
   slotHours?: Record<WorkSlot, number>;
+  shiftPatterns?: ShiftPatterns;
 }
 
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
@@ -104,6 +106,7 @@ export function ShiftTable({
   onPositionNoteChange,
   onSortChange,
   slotHours,
+  shiftPatterns,
 }: ShiftTableProps) {
   const visibleDates = new Set(dates);
   const assignedStaffIds = new Set(
@@ -119,6 +122,7 @@ export function ShiftTable({
     assignments,
     dates,
     mode: sortMode,
+    slotHours,
   });
 
   return (
@@ -176,6 +180,8 @@ export function ShiftTable({
               notes={notes}
               layers={layers}
               density={density}
+              slotHours={slotHours}
+              shiftPatterns={shiftPatterns}
               onToggleAssignment={onToggleAssignment}
             />
           ))}

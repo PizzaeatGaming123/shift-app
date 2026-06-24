@@ -62,4 +62,5 @@ public class Staff {
 
     public void setRank(Integer rank) { this.rank = rank; }
     public void setSkills(String skills) { this.skills = skills; }
+    public void setHourlyWage(Integer hourlyWage) { this.hourlyWage = hourlyWage; }
 }

@@ -1,7 +1,6 @@
 import { useApp } from '../store/AppContext';
 import { getMonthDates } from '../lib/date';
-import { useSetting } from '../lib/settings';
-import { shiftStatusSettingKey, type ShiftPlanStatus } from '../lib/shiftStatus';
+import { isPublishedStatus, useEffectiveShiftStatus } from '../lib/shiftStatus';
 import { ShiftTable } from './manager/ShiftTable';
 import { DEFAULT_WEEKDAY_REQUIRED, requiredForDate } from './manager/modelShift';
 
@@ -11,14 +10,10 @@ interface SharedViewProps { year: number; month: number; }
 export function SharedView({ year, month }: SharedViewProps) {
   const { me, staff, assignments, requests, dayNotes, storeId } = useApp();
   const monthKey = `${year}-${String(month).padStart(2, '0')}`;
-  const statusKey = shiftStatusSettingKey(storeId, monthKey);
-  const hasExplicitStatus = localStorage.getItem(statusKey) !== null;
-  const [shiftStatus] = useSetting<ShiftPlanStatus>(statusKey, 'DRAFT');
+  const [shiftStatus] = useEffectiveShiftStatus(storeId, monthKey, assignments);
   const myId = me ? String(me.id) : '';
   const mySelf = staff.find((s) => s.id === myId);
-  const published = !hasExplicitStatus
-    ? assignments.some((assignment) => assignment.staffIds.length > 0)
-    : shiftStatus === 'PUBLISHED' || shiftStatus === 'REPUBLISHED';
+  const published = isPublishedStatus(shiftStatus);
   const hasAny = published && assignments.some((assignment) => assignment.staffIds.length > 0);
 
   const dates = getMonthDates(year, month);

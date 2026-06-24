@@ -28,6 +28,12 @@ public class ShiftRequest {
     @Column(length = 5)
     private String endTime;
 
+    // 既存DBへの ddl-auto:update 追加を許すため nullable。
+    // 新規行は常にコンストラクタで DRAFT に初期化されるため実害はない。
+    @Enumerated(EnumType.STRING)
+    @Column(length = 24)
+    private RequestStatus status = RequestStatus.DRAFT;
+
     protected ShiftRequest() {}
 
     public ShiftRequest(Staff staff, LocalDate date, RequestSlot slot) {
@@ -42,6 +48,7 @@ public class ShiftRequest {
         this.slot = slot;
         this.startTime = startTime;
         this.endTime = endTime;
+        this.status = RequestStatus.DRAFT;
     }
 
     public Long getId() { return id; }
@@ -50,4 +57,7 @@ public class ShiftRequest {
     public RequestSlot getSlot() { return slot; }
     public String getStartTime() { return startTime; }
     public String getEndTime() { return endTime; }
+    public RequestStatus getStatus() { return status; }
+
+    public void setStatus(RequestStatus status) { this.status = status; }
 }

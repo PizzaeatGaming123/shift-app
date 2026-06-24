@@ -14,13 +14,30 @@ export function dailyWorkHours(
   );
 }
 
-/** 指定日の人件費の目安（総労働時間 × 仮時給） */
+/**
+ * 指定日の予定人件費。
+ * staff が与えられた場合は本人の時給（hourlyWage）で集計し、時給が null（権限分離で
+ * 隠されている／未設定）のときだけ HOURLY_WAGE 既定値で補う。
+ * 互換のため staff を省略した場合は従来通り全員 HOURLY_WAGE で計算する。
+ */
 export function dailyLaborCost(
   assignments: Assignment[],
   date: string,
   slotHours: Record<WorkSlot, number> = SLOT_HOURS,
+  staff?: Staff[],
 ): number {
-  return dailyWorkHours(assignments, date, slotHours) * HOURLY_WAGE;
+  if (!staff || staff.length === 0) {
+    return dailyWorkHours(assignments, date, slotHours) * HOURLY_WAGE;
+  }
+  const wageById = new Map(staff.map((s) => [s.id, s.hourlyWage ?? HOURLY_WAGE]));
+  let cost = 0;
+  for (const slot of WORK_SLOTS) {
+    const a = assignments.find((x) => x.date === date && x.slot === slot);
+    for (const id of a?.staffIds ?? []) {
+      cost += slotHours[slot] * (wageById.get(id) ?? HOURLY_WAGE);
+    }
+  }
+  return cost;
 }
 
 /** 指定スタッフの月間労働時間（割り当てベース） */

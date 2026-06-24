@@ -21,7 +21,10 @@ beforeEach(() => {
     }
     if (url.endsWith('/api/stores')) return response([{ id: 1, name: '中島店' }]);
     if (url.includes('/staff')) {
-      return response([{ id: 2, name: '田中太郎', employmentType: '正社員', role: 'STAFF', rank: 3, skills: 'キッチン' }]);
+      return response([
+        { id: 2, name: '田中太郎', employmentType: '正社員', role: 'STAFF', rank: 3, skills: 'キッチン' },
+        { id: 3, name: '山田花子', employmentType: 'パート', role: 'STAFF', rank: 2, skills: 'ホール' },
+      ]);
     }
     if (url.includes('/requests')) return response([]);
     if (url.includes('/assignments')) return response([]);
@@ -50,4 +53,13 @@ it('スタッフ画面: メッセージタブから店長へ送信できる', as
 
   expect(screen.getByText('この日、相談したいです')).toBeInTheDocument();
   expect(screen.getByText('店長へメッセージを送信しました')).toBeInTheDocument();
+
+  await user.click(screen.getByRole('button', { name: /山田花子/ }));
+  expect(screen.getByText('山田花子とのメッセージ')).toBeInTheDocument();
+
+  await user.type(screen.getByLabelText('メッセージを入力'), '交代できますか');
+  await user.click(screen.getByRole('button', { name: '送信' }));
+
+  expect(screen.getByText('交代できますか')).toBeInTheDocument();
+  expect(screen.getByText('山田花子へメッセージを送信しました')).toBeInTheDocument();
 });

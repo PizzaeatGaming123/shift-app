@@ -29,10 +29,8 @@ import {
   shiftPatternHours,
   shiftPatternSettingKey,
 } from '../../lib/shiftPatterns';
-import {
-  shiftStatusSettingKey,
-  type ShiftPlanStatus,
-} from '../../lib/shiftStatus';
+import { useEffectiveShiftStatus } from '../../lib/shiftStatus';
+import { colorSettingKey, DEFAULT_SHIFT_COLORS, type ShiftColorSettings } from './sections/ColorSettingsSection';
 import {
   collectionSettingKey,
   createDefaultCollectionSettings,
@@ -47,28 +45,6 @@ import {
 interface ManagerShiftScreenProps {
   homeSignal?: number;
 }
-
-interface ShiftColorSettings {
-  earlyBg: string;
-  earlyText: string;
-  lateBg: string;
-  lateText: string;
-  offBg: string;
-  offText: string;
-  requestBorder: string;
-  shortageBg: string;
-}
-
-const DEFAULT_SHIFT_COLORS: ShiftColorSettings = {
-  earlyBg: '#fff0f0',
-  earlyText: '#a65b5b',
-  lateBg: '#e9f6ff',
-  lateText: '#397aa9',
-  offBg: '#f2f2f2',
-  offText: '#777777',
-  requestBorder: '#9fb6c8',
-  shortageBg: '#fff4c7',
-};
 
 const SUMMARY_OPTIONS: { key: SummaryItemKey; label: string }[] = [
   { key: 'sales', label: '売上計画' },
@@ -194,22 +170,18 @@ export function ManagerShiftScreen({
     createDefaultCollectionSettings(month),
   );
   const [shiftColors] = useSetting<ShiftColorSettings>(
-    `akiyume-shift-colors:${storeId}`,
+    colorSettingKey(storeId),
     DEFAULT_SHIFT_COLORS,
   );
   const collection = {
     ...createDefaultCollectionSettings(month),
     ...storedCollection,
   };
-  const shiftStatusKey = shiftStatusSettingKey(storeId, month);
-  const [shiftStatus, setShiftStatus] = useSetting<ShiftPlanStatus>(
-    shiftStatusKey,
-    'DRAFT',
+  const [effectiveShiftStatus, setShiftStatus] = useEffectiveShiftStatus(
+    storeId,
+    month,
+    assignments,
   );
-  const effectiveShiftStatus: ShiftPlanStatus = localStorage.getItem(shiftStatusKey) === null
-    && assignments.some((assignment) => assignment.staffIds.length > 0)
-    ? 'PUBLISHED'
-    : shiftStatus;
   const [storedShiftPatterns] = useSetting(
     shiftPatternSettingKey(storeId),
     DEFAULT_SHIFT_PATTERNS,
@@ -500,6 +472,7 @@ export function ManagerShiftScreen({
           onPositionNoteChange={editPositionNote}
           onSortChange={setSortMode}
           slotHours={slotHours}
+          shiftPatterns={shiftPatterns}
         />
       )}
 

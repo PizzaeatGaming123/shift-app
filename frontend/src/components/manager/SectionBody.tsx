@@ -14,9 +14,9 @@ import { isAssigned } from '../../store/assignments';
 import { buildScheduleCsv, downloadCsv } from '../../lib/csv';
 import {
   WORK_SLOTS,
-  SLOT_HOURS,
   DAILY_SALES_TARGET,
 } from '../../constants';
+import type { WorkSlot } from '../../types';
 import type { ManagerSection } from './GlobalNav';
 import {
   DEFAULT_WEEKDAY_REQUIRED,
@@ -32,11 +32,14 @@ import {
 } from '../../lib/collectionSettings';
 import {
   DEFAULT_SHIFT_PATTERNS,
-  isValidShiftPattern,
+  normalizeShiftPatterns,
   shiftPatternHours,
   shiftPatternSettingKey,
   type ShiftPatterns,
 } from '../../lib/shiftPatterns';
+import { ColorSettingsSection } from './sections/ColorSettingsSection';
+import { ShiftPatternsSection } from './sections/ShiftPatternsSection';
+import { BusinessHoursSection } from './sections/BusinessHoursSection';
 
 /** 各セクション画面のタイトル（GlobalNav のラベルと一致） */
 export const SECTION_TITLES: Partial<Record<ManagerSection, string>> = {
@@ -56,7 +59,7 @@ export const SECTION_TITLES: Partial<Record<ManagerSection, string>> = {
   'sales-per-hour': '人時売上高',
   'model-shift': 'モデルシフト',
   'labor-status': '労務状況',
-  attendance: '勤怠',
+  attendance: 'シフト集計',
   'labor-alerts': '労働時間アラート',
   'store-management': '店舗管理',
   departments: '部門',
@@ -88,58 +91,12 @@ interface DisplayDefaults {
   tableWidth: 'standard' | 'wide';
 }
 
-interface BusinessHourDay {
-  enabled: boolean;
-  open: string;
-  close: string;
-}
-
-interface BusinessHoursSetting {
-  days: BusinessHourDay[];
-  breakStart: string;
-  breakEnd: string;
-  lastOrder: string;
-}
-
-interface ShiftColorSettings {
-  earlyBg: string;
-  earlyText: string;
-  lateBg: string;
-  lateText: string;
-  offBg: string;
-  offText: string;
-  requestBorder: string;
-  shortageBg: string;
-}
-
 const DEFAULT_DISPLAY_DEFAULTS: DisplayDefaults = {
   initialView: 'half-month',
   showRequests: true,
   showNotes: true,
   showSummary: false,
   tableWidth: 'wide',
-};
-
-const DEFAULT_BUSINESS_HOURS: BusinessHoursSetting = {
-  days: ['日', '月', '火', '水', '木', '金', '土'].map((label) => ({
-    enabled: label !== '日',
-    open: '07:00',
-    close: '24:00',
-  })),
-  breakStart: '14:00',
-  breakEnd: '15:00',
-  lastOrder: '23:30',
-};
-
-const DEFAULT_SHIFT_COLORS: ShiftColorSettings = {
-  earlyBg: '#fff0f0',
-  earlyText: '#a65b5b',
-  lateBg: '#e9f6ff',
-  lateText: '#397aa9',
-  offBg: '#f2f2f2',
-  offText: '#777777',
-  requestBorder: '#9fb6c8',
-  shortageBg: '#fff4c7',
 };
 
 interface FixedShiftRule {
@@ -181,6 +138,13 @@ interface MessageThread {
   messages: MessageItem[];
 }
 
+interface StoreProfile {
+  department: string;
+  manager: string;
+  status: '営業中' | '準備中' | '休業';
+  note: string;
+}
+
 function yen(n: number): string { return `¥${n.toLocaleString('ja-JP')}`; }
 
 function assignedDays(
@@ -202,6 +166,9 @@ export function SectionBody({ section }: { section: ManagerSection }) {
   const [importInfo, setImportInfo] = useState<{ count: number; sample: string[] } | null>(null);
   const [regName, setRegName] = useState('');
   const [regType, setRegType] = useState('パート');
+  const [regRole, setRegRole] = useState<'STAFF' | 'MANAGER'>('STAFF');
+  const [staffSearch, setStaffSearch] = useState('');
+  const [staffRoleFilter, setStaffRoleFilter] = useState<'all' | 'STAFF' | 'MANAGER'>('all');
   const [newDept, setNewDept] = useState('');
   const [recruitDate, setRecruitDate] = useState('');
   const [recruitMsg, setRecruitMsg] = useState('');
@@ -222,6 +189,8 @@ export function SectionBody({ section }: { section: ManagerSection }) {
   const [alertEmployment, setAlertEmployment] = useState('未指定');
   const [alertPosition, setAlertPosition] = useState('ホール');
   const [alertType, setAlertType] = useState('未指定');
+  const [permissionScope, setPermissionScope] = useState<'staff' | 'manager'>('staff');
+  const [recruitmentPosition, setRecruitmentPosition] = useState('ホール');
   const [supportMenu, setSupportMenu] = useState('ヘルプ要請登録');
   const [supportMonth, setSupportMonth] = useState(month);
   const [messageSearch, setMessageSearch] = useState('');
@@ -233,7 +202,11 @@ export function SectionBody({ section }: { section: ManagerSection }) {
 
   const [salesTarget, setSalesTarget] = useSetting(`akiyume-sales:${storeId}`, DAILY_SALES_TARGET);
   const [positions, setPositions] = useSetting<string[]>(`akiyume-positions:${storeId}`, ['ホール', 'キッチン']);
-  const [openHours, setOpenHours] = useSetting(`akiyume-hours:${storeId}`, { open: '09:00', close: '23:00' });
+  const [departments, setDepartments] = useSetting<string[]>(`akiyume-departments:${storeId}`, ['ホール', 'キッチン', '管理']);
+  const [storeProfiles, setStoreProfiles] = useSetting<Record<string, StoreProfile>>(
+    'akiyume-store-profiles',
+    {},
+  );
   const collectionDefaults = createDefaultCollectionSettings(month);
   const [storedCollect, setCollect] = useSetting(
     collectionSettingKey(storeId),
@@ -247,14 +220,6 @@ export function SectionBody({ section }: { section: ManagerSection }) {
     `akiyume-display-defaults:${storeId}`,
     DEFAULT_DISPLAY_DEFAULTS,
   );
-  const [businessHours, setBusinessHours] = useSetting<BusinessHoursSetting>(
-    `akiyume-business-hours:${storeId}`,
-    DEFAULT_BUSINESS_HOURS,
-  );
-  const [shiftColors, setShiftColors] = useSetting<ShiftColorSettings>(
-    `akiyume-shift-colors:${storeId}`,
-    DEFAULT_SHIFT_COLORS,
-  );
   const [perms, setPerms] = useSetting(`akiyume-perms:${storeId}`, {
     submit: true, viewOwn: true, viewOthers: false, postMemo: true, viewCost: false,
     buildOwnStore: false, publishOwnStore: false, changePublished: false,
@@ -266,7 +231,7 @@ export function SectionBody({ section }: { section: ManagerSection }) {
     `akiyume-model:${storeId}:${modelPos}`,
     DEFAULT_WEEKDAY_REQUIRED,
   );
-  const [storedShiftPatterns, setStoredShiftPatterns] = useSetting<ShiftPatterns>(
+  const [storedShiftPatterns] = useSetting<ShiftPatterns>(
     shiftPatternSettingKey(storeId),
     DEFAULT_SHIFT_PATTERNS,
   );
@@ -282,10 +247,15 @@ export function SectionBody({ section }: { section: ManagerSection }) {
     `akiyume-message-replies:${storeId}`,
     {},
   );
+  // 入力フォームの value は編集中も含めた生の値を流し込む必要があるため、
+  // 表示は storedShiftPatterns のまま使い、時間計算だけ normalize 後の値を使う。
+  // こうしないと、'06:30' のような途中入力が valid 判定に通る瞬間まで毎キーストロークで
+  // DEFAULT にスナップし直され、入力できなくなる。
   const shiftPatterns = storedShiftPatterns;
-  const configuredSlotHours = {
-    early: shiftPatternHours(shiftPatterns.early) || SLOT_HOURS.early,
-    late: shiftPatternHours(shiftPatterns.late) || SLOT_HOURS.late,
+  const normalizedShiftPatterns = normalizeShiftPatterns(storedShiftPatterns);
+  const configuredSlotHours: Record<WorkSlot, number> = {
+    early: shiftPatternHours(normalizedShiftPatterns.early),
+    late: shiftPatternHours(normalizedShiftPatterns.late),
   };
 
   function setModelCell(band: keyof WeekdayRequired, weekday: number, value: number) {
@@ -299,6 +269,12 @@ export function SectionBody({ section }: { section: ManagerSection }) {
   const mdLabel = (date: string) => `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`;
   const activeRecruitDate = recruitDate || dates[0] || '';
   const storeName = stores.find((s) => String(s.id) === String(storeId))?.name ?? '店舗';
+  const activeStoreProfile = storeProfiles[String(storeId)] ?? {
+    department: departments[0] ?? 'ホール',
+    manager: staff.find((person) => person.role === 'MANAGER')?.name ?? '店長',
+    status: '営業中' as const,
+    note: 'シフト作成対象店舗',
+  };
   const monthOptions = Array.from({ length: 7 }, (_, index) => {
     const base = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)) - 1 + index - 3, 1);
     const value = `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, '0')}`;
@@ -308,6 +284,7 @@ export function SectionBody({ section }: { section: ManagerSection }) {
   const employmentTypes = ['未指定', ...Array.from(new Set(staff.map((person) => person.employmentType)))];
   const alertTypes = ['未指定', '労働時間', '1日の労働時間', '連続勤務', 'シフト重複', '必要人数不足', '必須スキル不足'];
   const targetStaff = staff.filter((person) => person.role === 'STAFF');
+  const managerStaff = staff.filter((person) => person.role === 'MANAGER');
   const messageThreads: MessageThread[] = targetStaff.map((person, index) => {
     const baseMessages: MessageItem[] = [
       {
@@ -384,13 +361,12 @@ export function SectionBody({ section }: { section: ManagerSection }) {
   const submittedStaff = targetStaff.filter((person) => submittedStaffIds.has(person.id));
   const unsubmittedStaff = targetStaff.filter((person) => !submittedStaffIds.has(person.id));
   const weekdayLabels = ['日', '月', '火', '水', '木', '金', '土'];
-  const businessDays = businessHours.days.length === 7 ? businessHours.days : DEFAULT_BUSINESS_HOURS.days;
   const totalHours = dates.reduce(
     (sum, date) => sum + dailyWorkHours(assignments, date, configuredSlotHours),
     0,
   );
   const totalCost = dates.reduce(
-    (sum, date) => sum + dailyLaborCost(assignments, date, configuredSlotHours),
+    (sum, date) => sum + dailyLaborCost(assignments, date, configuredSlotHours, staff),
     0,
   );
   const monthSales = salesTarget * dates.length;
@@ -417,6 +393,20 @@ export function SectionBody({ section }: { section: ManagerSection }) {
   function exportCsv() {
     downloadCsv(`shift_${storeName}_${month}.csv`, buildScheduleCsv(staff, dates, assignments));
     showToast('CSVを書き出しました ✓');
+  }
+
+  function updateStoreProfile(id: string | number, patch: Partial<StoreProfile>) {
+    const key = String(id);
+    const current = storeProfiles[key] ?? {
+      department: departments[0] ?? 'ホール',
+      manager: staff.find((person) => person.role === 'MANAGER')?.name ?? '店長',
+      status: '営業中' as const,
+      note: '',
+    };
+    setStoreProfiles({
+      ...storeProfiles,
+      [key]: { ...current, ...patch },
+    });
   }
 
   function sendMessage() {
@@ -461,6 +451,136 @@ export function SectionBody({ section }: { section: ManagerSection }) {
     showToast(`${messageThreads.length}名へ一斉送信しました`);
   }
 
+  function renderStaffManagement(initialRole: 'all' | 'STAFF' | 'MANAGER') {
+    const effectiveRole = initialRole === 'all' ? staffRoleFilter : initialRole;
+    const registerRole = initialRole === 'all' ? regRole : initialRole;
+    const query = staffSearch.trim().toLowerCase();
+    const visibleMembers = staff.filter((person) => {
+      const matchesRole = effectiveRole === 'all' || person.role === effectiveRole;
+      const matchesQuery = !query
+        || person.name.toLowerCase().includes(query)
+        || person.employmentType.toLowerCase().includes(query)
+        || person.skills.some((skill) => skill.toLowerCase().includes(query));
+      return matchesRole && matchesQuery;
+    });
+    const staffCount = staff.filter((person) => person.role === 'STAFF').length;
+    const managerCount = staff.filter((person) => person.role === 'MANAGER').length;
+    return (
+      <div className="rk-reference-panel rk-staff-management">
+        <div className="rk-status-metrics rk-staff-management__metrics">
+          <article><span>スタッフ</span><strong>{staffCount}</strong></article>
+          <article><span>管理者</span><strong>{managerCount}</strong></article>
+          <article><span>未提出</span><strong>{unsubmittedStaff.length}</strong></article>
+          <article><span>登録候補</span><strong>{visibleMembers.length}</strong></article>
+        </div>
+
+        <div className="rk-filter-card rk-staff-management__filters">
+          <label>
+            <span>氏名検索</span>
+            <input
+              aria-label="スタッフ検索"
+              value={staffSearch}
+              onChange={(event) => setStaffSearch(event.target.value)}
+              placeholder="氏名・雇用形態・スキル"
+            />
+          </label>
+          <label>
+            <span>表示区分</span>
+            <select
+              aria-label="スタッフ表示区分"
+              value={effectiveRole}
+              disabled={initialRole !== 'all'}
+              onChange={(event) => setStaffRoleFilter(event.target.value as typeof staffRoleFilter)}
+            >
+              <option value="all">すべて</option>
+              <option value="STAFF">スタッフ</option>
+              <option value="MANAGER">管理者</option>
+            </select>
+          </label>
+          <label>
+            <span>登録区分</span>
+            <select
+              aria-label="登録する権限"
+              value={registerRole}
+              disabled={initialRole !== 'all'}
+              onChange={(event) => setRegRole(event.target.value as typeof regRole)}
+            >
+              <option value="STAFF">スタッフ</option>
+              <option value="MANAGER">管理者</option>
+            </select>
+          </label>
+          <label>
+            <span>雇用形態</span>
+            <select aria-label="登録する雇用形態" value={regType} onChange={(event) => setRegType(event.target.value)}>
+              <option value="正社員">正社員</option>
+              <option value="パート">パート</option>
+              <option value="アルバイト">アルバイト</option>
+            </select>
+          </label>
+          <label className="rk-filter-card__wide">
+            <span>氏名</span>
+            <input
+              aria-label="登録する氏名"
+              value={regName}
+              placeholder="例：山田太郎"
+              onChange={(event) => setRegName(event.target.value)}
+            />
+          </label>
+          <button
+            type="button"
+            className="tb-btn rk-filter-card__submit"
+            onClick={() => void submitRegister(registerRole)}
+          >
+            {registerRole === 'MANAGER' ? '管理者を登録' : 'スタッフを登録'}
+          </button>
+        </div>
+
+        <div className="rk-table-scroll">
+          <table className="rk-reference-table rk-compact-table">
+            <thead>
+              <tr>
+                <th scope="col">氏名</th>
+                <th scope="col">区分</th>
+                <th scope="col">雇用形態</th>
+                <th scope="col">ランク</th>
+                <th scope="col">スキル</th>
+                <th scope="col">予定時間</th>
+                <th scope="col">提出状態</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleMembers.map((person) => {
+                const hrs = staffMonthlyHours(assignments, person.id, dates, configuredSlotHours);
+                const submitted = person.role === 'MANAGER' || submittedStaffIds.has(person.id);
+                return (
+                  <tr key={person.id}>
+                    <th scope="row">{person.name}</th>
+                    <td>{person.role === 'MANAGER' ? '管理者' : 'スタッフ'}</td>
+                    <td>{person.employmentType}</td>
+                    <td>{person.rank != null ? `ランク${person.rank}` : '未設定'}</td>
+                    <td>
+                      <span className="rk-staff-management__skills">
+                        {person.skills.length > 0
+                          ? person.skills.map((skill) => <span key={skill} className="skill-tag">{skill}</span>)
+                          : <span className="muted-sm">未設定</span>}
+                      </span>
+                    </td>
+                    <td>{hrs.toFixed(1)} h</td>
+                    <td>
+                      <span className={submitted ? 'rk-status-tag is-submitted' : 'rk-status-tag is-unsubmitted'}>
+                        {submitted ? '提出済み' : '未提出'}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
   async function onImportFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -473,60 +593,13 @@ export function SectionBody({ section }: { section: ManagerSection }) {
 
   switch (section) {
     case 'staff-list':
-      return (
-        <ul className="modal-list">
-          {staff.map((s) => {
-            const consec = maxConsecutiveAssignedDays(assignments, s.id, dates);
-            const hrs = staffMonthlyHours(assignments, s.id, dates, configuredSlotHours);
-            const alerts = [consec >= 6 ? `連続${consec}日勤務` : '', hrs > 180 ? '労働時間超過' : ''].filter(Boolean);
-            return (
-              <li key={s.id}>
-                <span className="staff-li-main">
-                  <span className="staff-li-name">{s.name}<span className="muted-sm">（{s.employmentType}）</span></span>
-                  <span className="staff-li-sub">
-                    {s.rank != null && <span className="rank-badge">ランク{s.rank}</span>}
-                    {s.skills.map((sk) => <span key={sk} className="skill-tag">{sk}</span>)}
-                    {alerts.map((a) => <span key={a} className="alert-tag">労務注意：{a}</span>)}
-                  </span>
-                </span>
-                <span className="staff-li-hours">{hrs.toFixed(2)} h</span>
-              </li>
-            );
-          })}
-        </ul>
-      );
+      return renderStaffManagement('all');
 
     case 'staff-registration':
-    case 'manager-registration': {
-      const isAdmin = section === 'manager-registration';
-      return (
-        <div className="settings-form">
-          <p className="muted-sm">
-            {isAdmin ? '管理者（店長）を登録します。' : 'スタッフを登録します。'}
-            氏名と雇用形態を入力してください。初期パスワードは「password」です。
-          </p>
-          <label className="settings-row">
-            <span>氏名</span>
-            <input className="text-input" value={regName} placeholder="例：山田太郎" onChange={(e) => setRegName(e.target.value)} />
-          </label>
-          <label className="settings-row">
-            <span>雇用形態</span>
-            <select value={regType} onChange={(e) => setRegType(e.target.value)}>
-              <option value="正社員">正社員</option>
-              <option value="パート">パート</option>
-              <option value="アルバイト">アルバイト</option>
-            </select>
-          </label>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => void submitRegister(isAdmin ? 'MANAGER' : 'STAFF')}
-          >
-            {isAdmin ? '管理者を登録' : 'スタッフを登録'}
-          </button>
-        </div>
-      );
-    }
+      return renderStaffManagement('STAFF');
+
+    case 'manager-registration':
+      return renderStaffManagement('MANAGER');
 
     case 'rank-settings':
       return <RankSkillScreen initialTab="rank" />;
@@ -651,41 +724,165 @@ export function SectionBody({ section }: { section: ManagerSection }) {
 
     case 'sales-per-hour':
       return (
-        <dl>
-          <dt>当月売上計画</dt><dd>{yen(monthSales)}</dd>
-          <dt>当月総労働時間</dt><dd>{totalHours.toFixed(2)} h</dd>
-          <dt>人時売上高</dt><dd>{yen(salesPerHour)} / h</dd>
-        </dl>
+        <div className="rk-reference-panel rk-sales-per-hour">
+          <div className="rk-ref-toolbar">
+            <label>
+              <span>対象月</span>
+              <select aria-label="人時売上高の対象月" value={salesPlanMonth} onChange={(event) => setSalesPlanMonth(event.target.value)}>
+                {monthOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>店舗</span>
+              <select aria-label="人時売上高の店舗" value={alertStore} onChange={(event) => setAlertStore(event.target.value)}>
+                {stores.map((store) => <option key={store.id} value={store.id}>{store.name}</option>)}
+              </select>
+            </label>
+          </div>
+          <div className="rk-status-metrics">
+            <article><span>売上計画</span><strong>{yen(monthSales)}</strong></article>
+            <article><span>総労働時間</span><strong>{totalHours.toFixed(2)} h</strong></article>
+            <article><span>人時売上高</span><strong>{yen(salesPerHour)} / h</strong></article>
+            <article><span>人件費率</span><strong>{costRate}%</strong></article>
+          </div>
+          <div className="rk-table-scroll">
+            <table className="rk-reference-table rk-compact-table">
+              <thead>
+                <tr>
+                  <th scope="col">日付</th>
+                  <th scope="col">売上計画</th>
+                  <th scope="col">予定労働時間</th>
+                  <th scope="col">人時売上高</th>
+                  <th scope="col">状態</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dates.slice(0, 15).map((date) => {
+                  const hours = dailyWorkHours(assignments, date, configuredSlotHours);
+                  const value = hours > 0 ? Math.round(salesTarget / hours) : 0;
+                  return (
+                    <tr key={date}>
+                      <th scope="row">{mdLabel(date)}({weekdayLabels[new Date(date).getDay()]})</th>
+                      <td>{yen(salesTarget)}</td>
+                      <td>{hours.toFixed(2)} h</td>
+                      <td>{hours > 0 ? `${yen(value)} / h` : '未配置'}</td>
+                      <td>{value >= 3500 ? '目標内' : hours > 0 ? '確認' : 'シフト未配置'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p className="muted-sm">予定シフトを基にした管理指標です。実績勤怠ではありません。</p>
+        </div>
       );
 
     case 'labor-status':
       return (
-        <ul className="modal-list">
-          {staff.map((s) => {
-            const consec = maxConsecutiveAssignedDays(assignments, s.id, dates);
-            const hrs = staffMonthlyHours(assignments, s.id, dates, configuredSlotHours);
-            return (
-              <li key={s.id}>
-                <span className="staff-li-name">{s.name}</span>
-                <span className="muted-sm">連続最長 {consec}日 / 月間 {hrs.toFixed(0)}h</span>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="rk-reference-panel rk-labor-status">
+          <div className="rk-filter-card">
+            <label>
+              <span>開始日</span>
+              <input type="date" aria-label="労務状況開始日" value={laborPeriodStart} onChange={(event) => setLaborPeriodStart(event.target.value)} />
+            </label>
+            <label>
+              <span>終了日</span>
+              <input type="date" aria-label="労務状況終了日" value={laborPeriodEnd} onChange={(event) => setLaborPeriodEnd(event.target.value)} />
+            </label>
+            <label>
+              <span>店舗</span>
+              <select aria-label="労務状況店舗" value={alertStore} onChange={(event) => setAlertStore(event.target.value)}>
+                {stores.map((store) => <option key={store.id} value={store.id}>{store.name}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>雇用形態</span>
+              <select aria-label="労務状況雇用形態" value={alertEmployment} onChange={(event) => setAlertEmployment(event.target.value)}>
+                {employmentTypes.map((employment) => <option key={employment} value={employment}>{employment}</option>)}
+              </select>
+            </label>
+            <button type="button" className="tb-btn rk-filter-card__submit" onClick={() => showToast('労務状況を更新しました')}>
+              上記の条件で表示
+            </button>
+          </div>
+          <div className="rk-table-scroll">
+            <table className="rk-reference-table rk-compact-table">
+              <thead>
+                <tr>
+                  <th scope="col">スタッフ</th>
+                  <th scope="col">雇用形態</th>
+                  <th scope="col">予定時間</th>
+                  <th scope="col">勤務予定日数</th>
+                  <th scope="col">連続勤務</th>
+                  <th scope="col">シフト上の確認</th>
+                </tr>
+              </thead>
+              <tbody>
+                {targetStaff.map((person) => {
+                  const consec = maxConsecutiveAssignedDays(assignments, person.id, dates);
+                  const hrs = staffMonthlyHours(assignments, person.id, dates, configuredSlotHours);
+                  const days = assignedDays(assignments, person.id, dates);
+                  const warning = consec >= 6 || hrs > 180;
+                  return (
+                    <tr key={person.id} className={warning ? 'is-attention-row' : undefined}>
+                      <th scope="row">{person.name}</th>
+                      <td>{person.employmentType}</td>
+                      <td>{hrs.toFixed(1)} h</td>
+                      <td>{days} 日</td>
+                      <td>{consec} 日</td>
+                      <td>{warning ? '予定上の確認あり' : '確認なし'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
       );
 
     case 'attendance':
       return (
-        <div>
-          <p className="muted-sm">実績勤怠ではなく、確定シフトから算出した勤務予定です。</p>
-          <ul className="modal-list">
-          {staff.map((s) => (
-            <li key={s.id}>
-              <span className="staff-li-name">{s.name}</span>
-              <span className="muted-sm">勤務予定 {assignedDays(assignments, s.id, dates)} 日</span>
-            </li>
-          ))}
-          </ul>
+        <div className="rk-reference-panel rk-attendance-plan">
+          <div className="rk-ref-toolbar">
+            <label>
+              <span>対象月</span>
+              <select aria-label="勤務予定の対象月" value={salesPlanMonth} onChange={(event) => setSalesPlanMonth(event.target.value)}>
+                {monthOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+            </label>
+            <span className="rk-settings-note">出勤打刻ではなく、シフト表から見た勤務予定です。</span>
+          </div>
+          <div className="rk-table-scroll">
+            <table className="rk-reference-table rk-compact-table">
+              <thead>
+                <tr>
+                  <th scope="col">スタッフ</th>
+                  <th scope="col">勤務予定日数</th>
+                  <th scope="col">予定時間</th>
+                  <th scope="col">早番</th>
+                  <th scope="col">遅番</th>
+                  <th scope="col">休日数</th>
+                </tr>
+              </thead>
+              <tbody>
+                {targetStaff.map((person) => {
+                  const earlyCount = dates.filter((date) => isAssigned(assignments, date, 'early', person.id)).length;
+                  const lateCount = dates.filter((date) => isAssigned(assignments, date, 'late', person.id)).length;
+                  const days = assignedDays(assignments, person.id, dates);
+                  return (
+                    <tr key={person.id}>
+                      <th scope="row">{person.name}</th>
+                      <td>{days} 日</td>
+                      <td>{staffMonthlyHours(assignments, person.id, dates, configuredSlotHours).toFixed(1)} h</td>
+                      <td>{earlyCount} 回</td>
+                      <td>{lateCount} 回</td>
+                      <td>{Math.max(0, dates.length - days)} 日</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       );
 
@@ -774,72 +971,236 @@ export function SectionBody({ section }: { section: ManagerSection }) {
 
     case 'store-management':
       return (
-        <ul className="modal-list">
-          {stores.map((s) => (
-            <li key={s.id}>
-              <span className="staff-li-name">
-                {s.name}{String(s.id) === String(storeId) && <span className="muted-sm">（表示中）</span>}
-              </span>
-            </li>
-          ))}
-        </ul>
-      );
-
-    case 'departments':
-    case 'positions':
-      return (
-        <div className="settings-form">
-          <p className="muted-sm">この店舗のポジション（部門）を管理します。</p>
-          <ul className="modal-list">
-            {positions.map((p) => (
-              <li key={p}>
-                <span className="staff-li-name">{p}</span>
-                <button type="button" className="tb-btn sm" onClick={() => setPositions(positions.filter((x) => x !== p))}>削除</button>
-              </li>
-            ))}
-          </ul>
-          <label className="settings-row">
-            <input className="text-input" placeholder="新しい部門名" value={newDept} onChange={(e) => setNewDept(e.target.value)} />
-            <button
-              type="button"
-              className="tb-btn"
-              onClick={() => {
-                const v = newDept.trim();
-                if (v && !positions.includes(v)) { setPositions([...positions, v]); setNewDept(''); }
-              }}
-            >
-              追加
+        <div className="rk-reference-panel rk-store-management">
+          <div className="rk-filter-card">
+            <label>
+              <span>表示店舗</span>
+              <select aria-label="店舗管理の表示店舗" value={String(storeId)} onChange={(event) => showToast(`${event.target.options[event.target.selectedIndex].text}を確認中です`)}>
+                {stores.map((store) => <option key={store.id} value={store.id}>{store.name}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>事業部</span>
+              <select
+                aria-label="表示店舗の事業部"
+                value={activeStoreProfile.department}
+                onChange={(event) => updateStoreProfile(String(storeId ?? ''), { department: event.target.value })}
+              >
+                {departments.map((department) => <option key={department} value={department}>{department}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>責任者</span>
+              <input
+                aria-label="表示店舗の責任者"
+                value={activeStoreProfile.manager}
+                onChange={(event) => updateStoreProfile(String(storeId ?? ''), { manager: event.target.value })}
+              />
+            </label>
+            <label>
+              <span>状態</span>
+              <select
+                aria-label="表示店舗の状態"
+                value={activeStoreProfile.status}
+                onChange={(event) => updateStoreProfile(String(storeId ?? ''), { status: event.target.value as StoreProfile['status'] })}
+              >
+                <option value="営業中">営業中</option>
+                <option value="準備中">準備中</option>
+                <option value="休業">休業</option>
+              </select>
+            </label>
+            <button type="button" className="tb-btn rk-filter-card__submit" onClick={() => showToast('店舗設定を保存しました')}>
+              店舗設定を保存
             </button>
-          </label>
+          </div>
+          <div className="rk-table-scroll">
+            <table className="rk-reference-table rk-compact-table">
+              <thead>
+                <tr>
+                  <th scope="col">店舗名</th>
+                  <th scope="col">事業部</th>
+                  <th scope="col">責任者</th>
+                  <th scope="col">状態</th>
+                  <th scope="col">対象スタッフ</th>
+                  <th scope="col">メモ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stores.map((store) => {
+                  const profile = storeProfiles[String(store.id)] ?? {
+                    department: departments[0] ?? 'ホール',
+                    manager: managerStaff[0]?.name ?? '店長',
+                    status: '営業中' as const,
+                    note: String(store.id) === String(storeId) ? '表示中' : '登録済み',
+                  };
+                  return (
+                    <tr key={store.id} className={String(store.id) === String(storeId) ? 'is-group' : undefined}>
+                      <th scope="row">{store.name}</th>
+                      <td>{profile.department}</td>
+                      <td>{profile.manager}</td>
+                      <td>{profile.status}</td>
+                      <td>{staff.filter((person) => String(person.storeId) === String(store.id)).length} 名</td>
+                      <td>{profile.note}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       );
 
+    case 'departments': {
+      const addDepartment = () => {
+        const value = newDept.trim();
+        if (!value) return;
+        if (!departments.includes(value)) setDepartments([...departments, value]);
+        setNewDept('');
+      };
+      return (
+        <div className="rk-reference-panel rk-master-page">
+          <div className="rk-ref-toolbar">
+            <label>
+              <span>部門名</span>
+              <input aria-label="新しい部門名" value={newDept} onChange={(event) => setNewDept(event.target.value)} />
+            </label>
+            <button type="button" className="tb-btn" onClick={addDepartment}>部門を追加</button>
+          </div>
+          <table className="rk-reference-table rk-compact-table">
+            <thead>
+              <tr>
+                <th scope="col">部門</th>
+                <th scope="col">利用店舗</th>
+                <th scope="col">ポジション数</th>
+                <th scope="col">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {departments.map((department) => (
+                <tr key={department}>
+                  <th scope="row">{department}</th>
+                  <td>{storeName}</td>
+                  <td>{positions.length}</td>
+                  <td>
+                    <button type="button" className="tb-btn sm" onClick={() => setDepartments(departments.filter((item) => item !== department))}>
+                      削除
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+
+    case 'positions': {
+      const addPosition = () => {
+        const value = newDept.trim();
+        if (!value) return;
+        if (!positions.includes(value)) setPositions([...positions, value]);
+        setNewDept('');
+      };
+      return (
+        <div className="rk-reference-panel rk-master-page">
+          <div className="rk-ref-toolbar">
+            <label>
+              <span>ポジション名</span>
+              <input aria-label="新しいポジション名" value={newDept} onChange={(event) => setNewDept(event.target.value)} />
+            </label>
+            <label>
+              <span>所属部門</span>
+              <select aria-label="ポジションの所属部門" defaultValue={departments[0] ?? 'ホール'}>
+                {departments.map((department) => <option key={department} value={department}>{department}</option>)}
+              </select>
+            </label>
+            <button type="button" className="tb-btn" onClick={addPosition}>ポジションを追加</button>
+          </div>
+          <table className="rk-reference-table rk-compact-table">
+            <thead>
+              <tr>
+                <th scope="col">ポジション</th>
+                <th scope="col">必要人数設定</th>
+                <th scope="col">シフト表表示</th>
+                <th scope="col">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {positions.map((positionName) => (
+                <tr key={positionName}>
+                  <th scope="row">{positionName}</th>
+                  <td>モデルシフトで設定</td>
+                  <td>表示する</td>
+                  <td>
+                    <button type="button" className="tb-btn sm" onClick={() => setPositions(positions.filter((item) => item !== positionName))}>
+                      削除
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+
     case 'permissions':
       return (
-        <div className="settings-form">
-          <p className="muted-sm">スタッフに許可する操作を設定します（店長は常に全機能）。</p>
-          {([
-            ['submit', '希望シフトの提出'],
-            ['viewOwn', '自分の確定シフトの閲覧'],
-            ['viewOthers', '他スタッフのシフトの閲覧'],
-            ['postMemo', 'ひとことメモの投稿'],
-            ['viewCost', '人件費の閲覧'],
-            ['buildOwnStore', '自店舗のシフト作成'],
-            ['publishOwnStore', '自店舗のシフト公開'],
-            ['changePublished', '公開後のシフト変更'],
-            ['approveChanges', '変更申請の承認'],
-            ['manageStaff', 'スタッフ管理'],
-            ['manageSkills', 'スキル管理'],
-            ['manageRequired', '必要人数設定'],
-            ['viewAllStores', '全店舗シフト閲覧'],
-            ['manageSupport', '店舗間応援管理'],
-            ['csvExport', 'CSV出力'],
-          ] as const).map(([key, label]) => (
-            <label key={key} className="menu-check">
-              <input type="checkbox" checked={perms[key]} onChange={(e) => setPerms({ ...perms, [key]: e.target.checked })} />
-              {label}
+        <div className="rk-reference-panel rk-permission-page">
+          <div className="rk-ref-toolbar">
+            <label>
+              <span>権限対象</span>
+              <select aria-label="権限対象" value={permissionScope} onChange={(event) => setPermissionScope(event.target.value as typeof permissionScope)}>
+                <option value="staff">スタッフ</option>
+                <option value="manager">管理者</option>
+              </select>
             </label>
-          ))}
+            <span>スタッフは給与単価・他スタッフ情報を初期状態では閲覧できません。</span>
+          </div>
+          <table className="rk-reference-table rk-permission-table">
+            <thead>
+              <tr>
+                <th scope="col">権限</th>
+                <th scope="col">説明</th>
+                <th scope="col">許可</th>
+              </tr>
+            </thead>
+            <tbody>
+              {([
+                ['submit', '希望シフトの提出', '本人の希望シフトを下書き・提出できます'],
+                ['viewOwn', '自分の確定シフトの閲覧', '公開済みの自分の予定だけを確認できます'],
+                ['viewOthers', '他スタッフのシフトの閲覧', '他スタッフの予定表示を許可します'],
+                ['postMemo', 'ひとことメモの投稿', '希望や相談メモを送れます'],
+                ['viewCost', '人件費の閲覧', '予定人件費と単価情報を閲覧できます'],
+                ['buildOwnStore', '自店舗のシフト作成', '自店舗のシフト案を編集できます'],
+                ['publishOwnStore', '自店舗のシフト公開', '確定シフトをスタッフへ公開できます'],
+                ['changePublished', '公開後のシフト変更', '公開済みシフトの変更を記録できます'],
+                ['approveChanges', '変更申請の承認', '期限後の変更申請を承認できます'],
+                ['manageStaff', 'スタッフ管理', 'スタッフ情報を登録・編集できます'],
+                ['manageSkills', 'スキル管理', 'ランク・スキルを編集できます'],
+                ['manageRequired', '必要人数設定', 'モデルシフトや必要人数を編集できます'],
+                ['viewAllStores', '全店舗シフト閲覧', '複数店舗の予定を閲覧できます'],
+                ['manageSupport', '店舗間応援管理', 'ヘルプ勤務を依頼・承認できます'],
+                ['csvExport', 'CSV出力', 'シフト予定のCSVを書き出せます'],
+              ] as const).map(([key, label, description]) => (
+                <tr key={key}>
+                  <th scope="row">{label}</th>
+                  <td>{description}</td>
+                  <td>
+                    <label className="rk-plain-check">
+                      <input
+                        type="checkbox"
+                        checked={permissionScope === 'manager' || perms[key]}
+                        disabled={permissionScope === 'manager'}
+                        onChange={(event) => setPerms({ ...perms, [key]: event.target.checked })}
+                      />
+                      {permissionScope === 'manager' ? '常に許可' : '許可'}
+                    </label>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       );
 
@@ -879,260 +1240,118 @@ export function SectionBody({ section }: { section: ManagerSection }) {
       );
 
     case 'business-hours':
-      return (
-        <div className="rk-reference-panel rk-settings-page">
-          <div className="rk-ref-toolbar">
-            <label>
-              <span>標準 開店</span>
-              <input
-                aria-label="標準開店時刻"
-                value={openHours.open}
-                inputMode="numeric"
-                onChange={(event) => setOpenHours({ ...openHours, open: event.target.value })}
-              />
-            </label>
-            <label>
-              <span>標準 閉店</span>
-              <input
-                aria-label="標準閉店時刻"
-                value={openHours.close}
-                inputMode="numeric"
-                onChange={(event) => setOpenHours({ ...openHours, close: event.target.value })}
-              />
-            </label>
-            <button
-              type="button"
-              className="tb-btn"
-              onClick={() => {
-                const nextDays = businessDays.map((day) => ({
-                  ...day,
-                  open: openHours.open,
-                  close: openHours.close,
-                }));
-                setBusinessHours({ ...businessHours, days: nextDays });
-                showToast('曜日別営業時間へ反映しました');
-              }}
-            >
-              曜日へ反映
-            </button>
-          </div>
-
-          <div className="rk-filter-card rk-settings-filter">
-            <label>
-              <span>休憩目安 開始</span>
-              <input
-                aria-label="休憩目安開始"
-                value={businessHours.breakStart}
-                inputMode="numeric"
-                onChange={(event) => setBusinessHours({ ...businessHours, breakStart: event.target.value })}
-              />
-            </label>
-            <label>
-              <span>休憩目安 終了</span>
-              <input
-                aria-label="休憩目安終了"
-                value={businessHours.breakEnd}
-                inputMode="numeric"
-                onChange={(event) => setBusinessHours({ ...businessHours, breakEnd: event.target.value })}
-              />
-            </label>
-            <label>
-              <span>ラストオーダー</span>
-              <input
-                aria-label="ラストオーダー"
-                value={businessHours.lastOrder}
-                inputMode="numeric"
-                onChange={(event) => setBusinessHours({ ...businessHours, lastOrder: event.target.value })}
-              />
-            </label>
-            <span className="rk-settings-note">24:00まで入力できます。打刻ではなくシフト作成用の営業時間です。</span>
-          </div>
-
-          <table className="rk-reference-table rk-settings-table">
-            <thead>
-              <tr>
-                <th scope="col">曜日</th>
-                <th scope="col">営業</th>
-                <th scope="col">開店</th>
-                <th scope="col">閉店</th>
-                <th scope="col">シフト作成時の扱い</th>
-              </tr>
-            </thead>
-            <tbody>
-              {businessDays.map((day, index) => {
-                const updateDay = (next: Partial<BusinessHourDay>) => {
-                  const nextDays = [...businessDays];
-                  nextDays[index] = { ...day, ...next };
-                  setBusinessHours({ ...businessHours, days: nextDays });
-                };
-                return (
-                  <tr key={weekdayLabels[index]}>
-                    <th scope="row">{weekdayLabels[index]}曜日</th>
-                    <td>
-                      <label className="rk-plain-check">
-                        <input
-                          aria-label={`${weekdayLabels[index]}曜日を営業日にする`}
-                          type="checkbox"
-                          checked={day.enabled}
-                          onChange={(event) => updateDay({ enabled: event.target.checked })}
-                        />
-                        営業
-                      </label>
-                    </td>
-                    <td>
-                      <input
-                        aria-label={`${weekdayLabels[index]}曜日の開店時刻`}
-                        value={day.open}
-                        inputMode="numeric"
-                        disabled={!day.enabled}
-                        onChange={(event) => updateDay({ open: event.target.value })}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        aria-label={`${weekdayLabels[index]}曜日の閉店時刻`}
-                        value={day.close}
-                        inputMode="numeric"
-                        disabled={!day.enabled}
-                        onChange={(event) => updateDay({ close: event.target.value })}
-                      />
-                    </td>
-                    <td>{day.enabled ? `${day.open}〜${day.close}で人員配置` : '休日扱い'}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      );
+      return <BusinessHoursSection storeId={storeId} />;
 
     case 'collection-settings':
     case 'shift-settings':
       return (
-        <div className="rk-collection-settings">
-          <div className="rk-collection-preview">
-            <h3>シフト回収プレビュー</h3>
-            <div className="rk-collection-preview__cards">
-              <article>
-                <strong>{collect.targetMonth.replace('-', '年')}月</strong>
-                <span>受付開始 {collect.startAt.replace('T', ' ')}</span>
-              </article>
-              <span aria-hidden="true">›</span>
-              <article>
-                <strong>提出期限</strong>
-                <span>{collect.deadlineAt.replace('T', ' ')}</span>
-              </article>
-            </div>
+        <div className="rk-reference-panel rk-collection-settings">
+          <div className="rk-status-metrics rk-collection-settings__metrics">
+            <article><span>対象年月</span><strong>{collect.targetMonth.replace('-', '/')}</strong></article>
+            <article><span>受付状態</span><strong>{collect.status === 'OPEN' ? '受付中' : collect.status === 'BEFORE' ? '開始前' : '終了'}</strong></article>
+            <article><span>提出済み</span><strong>{submittedStaff.length}</strong></article>
+            <article className="is-warning"><span>未提出</span><strong>{unsubmittedStaff.length}</strong></article>
           </div>
-          <div className="rk-collection-form">
-            <label className="rk-field">
-              <span className="rk-field__label">対象年月</span>
+
+          <div className="rk-filter-card rk-collection-settings__form">
+            <label>
+              <span>対象年月</span>
               <input
-                className="rk-field__input"
+                aria-label="対象年月"
                 type="month"
                 value={collect.targetMonth}
                 onChange={(event) => setCollect({ ...collect, targetMonth: event.target.value })}
               />
             </label>
-
-            <fieldset className="rk-field">
-              <legend className="rk-field__label">シフト周期</legend>
-              <div className="rk-segments" role="radiogroup">
-                {([
-                  ['month', '1か月'],
-                  ['half-month', '半月'],
-                ] as const).map(([value, label]) => (
-                  <button
-                    type="button"
-                    key={value}
-                    role="radio"
-                    aria-checked={collect.cycle === value}
-                    className={`rk-segment${collect.cycle === value ? ' is-on' : ''}`}
-                    onClick={() => setCollect({ ...collect, cycle: value })}
-                  >
-                    {label}
-                  </button>
+            <label>
+              <span>シフト周期</span>
+              <select aria-label="シフト周期" value={collect.cycle} onChange={(event) => setCollect({ ...collect, cycle: event.target.value as typeof collect.cycle })}>
+                <option value="month">1か月</option>
+                <option value="half-month">半月</option>
+              </select>
+            </label>
+            <label>
+              <span>受付状態</span>
+              <select aria-label="受付状態" value={collect.status} onChange={(event) => setCollect({ ...collect, status: event.target.value as CollectionStatus })}>
+                <option value="BEFORE">受付開始前</option>
+                <option value="OPEN">受付中</option>
+                <option value="CLOSED">受付終了</option>
+              </select>
+            </label>
+            <label>
+              <span>通知回数</span>
+              <select aria-label="提出依頼の通知回数" value={collect.reminders} onChange={(event) => setCollect({ ...collect, reminders: Number(event.target.value) })}>
+                {[0, 1, 2, 3, 5].map((value) => (
+                  <option key={value} value={value}>{value === 0 ? '送らない' : `${value} 回`}</option>
                 ))}
-              </div>
-            </fieldset>
-
-            <label className="rk-field">
-              <span className="rk-field__label">提出開始日時</span>
+              </select>
+            </label>
+            <label>
+              <span>提出開始日時</span>
               <input
-                className="rk-field__input"
+                aria-label="提出開始日時"
                 type="datetime-local"
                 value={collect.startAt}
                 onChange={(event) => setCollect({ ...collect, startAt: event.target.value })}
               />
             </label>
-
-            <label className="rk-field">
-              <span className="rk-field__label">提出期限</span>
+            <label>
+              <span>提出期限</span>
               <input
-                className="rk-field__input"
+                aria-label="提出期限"
                 type="datetime-local"
                 value={collect.deadlineAt}
                 onChange={(event) => setCollect({ ...collect, deadlineAt: event.target.value })}
               />
             </label>
-
-            <label className="rk-field">
-              <span className="rk-field__label">シフト公開予定日</span>
+            <label>
+              <span>公開予定日</span>
               <input
-                className="rk-field__input"
+                aria-label="シフト公開予定日"
                 type="datetime-local"
                 value={collect.publishAt}
                 onChange={(event) => setCollect({ ...collect, publishAt: event.target.value })}
               />
             </label>
+            <button type="button" className="tb-btn rk-filter-card__submit" onClick={() => showToast('シフト回収設定を保存しました')}>
+              シフト回収設定を保存
+            </button>
+          </div>
 
-            <fieldset className="rk-field">
-              <legend className="rk-field__label">受付状態</legend>
-              <div className="rk-segments" role="radiogroup">
-                {([
-                  ['BEFORE', '受付開始前'],
-                  ['OPEN', '受付中'],
-                  ['CLOSED', '受付終了'],
-                ] as const).map(([value, label]) => (
-                  <button
-                    type="button"
-                    key={value}
-                    role="radio"
-                    aria-checked={collect.status === value}
-                    className={`rk-segment${collect.status === value ? ' is-on' : ''}`}
-                    onClick={() => setCollect({ ...collect, status: value as CollectionStatus })}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-
-            <fieldset className="rk-field">
-              <legend className="rk-field__label">提出依頼の通知回数</legend>
-              <p className="rk-field__hint">提出開始から期限までの間に、未提出スタッフへ送るリマインド数。</p>
-              <div className="rk-segments" role="radiogroup">
-                {[0, 1, 2, 3, 5].map((value) => (
-                  <button
-                    type="button"
-                    key={value}
-                    role="radio"
-                    aria-checked={collect.reminders === value}
-                    className={`rk-segment${collect.reminders === value ? ' is-on' : ''}`}
-                    onClick={() => setCollect({ ...collect, reminders: value })}
-                  >
-                    {value === 0 ? '送らない' : `${value} 回`}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
+          <div className="rk-table-scroll">
+            <table className="rk-reference-table rk-compact-table">
+              <thead>
+                <tr>
+                  <th scope="col">設定項目</th>
+                  <th scope="col">現在値</th>
+                  <th scope="col">スタッフ画面での扱い</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">提出期間</th>
+                  <td>{collect.startAt.replace('T', ' ')} 〜 {collect.deadlineAt.replace('T', ' ')}</td>
+                  <td>受付中・期限までの日数を表示</td>
+                </tr>
+                <tr>
+                  <th scope="row">公開予定</th>
+                  <td>{collect.publishAt.replace('T', ' ')}</td>
+                  <td>公開後に確定シフトを表示</td>
+                </tr>
+                <tr>
+                  <th scope="row">リマインド</th>
+                  <td>{collect.reminders === 0 ? '送らない' : `${collect.reminders} 回`}</td>
+                  <td>未提出者へ通知</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       );
 
     case 'collection':
       return (
-        <div className="rk-collection-status">
+        <div className="rk-reference-panel rk-collection-status">
           <div className="rk-status-metrics">
             <article><span>対象スタッフ</span><strong>{targetStaff.length}</strong></article>
             <article><span>提出済み</span><strong>{submittedStaff.length}</strong></article>
@@ -1140,30 +1359,60 @@ export function SectionBody({ section }: { section: ManagerSection }) {
             <article><span>下書き</span><strong>0</strong></article>
             <article><span>変更申請中</span><strong>0</strong></article>
           </div>
-          <div className="rk-collection-status__actions">
-            <span>対象月 {collect.targetMonth} / 期限 {collect.deadlineAt.replace('T', ' ')}</span>
+          <div className="rk-ref-toolbar rk-collection-status__actions">
+            <label>
+              <span>対象月</span>
+              <input aria-label="回収状況の対象月" type="month" value={collect.targetMonth} onChange={(event) => setCollect({ ...collect, targetMonth: event.target.value })} />
+            </label>
+            <span>期限 {collect.deadlineAt.replace('T', ' ')}</span>
             <button type="button" className="tb-btn" onClick={() => showToast(`${unsubmittedStaff.length}名へリマインドを送りました`)}>
               未提出者へ一括通知
             </button>
           </div>
-          <ul className="modal-list">
-            {targetStaff.map((s) => {
-              const submitted = submittedStaffIds.has(s.id);
-              return (
-              <li key={s.id}>
-                <span className="staff-li-name">{s.name}</span>
-                <span className={submitted ? 'rk-status-tag is-submitted' : 'rk-status-tag is-unsubmitted'}>
-                  {submitted ? '提出済み' : '未提出'}
-                </span>
-                {!submitted && (
-                  <button type="button" className="tb-btn sm" onClick={() => showToast(`${s.name}さんへリマインドを送りました`)}>
-                    通知
-                  </button>
-                )}
-              </li>
-              );
-            })}
-          </ul>
+          <div className="rk-table-scroll">
+            <table className="rk-reference-table rk-compact-table">
+              <thead>
+                <tr>
+                  <th scope="col">スタッフ</th>
+                  <th scope="col">雇用形態</th>
+                  <th scope="col">提出状態</th>
+                  <th scope="col">提出対象</th>
+                  <th scope="col">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {targetStaff.map((person) => {
+                  const submitted = submittedStaffIds.has(person.id);
+                  const latestRequest = requests
+                    .filter((request) => request.staffId === person.id && request.date.startsWith(collect.targetMonth))
+                    .sort((a, b) => b.date.localeCompare(a.date))[0];
+                  return (
+                    <tr key={person.id}>
+                      <th scope="row">{person.name}</th>
+                      <td>{person.employmentType}</td>
+                      <td>
+                        <span className={submitted ? 'rk-status-tag is-submitted' : 'rk-status-tag is-unsubmitted'}>
+                          {submitted ? '提出済み' : '未提出'}
+                        </span>
+                      </td>
+                      <td>{latestRequest ? `${mdLabel(latestRequest.date)} まで確認` : collect.targetMonth}</td>
+                      <td>
+                        {!submitted ? (
+                          <button type="button" className="tb-btn sm" onClick={() => showToast(`${person.name}さんへリマインドを送りました`)}>
+                            通知
+                          </button>
+                        ) : (
+                          <button type="button" className="tb-btn sm" onClick={() => showToast(`${person.name}さんの提出内容を確認しました`)}>
+                            確認
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       );
 
@@ -1340,42 +1589,84 @@ export function SectionBody({ section }: { section: ManagerSection }) {
 
     case 'recruitment':
       return (
-        <div className="settings-form">
+        <div className="rk-reference-panel rk-recruitment-page">
           <p className="muted-sm">
             人手が足りない日にメッセージ付きで追加募集を出します。シフト表ツールバーの「追加募集◯件」に反映されます。
           </p>
-          <label className="settings-row">
-            <span>募集日</span>
-            <select aria-label="募集日" value={activeRecruitDate} onChange={(e) => setRecruitDate(e.target.value)}>
-              {dates.map((d) => <option key={d} value={d}>{mdLabel(d)}</option>)}
-            </select>
-          </label>
-          <label className="settings-row">
-            <span>メッセージ</span>
-            <input
-              className="text-input"
-              aria-label="募集メッセージ"
-              placeholder="例：18時以降ホール1名募集"
-              value={recruitMsg}
-              onChange={(e) => setRecruitMsg(e.target.value)}
-            />
-          </label>
-          <button type="button" className="btn btn-primary" onClick={() => void addRecruit()}>募集を追加</button>
-          <ul className="modal-list">
-            {recruitments.filter((r) => r.message.trim()).length === 0 ? (
-              <li><span className="muted-sm">現在この月の追加募集はありません。</span></li>
-            ) : (
-              recruitments
-                .filter((r) => r.message.trim())
-                .sort((a, b) => a.date.localeCompare(b.date))
-                .map((r) => (
-                  <li key={r.date}>
-                    <span className="staff-li-name">{mdLabel(r.date)}　{r.message}</span>
-                    <button type="button" className="tb-btn sm" onClick={() => void setRecruitment(r.date, '')}>削除</button>
-                  </li>
-                ))
-            )}
-          </ul>
+          <div className="rk-filter-card">
+            <label>
+              <span>募集日</span>
+              <select aria-label="募集日" value={activeRecruitDate} onChange={(event) => setRecruitDate(event.target.value)}>
+                {dates.map((date) => <option key={date} value={date}>{mdLabel(date)}({weekdayLabels[new Date(date).getDay()]})</option>)}
+              </select>
+            </label>
+            <label>
+              <span>ポジション</span>
+              <select aria-label="追加募集ポジション" value={recruitmentPosition} onChange={(event) => setRecruitmentPosition(event.target.value)}>
+                {positions.map((positionName) => <option key={positionName} value={positionName}>{positionName}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>雇用形態</span>
+              <select aria-label="追加募集雇用形態" value={alertEmployment} onChange={(event) => setAlertEmployment(event.target.value)}>
+                {employmentTypes.map((employment) => <option key={employment} value={employment}>{employment}</option>)}
+              </select>
+            </label>
+            <label className="rk-filter-card__wide">
+              <span>メッセージ</span>
+              <input
+                aria-label="募集メッセージ"
+                placeholder="例：18時以降ホール1名募集"
+                value={recruitMsg}
+                onChange={(event) => setRecruitMsg(event.target.value)}
+              />
+            </label>
+            <button type="button" className="tb-btn rk-filter-card__submit" onClick={() => void addRecruit()}>
+              募集を追加
+            </button>
+          </div>
+
+          <div className="rk-table-scroll">
+            <table className="rk-reference-table rk-compact-table">
+              <thead>
+                <tr>
+                  <th scope="col">募集日</th>
+                  <th scope="col">ポジション</th>
+                  <th scope="col">募集内容</th>
+                  <th scope="col">表示状態</th>
+                  <th scope="col">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recruitments.filter((item) => item.message.trim()).length === 0 ? (
+                  <tr>
+                    <td>{mdLabel(activeRecruitDate)}</td>
+                    <td>{recruitmentPosition}</td>
+                    <td>現在この月の追加募集はありません。</td>
+                    <td>未掲載</td>
+                    <td>—</td>
+                  </tr>
+                ) : (
+                  recruitments
+                    .filter((item) => item.message.trim())
+                    .sort((a, b) => a.date.localeCompare(b.date))
+                    .map((item) => (
+                      <tr key={item.date}>
+                        <th scope="row">{mdLabel(item.date)}({weekdayLabels[new Date(item.date).getDay()]})</th>
+                        <td>{recruitmentPosition}</td>
+                        <td>{item.message}</td>
+                        <td>掲載中</td>
+                        <td>
+                          <button type="button" className="tb-btn sm" onClick={() => void setRecruitment(item.date, '')}>
+                            削除
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       );
 
@@ -1554,28 +1845,38 @@ export function SectionBody({ section }: { section: ManagerSection }) {
 
     case 'fixed-shifts':
       return (
-        <div className="settings-form rk-fixed-shifts">
+        <div className="rk-reference-panel rk-fixed-shifts">
+          <div className="rk-status-metrics rk-fixed-shifts__metrics">
+            <article><span>固定条件</span><strong>{fixedShiftRules.length}</strong></article>
+            <article><span>対象スタッフ</span><strong>{targetStaff.length}</strong></article>
+            <article><span>表示月</span><strong>{month.replace('-', '/')}</strong></article>
+            <article><span>勤務枠</span><strong>早/遅/休</strong></article>
+          </div>
           <p className="muted-sm">繰り返し条件を登録し、対象月の希望またはシフト案へコピーできます。</p>
-          <div className="rk-inline-form">
-            <label>スタッフ
-              <select value={fixedStaffId} onChange={(event) => setFixedStaffId(event.target.value)}>
+          <div className="rk-filter-card rk-fixed-shifts__form">
+            <label>
+              <span>スタッフ</span>
+              <select aria-label="スタッフ" value={fixedStaffId} onChange={(event) => setFixedStaffId(event.target.value)}>
                 <option value="">選択</option>
                 {targetStaff.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}
               </select>
             </label>
-            <label>周期
-              <select value={fixedFrequency} onChange={(event) => setFixedFrequency(event.target.value as typeof fixedFrequency)}>
+            <label>
+              <span>周期</span>
+              <select aria-label="固定シフト周期" value={fixedFrequency} onChange={(event) => setFixedFrequency(event.target.value as typeof fixedFrequency)}>
                 <option value="every">毎週</option>
                 <option value="second-fourth">第2・第4</option>
               </select>
             </label>
-            <label>曜日
-              <select value={fixedWeekday} onChange={(event) => setFixedWeekday(Number(event.target.value))}>
+            <label>
+              <span>曜日</span>
+              <select aria-label="曜日" value={fixedWeekday} onChange={(event) => setFixedWeekday(Number(event.target.value))}>
                 {weekdayLabels.map((label, index) => <option key={label} value={index}>{label}曜日</option>)}
               </select>
             </label>
-            <label>勤務
-              <select value={fixedValue} onChange={(event) => setFixedValue(event.target.value as typeof fixedValue)}>
+            <label>
+              <span>勤務</span>
+              <select aria-label="固定シフト勤務" value={fixedValue} onChange={(event) => setFixedValue(event.target.value as typeof fixedValue)}>
                 <option value="early">{shiftPatterns.early.label}</option>
                 <option value="late">{shiftPatterns.late.label}</option>
                 <option value="off">休み</option>
@@ -1598,191 +1899,53 @@ export function SectionBody({ section }: { section: ManagerSection }) {
               固定シフトを追加
             </button>
           </div>
-          <ul className="modal-list">
-            {fixedShiftRules.map((rule) => (
-              <li key={rule.id}>
-                <span className="staff-li-main">
-                  <span className="staff-li-name">{staff.find((person) => person.id === rule.staffId)?.name}</span>
-                  <span className="muted-sm">
-                    {rule.frequency === 'every' ? '毎週' : '第2・第4'}{weekdayLabels[rule.weekday]}曜日 /
-                    {rule.value === 'off' ? '休み' : shiftPatterns[rule.value].label}
-                  </span>
-                </span>
-                <button type="button" className="tb-btn sm" onClick={() => setFixedShiftRules(fixedShiftRules.filter((item) => item.id !== rule.id))}>削除</button>
-              </li>
-            ))}
-          </ul>
-          <button type="button" className="btn btn-primary" onClick={() => showToast(`${month}のシフト案へ固定シフトをコピーしました`)}>
+          <div className="rk-table-scroll">
+            <table className="rk-reference-table rk-compact-table">
+              <thead>
+                <tr>
+                  <th scope="col">スタッフ</th>
+                  <th scope="col">周期</th>
+                  <th scope="col">曜日</th>
+                  <th scope="col">勤務</th>
+                  <th scope="col">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {fixedShiftRules.length === 0 ? (
+                  <tr>
+                    <td>未登録</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td>上の条件から登録できます</td>
+                  </tr>
+                ) : fixedShiftRules.map((rule) => (
+                  <tr key={rule.id}>
+                    <th scope="row">{staff.find((person) => person.id === rule.staffId)?.name}</th>
+                    <td>{rule.frequency === 'every' ? '毎週' : '第2・第4'}</td>
+                    <td>{weekdayLabels[rule.weekday]}曜日</td>
+                    <td>{rule.value === 'off' ? '休み' : shiftPatterns[rule.value].label}</td>
+                    <td>
+                      <button type="button" className="tb-btn sm" onClick={() => setFixedShiftRules(fixedShiftRules.filter((item) => item.id !== rule.id))}>
+                        削除
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <button type="button" className="tb-btn rk-fixed-shifts__copy" onClick={() => showToast(`${month}のシフト案へ固定シフトをコピーしました`)}>
             表示月のシフト案へコピー
           </button>
         </div>
       );
 
     case 'shift-patterns':
-      return (
-        <div className="rk-pattern-editor">
-          <p className="muted-sm">
-            ヒアリングで確認した勤務枠です。変更内容はスタッフ提出と予定時間集計へ反映されます。
-          </p>
-          <table className="rk-pattern-table">
-            <thead>
-              <tr>
-                <th scope="col">シフトパターン</th>
-                <th scope="col">開始</th>
-                <th scope="col">終了</th>
-                <th scope="col">予定時間</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(['early', 'late'] as const).map((slot) => {
-                const pattern = shiftPatterns[slot];
-                const update = (next: Partial<(typeof pattern)>) => {
-                  const candidate = { ...pattern, ...next };
-                  setStoredShiftPatterns({
-                    ...shiftPatterns,
-                    [slot]: candidate,
-                  });
-                };
-                return (
-                  <tr key={slot}>
-                    <td>
-                      <input
-                        aria-label={`${slot === 'early' ? '早番' : '遅番'}の名称`}
-                        value={pattern.label}
-                        onChange={(event) => update({ label: event.target.value })}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        aria-label={`${pattern.label}の開始時刻`}
-                        value={pattern.start}
-                        inputMode="numeric"
-                        onChange={(event) => update({ start: event.target.value })}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        aria-label={`${pattern.label}の終了時刻`}
-                        value={pattern.end}
-                        inputMode="numeric"
-                        onChange={(event) => update({ end: event.target.value })}
-                      />
-                    </td>
-                    <td>
-                      {isValidShiftPattern(pattern)
-                        ? `${shiftPatternHours(pattern).toFixed(1)}時間`
-                        : <span className="alert-tag">時刻を確認</span>}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          <button
-            type="button"
-            className="tb-btn"
-            onClick={() => setStoredShiftPatterns(DEFAULT_SHIFT_PATTERNS)}
-          >
-            ヒアリング時の設定へ戻す
-          </button>
-        </div>
-      );
+      return <ShiftPatternsSection storeId={storeId} />;
 
     case 'color-settings':
-      return (
-        <div className="rk-reference-panel rk-settings-page">
-          <p className="muted-sm">
-            シフト表で使う色を店舗ごとに保存します。派手な装飾ではなく、一覧で見分けるための色だけを調整します。
-          </p>
-          <table className="rk-reference-table rk-settings-table rk-color-table">
-            <thead>
-              <tr>
-                <th scope="col">項目</th>
-                <th scope="col">背景</th>
-                <th scope="col">文字・線</th>
-                <th scope="col">表示例</th>
-              </tr>
-            </thead>
-            <tbody>
-              {([
-                ['early', '早番', 'earlyBg', 'earlyText'],
-                ['late', '遅番', 'lateBg', 'lateText'],
-                ['off', '休み', 'offBg', 'offText'],
-              ] as const).map(([key, label, bgKey, textKey]) => (
-                <tr key={key}>
-                  <th scope="row">{label}</th>
-                  <td>
-                    <input
-                      aria-label={`${label}の背景色`}
-                      type="color"
-                      value={shiftColors[bgKey]}
-                      onChange={(event) => setShiftColors({ ...shiftColors, [bgKey]: event.target.value })}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      aria-label={`${label}の文字色`}
-                      type="color"
-                      value={shiftColors[textKey]}
-                      onChange={(event) => setShiftColors({ ...shiftColors, [textKey]: event.target.value })}
-                    />
-                  </td>
-                  <td>
-                    <span
-                      className="rk-color-preview-chip"
-                      style={{ background: shiftColors[bgKey], color: shiftColors[textKey], borderColor: shiftColors[textKey] }}
-                    >
-                      {label}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              <tr>
-                <th scope="row">希望シフトの枠線</th>
-                <td colSpan={2}>
-                  <input
-                    aria-label="希望シフトの枠線色"
-                    type="color"
-                    value={shiftColors.requestBorder}
-                    onChange={(event) => setShiftColors({ ...shiftColors, requestBorder: event.target.value })}
-                  />
-                </td>
-                <td>
-                  <span
-                    className="rk-color-preview-chip is-request"
-                    style={{ borderColor: shiftColors.requestBorder }}
-                  >
-                    早番希望
-                  </span>
-                </td>
-              </tr>
-              <tr>
-                <th scope="row">不足・注意行</th>
-                <td colSpan={2}>
-                  <input
-                    aria-label="不足注意行の背景色"
-                    type="color"
-                    value={shiftColors.shortageBg}
-                    onChange={(event) => setShiftColors({ ...shiftColors, shortageBg: event.target.value })}
-                  />
-                </td>
-                <td>
-                  <span className="rk-color-preview-cell" style={{ background: shiftColors.shortageBg }}>
-                    必要人数不足
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <button
-            type="button"
-            className="tb-btn"
-            onClick={() => setShiftColors(DEFAULT_SHIFT_COLORS)}
-          >
-            標準色へ戻す
-          </button>
-        </div>
-      );
+      return <ColorSettingsSection storeId={storeId} />;
 
     case 'store-help':
       return (
