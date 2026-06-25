@@ -124,10 +124,11 @@ export function ShiftTable({
     mode: sortMode,
     slotHours,
   });
+  const wide = dates.length > 16;
 
   return (
-    <div className="rk-shift-table-scroll">
-      <table className={`rk-shift-table rk-shift-table--${density}`}>
+    <div className={`rk-shift-table-scroll${wide ? ' rk-shift-table-scroll--wide' : ''}`}>
+      <table className={`rk-shift-table rk-shift-table--${density}${wide ? ' rk-shift-table--wide' : ''}`}>
         <thead className={layers.pinHeader ? 'rk-shift-table__head--fixed' : undefined}>
           <tr>
             <th scope="col" className="rk-shift-table__staff-heading">

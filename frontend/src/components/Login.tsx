@@ -33,6 +33,7 @@ export function Login() {
       <div className="login-card card">
         <div className="login-brand">
           <div className="login-logo">暁夢シフト</div>
+          <p className="login-tagline">シフト管理システム</p>
         </div>
         <form onSubmit={submit} className="login-form">
           <label className="field">
@@ -45,7 +46,7 @@ export function Login() {
           </label>
           {error && <p className="form-error">{error}</p>}
           <button type="submit" className="btn btn-primary btn-block" disabled={busy}>
-            {busy ? 'ログイン中…' : 'ログイン →'}
+            {busy ? 'ログイン中…' : 'ログイン'}
           </button>
         </form>
         <div className="login-demo">

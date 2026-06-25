@@ -76,6 +76,21 @@ describe('ShiftTable', () => {
     expect(container.querySelector('.rk-shift-table')).toHaveClass('rk-shift-table--large');
   });
 
+  it('月表示のように日数が多い場合は横幅を確保する', () => {
+    const monthDates = Array.from({ length: 30 }, (_, index) => (
+      `2026-06-${String(index + 1).padStart(2, '0')}`
+    ));
+    const { container } = render(
+      <ShiftTable
+        {...baseProps}
+        dates={monthDates}
+      />,
+    );
+
+    expect(container.querySelector('.rk-shift-table-scroll')).toHaveClass('rk-shift-table-scroll--wide');
+    expect(container.querySelector('.rk-shift-table')).toHaveClass('rk-shift-table--wide');
+  });
+
   it('出勤者のみの表示とスタッフ並び替え操作を反映する', async () => {
     const user = userEvent.setup();
     const onSortChange = vi.fn();
