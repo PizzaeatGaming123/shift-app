@@ -13,6 +13,7 @@ function renderNav(overrides: {
   onHome?: () => void;
   onOpenSection?: (section: ManagerSection) => void;
   onLogout?: () => void;
+  onOpenHelp?: () => void;
 } = {}) {
   const props = {
     userName: '西村健一',
@@ -20,6 +21,7 @@ function renderNav(overrides: {
     onHome: vi.fn(),
     onOpenSection: vi.fn(),
     onLogout: vi.fn(),
+    onOpenHelp: vi.fn(),
     ...overrides,
   };
   render(<GlobalNav {...props} />);
@@ -61,6 +63,16 @@ describe('GlobalNav', () => {
 
     await user.click(screen.getByRole('button', { name: '暁夢シフト' }));
     expect(props.onHome).toHaveBeenCalledOnce();
+  });
+
+  it('ヘルプボタンを記号だけではなく上部メニューと同じボタンとして表示する', async () => {
+    const user = userEvent.setup();
+    const props = renderNav();
+
+    await user.click(screen.getByRole('button', { name: 'ヘルプ' }));
+
+    expect(screen.queryByRole('button', { name: '?' })).not.toBeInTheDocument();
+    expect(props.onOpenHelp).toHaveBeenCalledOnce();
   });
 
   it('有効なメニューだけ画面遷移できる', async () => {

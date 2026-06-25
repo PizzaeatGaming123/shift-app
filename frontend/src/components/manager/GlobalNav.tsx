@@ -204,11 +204,11 @@ export function GlobalNav({
       <div className="rk-global-nav__spacer" />
       <button
         type="button"
-        className="rk-global-nav__icon"
+        className="rk-global-nav__help"
         aria-label="ヘルプ"
         onClick={onOpenHelp}
       >
-        ?
+        ヘルプ
       </button>
       <div className="rk-global-nav__group rk-global-nav__account">
         <button

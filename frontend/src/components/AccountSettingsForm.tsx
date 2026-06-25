@@ -12,8 +12,6 @@ interface AccountProfile {
   notifyOnPublish: boolean;
   notifyOnReminder: boolean;
   notifyOnChange: boolean;
-  monthlyHourLimit: number; // 0 = 上限なし
-  retireDate: string; // YYYY-MM-DD or ""
 }
 
 const DEFAULT_PROFILE: AccountProfile = {
@@ -25,8 +23,6 @@ const DEFAULT_PROFILE: AccountProfile = {
   notifyOnPublish: true,
   notifyOnReminder: true,
   notifyOnChange: true,
-  monthlyHourLimit: 0,
-  retireDate: '',
 };
 
 function accountKey(meId: number | string): string {
@@ -161,34 +157,6 @@ export function AccountSettingsForm() {
             onChange={(e) => update('notifyOnChange', e.target.checked)} />
           公開済みシフトの変更通知を受け取る
         </label>
-      </section>
-
-      <section className="rk-account__group">
-        <h4>勤務希望（自己申告）</h4>
-        <label className="rk-account__row">
-          <span>月間勤務時間の上限</span>
-          <select
-            value={draft.monthlyHourLimit}
-            onChange={(e) => update('monthlyHourLimit', Number(e.target.value))}
-          >
-            <option value={0}>上限なし</option>
-            <option value={88}>88時間（社会保険未加入の目安）</option>
-            <option value={104}>104時間</option>
-            <option value={120}>120時間</option>
-            <option value={160}>160時間（フルタイム目安）</option>
-          </select>
-        </label>
-        <label className="rk-account__row">
-          <span>退職予定日</span>
-          <input
-            type="date"
-            value={draft.retireDate}
-            onChange={(e) => update('retireDate', e.target.value)}
-          />
-        </label>
-        <p className="rk-account__hint">
-          上限と退職予定日は、店長がシフトを組む際の目安として使用されます。
-        </p>
       </section>
 
       <div className="rk-account__actions">
