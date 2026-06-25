@@ -227,12 +227,9 @@ export function ManagerShiftScreen({
 
   useEffect(() => {
     if (homeSignal === 0) return;
-    // シフト作成は通常「翌月分」を準備する運用なので、ホームに戻る際は翌月へリセットする
-    const now = new Date();
-    const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    const nextMonth = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`;
-    setMonth(nextMonth);
-    setAnchorDate(`${nextMonth}-01`);
+    const defaultMonth = '2026-09';
+    setMonth(defaultMonth);
+    setAnchorDate(`${defaultMonth}-01`);
     setView('half-month');
   }, [homeSignal, setMonth]);
 

@@ -18,6 +18,9 @@ data/
 frontend/node_modules/
 frontend/dist/
 
+# Static bundle copied into Spring Boot for同梱配信（deploy/bundle-static.* で再生成）
+backend/src/main/resources/static/
+
 # TypeScript build artifacts (from `tsc -b`)
 *.tsbuildinfo
 vite.config.js
