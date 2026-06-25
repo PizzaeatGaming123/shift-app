@@ -5029,3 +5029,209 @@ button.rk-shift-chip:focus-visible {
   font-size: 12px;
   line-height: 1.6;
 }
+
+/* ---- site-wide password gate ---- */
+.site-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: linear-gradient(160deg, #e7f1fb 0%, #f4f5f7 60%);
+}
+
+.site-gate__card {
+  width: 100%;
+  max-width: 360px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 28px 24px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, .08);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.site-gate__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  color: var(--primary-dark);
+  text-align: center;
+}
+
+.site-gate__lead {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.site-gate__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.site-gate__field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 16px;
+  background: #fff;
+}
+
+.site-gate__field input:focus-visible {
+  border-color: var(--primary);
+  outline: 3px solid rgba(47, 128, 196, .22);
+  outline-offset: 0;
+}
+
+.site-gate__error {
+  margin: 0;
+  color: var(--low);
+  font-size: 13px;
+}
+
+.site-gate__submit {
+  margin-top: 4px;
+  min-height: 46px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--t);
+}
+
+.site-gate__submit:hover,
+.site-gate__submit:focus-visible {
+  background: var(--primary-dark);
+}
+
+/* ---- mobile (manager) ---- */
+@media (max-width: 760px) {
+  .app {
+    max-width: none;
+    padding: 0 0 64px;
+  }
+
+  /* drop forced 1120px so the page actually fits the viewport */
+  .rk-manager,
+  .rk-section-screen {
+    min-width: 0;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  /* global nav: let it scroll horizontally rather than wrap/clip */
+  .rk-global-nav {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .rk-global-nav::-webkit-scrollbar { display: none; }
+  .rk-global-nav button {
+    padding: 0 11px;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .rk-global-nav__brand {
+    min-width: 0;
+    padding: 0 12px;
+  }
+  .rk-global-nav__spacer {
+    display: none;
+  }
+  .rk-global-nav__menu {
+    width: min(260px, calc(100vw - 24px));
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+  /* keep the account menu pinned to the right edge of the viewport */
+  .rk-global-nav__account .rk-global-nav__menu {
+    position: fixed;
+    top: 40px;
+    right: 8px;
+    left: auto;
+  }
+
+  /* section screen chrome: tighter */
+  .rk-section-screen__head {
+    padding: 0 12px;
+    height: 44px;
+  }
+  .rk-section-screen__title {
+    font-size: 14px;
+  }
+  .rk-section-screen__body {
+    margin: 10px;
+    padding: 14px 12px;
+  }
+  .rk-section-screen__body .settings-form,
+  .rk-section-screen__body .modal-list {
+    max-width: 100%;
+  }
+
+  /* shift toolbar: stack & wrap, allow selects to shrink */
+  .rk-shift-toolbar__primary,
+  .rk-shift-toolbar__secondary {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px 8px;
+  }
+  .rk-shift-toolbar select {
+    min-width: 0;
+    flex: 1 1 140px;
+    max-width: 100%;
+  }
+  .rk-shift-mode-switch {
+    margin-left: 0;
+  }
+  .rk-shift-toolbar__period {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  /* confirm / shift dialogs: drop hard min-widths */
+  .rk-confirm-form { min-width: 0; gap: 14px; }
+  .rk-confirm-list--dates { grid-template-columns: repeat(2, 1fr); }
+  .rk-confirm-done { min-width: 0; padding: 18px 4px; }
+
+  /* matrix wrap already scrolls; just ensure name col doesn't dominate */
+  .row-head,
+  .sticky-col {
+    min-width: 112px;
+    width: 112px;
+  }
+}
+
+@media (max-width: 480px) {
+  .rk-section-screen__body {
+    margin: 8px 6px;
+    padding: 12px 10px;
+  }
+  .rk-section-screen__head {
+    padding: 0 10px;
+    gap: 8px;
+  }
+  .rk-section-screen__back {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+  .matrix.size-standard th,
+  .matrix.size-standard td {
+    padding: 4px 6px;
+    min-width: 44px;
+  }
+}
