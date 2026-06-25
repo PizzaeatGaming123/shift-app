@@ -118,17 +118,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     api.stores().then((list) => setStores(list.map(toStore)));
   }, [me]);
 
-  const reloadStoreData = useCallback(async () => {
+  const reloadStoreData = useCallback(async (clearBeforeLoad = false) => {
     if (!storeId) return;
     const requestSeq = ++reloadSeq.current;
     const activeStoreId = storeId;
-    setStaff([]);
-    setRequests([]);
-    setAssignments([]);
-    setDayNotes([]);
-    setStoreNotes([]);
-    setRecruitments([]);
-    setShiftPlanStatusState('DRAFT');
+    if (clearBeforeLoad) {
+      setStaff([]);
+      setRequests([]);
+      setAssignments([]);
+      setDayNotes([]);
+      setStoreNotes([]);
+      setRecruitments([]);
+      setShiftPlanStatusState('DRAFT');
+    }
     // コア取得：これらが落ちると画面が成立しないので Promise.all で待つ。
     const [st, rq, as, dn, sn, rc] = await Promise.all([
       api.staff(activeStoreId),
@@ -158,7 +160,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [storeId, month]);
 
   useEffect(() => {
-    if (me && storeId) void reloadStoreData();
+    if (me && storeId) void reloadStoreData(true);
   }, [me, storeId, month, reloadStoreData]);
 
   const login = useCallback(async (username: string, password: string) => {
@@ -208,9 +210,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const toggleAssignment = useCallback(
     async (date: string, slot: WorkSlot, staffId: string, assigned: boolean) => {
       if (!storeId) return;
-      if (assigned) await api.unassign(storeId, date, slot, Number(staffId));
-      else await api.assign(storeId, date, slot, Number(staffId));
-      await reloadStoreData();
+      setAssignments((current) => {
+        if (assigned) {
+          return current
+            .map((item) => (
+              item.date === date && item.slot === slot
+                ? { ...item, staffIds: item.staffIds.filter((id) => id !== staffId) }
+                : item
+            ))
+            .filter((item) => item.staffIds.length > 0);
+        }
+        const target = current.find((item) => item.date === date && item.slot === slot);
+        if (!target) return [...current, { date, slot, staffIds: [staffId] }];
+        if (target.staffIds.includes(staffId)) return current;
+        return current.map((item) => (
+          item === target ? { ...item, staffIds: [...item.staffIds, staffId] } : item
+        ));
+      });
+      try {
+        if (assigned) await api.unassign(storeId, date, slot, Number(staffId));
+        else await api.assign(storeId, date, slot, Number(staffId));
+      } finally {
+        await reloadStoreData();
+      }
     }, [storeId, reloadStoreData]);
 
   const setDayNote = useCallback(async (date: string, text: string) => {
