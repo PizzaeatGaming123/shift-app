@@ -3887,11 +3887,16 @@ button.cal-cell:active {
 }
 
 .rk-shift-staff-row--standard {
-  height: 54px;
+  height: 48px;
 }
 
 .rk-shift-staff-row--large {
-  height: 72px;
+  height: 64px;
+}
+
+/* Phase 6: 標準サイズの行は 15 人をスクロールなしで収めるためにパディングを詰める。 */
+.rk-shift-staff-row--standard .rk-shift-cell {
+  padding: 0.35rem 0.4rem !important;
 }
 
 .rk-shift-table--small {
@@ -3932,7 +3937,8 @@ button.cal-cell:active {
 
 .rk-shift-staff {
   position: relative;
-  padding: 7px 8px !important;
+  min-width: 100px;
+  padding: 0.35rem 0.4rem !important;
   background: #fff;
   vertical-align: top !important;
 }

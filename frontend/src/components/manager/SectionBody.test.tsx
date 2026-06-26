@@ -116,6 +116,8 @@ it('表示設定: 初期表示と文字サイズと表示項目を保存する',
   renderSection('display-settings');
 
   await user.selectOptions(await screen.findByLabelText('シフト表の初期表示'), 'month');
+  // 既定値が 'large' になったので一度別サイズに切り替えてから戻し、保存をトリガする。
+  await user.click(screen.getByLabelText('小（コンパクト）'));
   await user.click(screen.getByLabelText('大（見やすい）'));
   await user.click(screen.getByLabelText('売上・人件費などの集計行を表示'));
 
