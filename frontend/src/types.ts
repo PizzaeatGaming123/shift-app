@@ -1,4 +1,4 @@
-export type EmploymentType = '正社員' | 'パート' | 'アルバイト';
+export type EmploymentType = '正社員' | 'パート';
 
 /** 勤務できる時間帯 */
 export type WorkSlot = 'early' | 'late'; // 早番 / 遅番

@@ -558,7 +558,6 @@ export function SectionBody({ section }: { section: ManagerSection }) {
             >
               <option value="正社員">正社員</option>
               <option value="パート">パート</option>
-              <option value="アルバイト">アルバイト</option>
             </select>
           </label>
 
