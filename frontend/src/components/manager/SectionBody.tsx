@@ -5,17 +5,12 @@ import { useToast } from '../ui/Toast';
 import { useSetting } from '../../lib/settings';
 import { getMonthDates } from '../../lib/date';
 import {
-  dailyWorkHours,
-  dailyLaborCost,
   staffMonthlyHours,
   maxConsecutiveAssignedDays,
 } from '../../store/labor';
 import { isAssigned } from '../../store/assignments';
 import { buildScheduleCsv, downloadCsv } from '../../lib/csv';
-import {
-  WORK_SLOTS,
-  DAILY_SALES_TARGET,
-} from '../../constants';
+import { WORK_SLOTS } from '../../constants';
 import type { WorkSlot } from '../../types';
 import type { ManagerSection } from './GlobalNav';
 import {
@@ -24,7 +19,6 @@ import {
   WEEKDAY_COLUMNS,
   type WeekdayRequired,
 } from './modelShift';
-import { RankSkillScreen } from './RankSkillScreen';
 import {
   collectionSettingKey,
   createDefaultCollectionSettings,
@@ -51,12 +45,7 @@ export const SECTION_TITLES: Partial<Record<ManagerSection, string>> = {
   'staff-list': 'スタッフ一覧',
   'staff-registration': 'スタッフ登録',
   'manager-registration': '管理者登録',
-  'rank-settings': 'ランク・スキル一覧',
-  'skill-settings': 'ランク・スキル一覧',
   'fixed-shifts': '固定シフト',
-  'sales-plan': '売上計画',
-  'labor-cost': '人件費',
-  'sales-per-hour': '人時売上高',
   'model-shift': 'モデルシフト',
   'labor-status': '労務状況',
   attendance: 'シフト集計',
@@ -145,8 +134,6 @@ interface StoreProfile {
   note: string;
 }
 
-function yen(n: number): string { return `¥${n.toLocaleString('ja-JP')}`; }
-
 function assignedDays(
   assignments: ReturnType<typeof useApp>['assignments'],
   staffId: string,
@@ -199,7 +186,6 @@ export function SectionBody({ section }: { section: ManagerSection }) {
   const [broadcastOpen, setBroadcastOpen] = useState(false);
   const [broadcastText, setBroadcastText] = useState('シフトを公開しました。スタッフ画面から確認してください。');
 
-  const [salesTarget, setSalesTarget] = useSetting(`akiyume-sales:${storeId}`, DAILY_SALES_TARGET);
   const [positions, setPositions] = useSetting<string[]>(`akiyume-positions:${storeId}`, ['ホール', 'キッチン']);
   const [departments, setDepartments] = useSetting<string[]>(`akiyume-departments:${storeId}`, ['ホール', 'キッチン', '管理']);
   const [storeProfiles, setStoreProfiles] = useSetting<Record<string, StoreProfile>>(
@@ -360,17 +346,6 @@ export function SectionBody({ section }: { section: ManagerSection }) {
   const submittedStaff = targetStaff.filter((person) => submittedStaffIds.has(person.id));
   const unsubmittedStaff = targetStaff.filter((person) => !submittedStaffIds.has(person.id));
   const weekdayLabels = ['日', '月', '火', '水', '木', '金', '土'];
-  const totalHours = dates.reduce(
-    (sum, date) => sum + dailyWorkHours(assignments, date, configuredSlotHours),
-    0,
-  );
-  const totalCost = dates.reduce(
-    (sum, date) => sum + dailyLaborCost(assignments, date, configuredSlotHours, staff),
-    0,
-  );
-  const monthSales = salesTarget * dates.length;
-  const salesPerHour = totalHours > 0 ? Math.round(monthSales / totalHours) : 0;
-  const costRate = monthSales > 0 ? Math.round((totalCost / monthSales) * 100) : 0;
 
   async function submitRegister(role: 'STAFF' | 'MANAGER') {
     const name = regName.trim();
@@ -624,182 +599,6 @@ export function SectionBody({ section }: { section: ManagerSection }) {
 
     case 'manager-registration':
       return renderStaffRegistration('MANAGER');
-
-    case 'rank-settings':
-      return <RankSkillScreen initialTab="rank" />;
-
-    case 'skill-settings':
-      return <RankSkillScreen initialTab="skill" />;
-
-    case 'sales-plan':
-      return (
-        <div className="rk-reference-panel rk-sales-plan">
-          <div className="rk-ref-toolbar">
-            <label>
-              <span>売上計画</span>
-              <select
-                aria-label="売上計画の対象月"
-                value={salesPlanMonth}
-                onChange={(event) => setSalesPlanMonth(event.target.value)}
-              >
-                {monthOptions.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span>{monthOptions.find((option) => option.value === salesPlanMonth)?.label ?? '対象月'}固定人件費</span>
-              <input type="number" min={0} step={10000} defaultValue={1000000} aria-label="固定人件費" />
-              <b>円</b>
-            </label>
-          </div>
-
-          <div className="rk-plan-editor">
-            <div className="rk-plan-editor__total">
-              <span>合計</span>
-              <strong>{yen(salesTarget * dates.length)}</strong>
-              <span>円</span>
-            </div>
-            <div className="rk-plan-editor__rows">
-              {dates.slice(0, 15).map((date, index) => (
-                <label key={date} className={index % 7 === 6 ? 'is-sunday' : ''}>
-                  <span>{mdLabel(date)}({weekdayLabels[new Date(date).getDay()]})</span>
-                  <input
-                    aria-label={`${mdLabel(date)}の売上計画`}
-                    type="number"
-                    min={0}
-                    step={1000}
-                    value={salesTarget}
-                    onChange={(event) => setSalesTarget(Math.max(0, Number(event.target.value) || 0))}
-                  />
-                  <b>円</b>
-                </label>
-              ))}
-            </div>
-            <div className="rk-ref-actions">
-              <button type="button" className="tb-btn">キャンセル</button>
-              <button type="button" className="tb-btn primary" onClick={() => showToast('売上計画を保存しました')}>保存</button>
-            </div>
-          </div>
-        </div>
-      );
-
-    case 'labor-cost':
-      return (
-        <div className="rk-reference-panel">
-          <div className="rk-ref-toolbar">
-            <label>
-              <span>表示する期間</span>
-              <input
-                type="date"
-                aria-label="人件費表示開始日"
-                value={laborPeriodStart}
-                onChange={(event) => setLaborPeriodStart(event.target.value)}
-              />
-              <em>〜</em>
-              <input
-                type="date"
-                aria-label="人件費表示終了日"
-                value={laborPeriodEnd}
-                onChange={(event) => setLaborPeriodEnd(event.target.value)}
-              />
-            </label>
-          </div>
-          <div className="rk-table-scroll">
-            <table className="rk-reference-table">
-              <thead>
-                <tr>
-                  <th scope="col">店舗</th>
-                  <th scope="col">売上計画</th>
-                  <th scope="col">人件費（人件費率）</th>
-                  <th scope="col">人時売上高</th>
-                  <th scope="col">総労働時間</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="is-group">
-                  <th scope="row">第一事業部</th>
-                  <td>{yen(monthSales)}</td>
-                  <td>{yen(totalCost)} ({costRate}%)</td>
-                  <td>{yen(salesPerHour)}</td>
-                  <td>{totalHours.toFixed(2)} h</td>
-                </tr>
-                {stores.map((store, index) => {
-                  const plannedSales = Math.round(monthSales / Math.max(1, stores.length));
-                  const plannedCost = Math.round(totalCost / Math.max(1, stores.length));
-                  const storeHours = totalHours / Math.max(1, stores.length);
-                  const diff = index === 0 ? '+100,000' : '-100,000';
-                  return (
-                    <tr key={store.id}>
-                      <th scope="row">{store.name}</th>
-                      <td>{yen(plannedSales)}</td>
-                      <td>{yen(plannedCost)} ({costRate}%) <span className={index === 0 ? 'is-up' : 'is-down'}>({diff})</span></td>
-                      <td>{yen(storeHours > 0 ? Math.round(plannedSales / storeHours) : 0)}</td>
-                      <td>{storeHours.toFixed(2)} h</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <p className="muted-sm">予定シフトから計算した概算です。実績勤怠・給与計算ではありません。</p>
-        </div>
-      );
-
-    case 'sales-per-hour':
-      return (
-        <div className="rk-reference-panel rk-sales-per-hour">
-          <div className="rk-ref-toolbar">
-            <label>
-              <span>対象月</span>
-              <select aria-label="人時売上高の対象月" value={salesPlanMonth} onChange={(event) => setSalesPlanMonth(event.target.value)}>
-                {monthOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-              </select>
-            </label>
-            <label>
-              <span>店舗</span>
-              <select aria-label="人時売上高の店舗" value={alertStore} onChange={(event) => setAlertStore(event.target.value)}>
-                {stores.map((store) => <option key={store.id} value={store.id}>{store.name}</option>)}
-              </select>
-            </label>
-          </div>
-          <div className="rk-status-metrics">
-            <article><span>売上計画</span><strong>{yen(monthSales)}</strong></article>
-            <article><span>総労働時間</span><strong>{totalHours.toFixed(2)} h</strong></article>
-            <article><span>人時売上高</span><strong>{yen(salesPerHour)} / h</strong></article>
-            <article><span>人件費率</span><strong>{costRate}%</strong></article>
-          </div>
-          <div className="rk-table-scroll">
-            <table className="rk-reference-table rk-compact-table">
-              <thead>
-                <tr>
-                  <th scope="col">日付</th>
-                  <th scope="col">売上計画</th>
-                  <th scope="col">予定労働時間</th>
-                  <th scope="col">人時売上高</th>
-                  <th scope="col">状態</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dates.slice(0, 15).map((date) => {
-                  const hours = dailyWorkHours(assignments, date, configuredSlotHours);
-                  const value = hours > 0 ? Math.round(salesTarget / hours) : 0;
-                  return (
-                    <tr key={date}>
-                      <th scope="row">{mdLabel(date)}({weekdayLabels[new Date(date).getDay()]})</th>
-                      <td>{yen(salesTarget)}</td>
-                      <td>{hours.toFixed(2)} h</td>
-                      <td>{hours > 0 ? `${yen(value)} / h` : '未配置'}</td>
-                      <td>{value >= 3500 ? '目標内' : hours > 0 ? '確認' : 'シフト未配置'}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <p className="muted-sm">予定シフトを基にした管理指標です。実績勤怠ではありません。</p>
-        </div>
-      );
 
     case 'labor-status':
       return (
