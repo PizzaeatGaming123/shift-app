@@ -36,14 +36,23 @@ public class AssignmentService {
     }
 
     @Transactional
-    public void assign(Long storeId, LocalDate date, String slotCode, Long staffId, String changedBy) {
+    public void assign(Long storeId, LocalDate date, String slotCode, Long staffId,
+                       String startTime, String endTime, String changedBy) {
         WorkSlot slot = WorkSlot.fromCode(slotCode);
-        if (assignmentRepository.findByStore_IdAndDateAndSlotAndStaff_Id(storeId, date, slot, staffId).isPresent()) {
-            return; // 冪等
+        var existing = assignmentRepository.findByStore_IdAndDateAndSlotAndStaff_Id(storeId, date, slot, staffId);
+        if (existing.isPresent()) {
+            // 既存があれば時間メタデータだけ更新（冪等性を保ちつつ時間変更を可能にする）
+            var a = existing.get();
+            a.setStartTime(startTime);
+            a.setEndTime(endTime);
+            return;
         }
         Store store = storeRepository.findById(storeId).orElseThrow();
         Staff staff = staffRepository.findById(staffId).orElseThrow();
-        assignmentRepository.save(new ShiftAssignment(store, date, slot, staff));
+        var a = new ShiftAssignment(store, date, slot, staff);
+        a.setStartTime(startTime);
+        a.setEndTime(endTime);
+        assignmentRepository.save(a);
         recordChangeIfApplicable(store, date, slot, staff,
                 ShiftChangeHistory.Action.ASSIGN, changedBy);
     }

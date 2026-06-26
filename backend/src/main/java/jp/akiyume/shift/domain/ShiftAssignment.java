@@ -26,6 +26,14 @@ public class ShiftAssignment {
     @JoinColumn(name = "staff_id")
     private Staff staff;
 
+    /** 任意の開始時刻 "HH:MM"。null の場合は slot 既定の時間帯（早/遅）に従う。 */
+    @Column(name = "start_time", length = 5)
+    private String startTime;
+
+    /** 任意の終了時刻 "HH:MM"。null の場合は slot 既定の時間帯に従う。 */
+    @Column(name = "end_time", length = 5)
+    private String endTime;
+
     protected ShiftAssignment() {}
 
     public ShiftAssignment(Store store, LocalDate date, WorkSlot slot, Staff staff) {
@@ -40,4 +48,8 @@ public class ShiftAssignment {
     public LocalDate getDate() { return date; }
     public WorkSlot getSlot() { return slot; }
     public Staff getStaff() { return staff; }
+    public String getStartTime() { return startTime; }
+    public String getEndTime() { return endTime; }
+    public void setStartTime(String startTime) { this.startTime = startTime; }
+    public void setEndTime(String endTime) { this.endTime = endTime; }
 }
