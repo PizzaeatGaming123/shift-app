@@ -57,6 +57,29 @@ it('スタッフ一覧: スタッフ名を表示する', async () => {
   expect(screen.queryByRole('button', { name: 'スタッフを登録' })).not.toBeInTheDocument();
 });
 
+it('スタッフ一覧: 「月上限」セルがあり値を編集できる', async () => {
+  renderSection('staff-list');
+
+  // 列見出し
+  expect(await screen.findByRole('columnheader', { name: '月上限' })).toBeInTheDocument();
+
+  // 田中太郎の編集セル
+  const input = await screen.findByLabelText('田中太郎の月上限');
+  expect(input).toBeInTheDocument();
+
+  // 値を入力すると updateStaff PUT が飛ぶ。
+  // fireEvent.change なら 1 イベントで値全体が反映され、リロードで stale になる問題を避けられる。
+  fireEvent.change(input, { target: { value: '87' } });
+
+  const calls = (globalThis.fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+  const putCalls = calls.filter(([url, init]) =>
+    String(url).includes('/api/staff/2')
+    && (init as RequestInit | undefined)?.method === 'PUT');
+  expect(putCalls.length).toBeGreaterThan(0);
+  const lastBody = String((putCalls[putCalls.length - 1]![1] as RequestInit).body);
+  expect(lastBody).toContain('"monthlyHourLimit":87');
+});
+
 it('スタッフ登録: 検索欄を出さず登録入力だけを表示する', async () => {
   renderSection('staff-registration');
   expect(await screen.findByRole('form', { name: 'スタッフ登録' })).toBeInTheDocument();

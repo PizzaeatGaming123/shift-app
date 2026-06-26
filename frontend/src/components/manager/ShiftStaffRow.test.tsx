@@ -124,6 +124,73 @@ describe('ShiftStaffRow', () => {
     expect(screen.getByText('06:30-15:30')).toBeInTheDocument();
   });
 
+  it('月時間が上限80%未満なら時間表示に soft 以上の warn class はつかない', () => {
+    // 1日 × early(9h) = 9h、上限 100 → 9% → normal
+    render(
+      <table>
+        <tbody>
+          <ShiftStaffRow
+            person={{ ...person, monthlyHourLimit: 100 }}
+            dates={[date]}
+            requests={[]}
+            assignments={[{ date, slot: 'early', staffIds: ['1'] }]}
+            notes={[]}
+            layers={DEFAULT_SHIFT_LAYERS}
+            density="standard"
+            onToggleAssignment={() => {}}
+          />
+        </tbody>
+      </table>,
+    );
+
+    const hours = screen.getByText('9:00');
+    expect(hours.className).toContain('rk-warn-normal');
+    expect(hours.className).not.toMatch(/rk-warn-(soft|medium|hard)/);
+  });
+
+  it('月時間が上限100%超なら hard class がつく', () => {
+    // 1日 × early(9h) = 9h、上限 5 → 180% → hard
+    render(
+      <table>
+        <tbody>
+          <ShiftStaffRow
+            person={{ ...person, monthlyHourLimit: 5 }}
+            dates={[date]}
+            requests={[]}
+            assignments={[{ date, slot: 'early', staffIds: ['1'] }]}
+            notes={[]}
+            layers={DEFAULT_SHIFT_LAYERS}
+            density="standard"
+            onToggleAssignment={() => {}}
+          />
+        </tbody>
+      </table>,
+    );
+
+    expect(screen.getByText('9:00').className).toContain('rk-warn-hard');
+  });
+
+  it('月上限が null なら warn class は none', () => {
+    render(
+      <table>
+        <tbody>
+          <ShiftStaffRow
+            person={{ ...person, monthlyHourLimit: null }}
+            dates={[date]}
+            requests={[]}
+            assignments={[{ date, slot: 'early', staffIds: ['1'] }]}
+            notes={[]}
+            layers={DEFAULT_SHIFT_LAYERS}
+            density="standard"
+            onToggleAssignment={() => {}}
+          />
+        </tbody>
+      </table>,
+    );
+
+    expect(screen.getByText('9:00').className).toContain('rk-warn-none');
+  });
+
   it('確定シフトのボタンから割り当て解除を実行する', async () => {
     const user = userEvent.setup();
     const onToggleAssignment = vi.fn();

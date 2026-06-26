@@ -147,7 +147,7 @@ function assignedDays(
 export function SectionBody({ section }: { section: ManagerSection }) {
   const {
     stores, staff, requests, assignments, storeId, month,
-    createStaff, recruitments, setRecruitment,
+    createStaff, updateStaff, recruitments, setRecruitment,
   } = useApp();
   const { showToast } = useToast();
 
@@ -483,6 +483,7 @@ export function SectionBody({ section }: { section: ManagerSection }) {
                 <th scope="col">ランク</th>
                 <th scope="col">スキル</th>
                 <th scope="col">予定時間</th>
+                <th scope="col">月上限</th>
                 <th scope="col">提出状態</th>
               </tr>
             </thead>
@@ -504,6 +505,28 @@ export function SectionBody({ section }: { section: ManagerSection }) {
                       </span>
                     </td>
                     <td>{hrs.toFixed(1)} h</td>
+                    <td>
+                      <input
+                        type="number"
+                        min={0}
+                        max={300}
+                        aria-label={`${person.name}の月上限`}
+                        value={person.monthlyHourLimit ?? ''}
+                        onChange={(event) => {
+                          const raw = event.target.value;
+                          const next = raw === '' ? null : Number(raw);
+                          void updateStaff(
+                            person.id,
+                            person.rank,
+                            person.skills,
+                            person.hourlyWage ?? null,
+                            next,
+                          );
+                        }}
+                        style={{ width: 56 }}
+                      />
+                      <small> h</small>
+                    </td>
                     <td>
                       <span className={submitted ? 'rk-status-tag is-submitted' : 'rk-status-tag is-unsubmitted'}>
                         {submitted ? '提出済み' : '未提出'}
