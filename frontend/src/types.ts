@@ -43,6 +43,10 @@ export interface Assignment {
   date: string; // 'YYYY-MM-DD'
   slot: WorkSlot;
   staffIds: string[];
+  /** staffIds と同じ index で対応する開始時刻 'HH:MM'。未指定なら slot の既定時間。 */
+  startTimes?: (string | null)[];
+  /** staffIds と同じ index で対応する終了時刻 'HH:MM'。未指定なら slot の既定時間。 */
+  endTimes?: (string | null)[];
 }
 
 /** スタッフの日次ひとことメモ */
