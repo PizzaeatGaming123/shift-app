@@ -95,6 +95,11 @@ public class DataSeeder implements CommandLineRunner {
                 case FULL_TIME -> 1800;
                 case PART_TIME -> 1100;
             });
+            // デモ用の月労働時間上限。パートは扶養範囲内の 87h、正社員は制限なし。
+            staff.setMonthlyHourLimit(switch (p.type()) {
+                case FULL_TIME -> null;
+                case PART_TIME -> 87;
+            });
             saved.add(staffRepository.save(staff));
             idx++;
         }
@@ -125,7 +130,16 @@ public class DataSeeder implements CommandLineRunner {
                 requestRepository.save(new ShiftRequest(person, date, slot));
                 // 第1週（1..7日）は店長が希望どおりに割り当て済みにしておく
                 if (day <= 7 && slot != RequestSlot.OFF) {
-                    assignmentRepository.save(new ShiftAssignment(store, date, toWorkSlot(slot), person));
+                    ShiftAssignment assignment =
+                            new ShiftAssignment(store, date, toWorkSlot(slot), person);
+                    // パート × 早番のサンプルでは「9:00-13:00」の任意時間を設定し、
+                    // 時間メイン UI が機能していることを確認できるようにする。
+                    if (person.getEmploymentType() == EmploymentType.PART_TIME
+                            && toWorkSlot(slot) == WorkSlot.EARLY) {
+                        assignment.setStartTime("09:00");
+                        assignment.setEndTime("13:00");
+                    }
+                    assignmentRepository.save(assignment);
                 }
             }
         }
