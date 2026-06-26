@@ -223,7 +223,104 @@ describe('ShiftStaffRow', () => {
       'early',
       '1',
       true,
+      null,
+      null,
     );
     expect(screen.getByRole('row')).toHaveClass('rk-shift-staff-row--large');
+  });
+
+  it('空セルで onOpenAssignTimeModal を渡せば「＋」ボタンが出てクリックでコールバックされる', async () => {
+    const user = userEvent.setup();
+    const onOpen = vi.fn();
+
+    render(
+      <table>
+        <tbody>
+          <ShiftStaffRow
+            person={person}
+            dates={[date]}
+            requests={[]}
+            assignments={[]}
+            notes={[]}
+            layers={DEFAULT_SHIFT_LAYERS}
+            density="standard"
+            onToggleAssignment={() => {}}
+            onOpenAssignTimeModal={onOpen}
+          />
+        </tbody>
+      </table>,
+    );
+
+    await user.click(
+      screen.getByRole('button', {
+        name: '田中太郎 2026-07-01 に割当を追加',
+      }),
+    );
+
+    expect(onOpen).toHaveBeenCalledWith('1', '2026-07-01');
+  });
+
+  it('空セルでも onOpenAssignTimeModal を渡さなければ「＋」ボタンは出ない', () => {
+    render(
+      <table>
+        <tbody>
+          <ShiftStaffRow
+            person={person}
+            dates={[date]}
+            requests={[]}
+            assignments={[]}
+            notes={[]}
+            layers={DEFAULT_SHIFT_LAYERS}
+            density="standard"
+            onToggleAssignment={() => {}}
+          />
+        </tbody>
+      </table>,
+    );
+
+    expect(screen.queryByRole('button', { name: /に割当を追加/ })).not.toBeInTheDocument();
+  });
+
+  it('時間付き割当は時間ラベルを表示し、解除コールバックに時刻も渡す', async () => {
+    const user = userEvent.setup();
+    const onToggleAssignment = vi.fn();
+
+    render(
+      <table>
+        <tbody>
+          <ShiftStaffRow
+            person={person}
+            dates={[date]}
+            requests={[]}
+            assignments={[{
+              date,
+              slot: 'early',
+              staffIds: ['1'],
+              startTimes: ['09:00'],
+              endTimes: ['13:00'],
+            }]}
+            notes={[]}
+            layers={DEFAULT_SHIFT_LAYERS}
+            density="standard"
+            onToggleAssignment={onToggleAssignment}
+          />
+        </tbody>
+      </table>,
+    );
+
+    await user.click(
+      screen.getByRole('button', {
+        name: '田中太郎 2026-07-01 09:00-13:00の割り当てを解除',
+      }),
+    );
+
+    expect(onToggleAssignment).toHaveBeenCalledWith(
+      date,
+      'early',
+      '1',
+      true,
+      '09:00',
+      '13:00',
+    );
   });
 });

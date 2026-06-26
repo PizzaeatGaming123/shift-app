@@ -35,7 +35,14 @@ interface AppContextValue {
     endTime?: string | null;
     note: string;
   }[]) => Promise<void>;
-  toggleAssignment: (date: string, slot: WorkSlot, staffId: string, assigned: boolean) => Promise<void>;
+  toggleAssignment: (
+    date: string,
+    slot: WorkSlot,
+    staffId: string,
+    assigned: boolean,
+    startTime?: string | null,
+    endTime?: string | null,
+  ) => Promise<void>;
   setDayNote: (date: string, text: string) => Promise<void>;
   setStoreNote: (date: string, text: string) => Promise<void>;
   setRecruitment: (date: string, message: string) => Promise<void>;
@@ -223,28 +230,70 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [reloadStoreData]);
 
   const toggleAssignment = useCallback(
-    async (date: string, slot: WorkSlot, staffId: string, assigned: boolean) => {
+    async (
+      date: string,
+      slot: WorkSlot,
+      staffId: string,
+      assigned: boolean,
+      startTime?: string | null,
+      endTime?: string | null,
+    ) => {
       if (!storeId) return;
       setAssignments((current) => {
         if (assigned) {
+          // 既存割当の解除：staffId と並列に並ぶ startTimes/endTimes も同 index で除去する。
           return current
-            .map((item) => (
-              item.date === date && item.slot === slot
-                ? { ...item, staffIds: item.staffIds.filter((id) => id !== staffId) }
-                : item
-            ))
+            .map((item) => {
+              if (item.date !== date || item.slot !== slot) return item;
+              const idx = item.staffIds.indexOf(staffId);
+              if (idx < 0) return item;
+              const nextIds = item.staffIds.filter((_, i) => i !== idx);
+              const nextStartTimes = item.startTimes?.filter((_, i) => i !== idx);
+              const nextEndTimes = item.endTimes?.filter((_, i) => i !== idx);
+              return {
+                ...item,
+                staffIds: nextIds,
+                startTimes: nextStartTimes,
+                endTimes: nextEndTimes,
+              };
+            })
             .filter((item) => item.staffIds.length > 0);
         }
         const target = current.find((item) => item.date === date && item.slot === slot);
-        if (!target) return [...current, { date, slot, staffIds: [staffId] }];
-        if (target.staffIds.includes(staffId)) return current;
+        const start = startTime ?? null;
+        const end = endTime ?? null;
+        if (!target) {
+          return [...current, {
+            date,
+            slot,
+            staffIds: [staffId],
+            startTimes: [start],
+            endTimes: [end],
+          }];
+        }
+        // 既に該当 staffId が居る場合は時間メタデータだけ上書きする（バックエンドと整合）。
+        const existingIdx = target.staffIds.indexOf(staffId);
+        if (existingIdx >= 0) {
+          const startTimes = [...(target.startTimes ?? target.staffIds.map(() => null))];
+          const endTimes = [...(target.endTimes ?? target.staffIds.map(() => null))];
+          startTimes[existingIdx] = start;
+          endTimes[existingIdx] = end;
+          return current.map((item) => (
+            item === target ? { ...item, startTimes, endTimes } : item
+          ));
+        }
         return current.map((item) => (
-          item === target ? { ...item, staffIds: [...item.staffIds, staffId] } : item
+          item === target ? {
+            ...item,
+            staffIds: [...item.staffIds, staffId],
+            startTimes: [...(item.startTimes ?? item.staffIds.map(() => null)), start],
+            endTimes: [...(item.endTimes ?? item.staffIds.map(() => null)), end],
+          } : item
         ));
       });
       try {
         if (assigned) await api.unassign(storeId, date, slot, Number(staffId));
-        else await api.assign(storeId, date, slot, Number(staffId));
+        else await api.assign(storeId, date, slot, Number(staffId), startTime ?? null, endTime ?? null);
       } finally {
         await reloadStoreData();
       }

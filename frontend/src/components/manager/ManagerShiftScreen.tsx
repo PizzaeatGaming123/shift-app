@@ -460,8 +460,8 @@ export function ManagerShiftScreen({
           salesTarget={salesTarget}
           requiredByBand={requiredByBand}
           visibleSummaryItems={visibleSummaryItems}
-          onToggleAssignment={(date, slot, staffId, assigned) =>
-            void toggleAssignment(date, slot, staffId, assigned)}
+          onToggleAssignment={(date, slot, staffId, assigned, startTime, endTime) =>
+            void toggleAssignment(date, slot, staffId, assigned, startTime, endTime)}
           onStoreNoteChange={editStoreNote}
           onPositionNoteChange={editPositionNote}
           onSortChange={setSortMode}

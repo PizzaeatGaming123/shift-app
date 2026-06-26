@@ -165,7 +165,10 @@ describe('getShiftCellModel', () => {
       notes,
     })).toEqual({
       request: { slot: 'early', label: '早番', time: '7:00-16:00' },
-      assignment: { slot: 'early', label: '早番', time: '7:00-16:00' },
+      assignment: {
+        slot: 'early', label: '早番', time: '7:00-16:00',
+        startTime: null, endTime: null,
+      },
       note: '早番大丈夫です！',
     });
   });
@@ -181,6 +184,29 @@ describe('getShiftCellModel', () => {
       slot: 'off',
       label: '休み',
       time: null,
+    });
+  });
+
+  it('割当に startTimes/endTimes が並列で入っていれば、その index の時間が assignment に載る', () => {
+    const result = getShiftCellModel({
+      staffId: '2',
+      date: '2026-07-10',
+      requests: [],
+      assignments: [{
+        date: '2026-07-10',
+        slot: 'early',
+        staffIds: ['1', '2'],
+        startTimes: [null, '09:00'],
+        endTimes: [null, '13:00'],
+      }],
+      notes: [],
+    });
+    expect(result.assignment).toEqual({
+      slot: 'early',
+      label: '09:00-13:00',
+      time: '09:00-13:00',
+      startTime: '09:00',
+      endTime: '13:00',
     });
   });
 });
