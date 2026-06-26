@@ -56,12 +56,8 @@ const SORT_LABEL: Record<StaffSortMode, string> = {
   rank: 'ランク順',
 };
 const DEFAULT_SUMMARY_ITEMS: SummaryItemKey[] = [
-  'sales',
-  'salesPerHour',
   'workHours',
-  'laborCost',
   'modelShift',
-  'rankTotal',
   'storeNote',
   'positionNote',
 ];

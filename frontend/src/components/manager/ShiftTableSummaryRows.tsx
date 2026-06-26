@@ -7,12 +7,8 @@ import type {
 import { getDailySummary } from './shiftViewModel';
 
 export type SummaryItemKey =
-  | 'sales'
-  | 'salesPerHour'
   | 'workHours'
-  | 'laborCost'
   | 'modelShift'
-  | 'rankTotal'
   | 'storeNote'
   | 'positionNote';
 
@@ -43,10 +39,6 @@ const BANDS: {
   { key: 'early', label: '早番 7:00〜16:00', slots: ['early'] },
   { key: 'late', label: '遅番 15:00〜24:00', slots: ['late'] },
 ];
-
-function yen(value: number): string {
-  return `¥${value.toLocaleString('ja-JP')}`;
-}
 
 function coverage(assignments: Assignment[], date: string, slots: WorkSlot[]): number {
   const staffIds = new Set<string>();
@@ -80,43 +72,12 @@ export function ShiftTableSummaryRows({
 
   return (
     <>
-      {visible.has('sales') && (
-        <tr className="rk-summary-row">
-          <th scope="row" role="rowheader">売上計画</th>
-          {dates.map((date) => <td key={date}>{yen(summaries.get(date)!.sales)}</td>)}
-        </tr>
-      )}
-
-      {visible.has('salesPerHour') && (
-        <tr className="rk-summary-row">
-          <th scope="row" role="rowheader">人時売上高</th>
-          {dates.map((date) => (
-            <td key={date}>{yen(summaries.get(date)!.salesPerHour)}</td>
-          ))}
-        </tr>
-      )}
-
       {visible.has('workHours') && (
         <tr className="rk-summary-row">
           <th scope="row" role="rowheader">総労働時間</th>
           {dates.map((date) => (
             <td key={date}>{summaries.get(date)!.workHours.toFixed(2)} h</td>
           ))}
-        </tr>
-      )}
-
-      {visible.has('laborCost') && (
-        <tr className="rk-summary-row">
-          <th scope="row" role="rowheader">人件費</th>
-          {dates.map((date) => {
-            const summary = summaries.get(date)!;
-            return (
-              <td key={date}>
-                <span>{yen(summary.laborCost)}</span>
-                <small>({summary.laborCostRate.toFixed(2)}%)</small>
-              </td>
-            );
-          })}
         </tr>
       )}
 
@@ -137,13 +98,6 @@ export function ShiftTableSummaryRows({
             </tr>
           ))}
         </>
-      )}
-
-      {visible.has('rankTotal') && (
-        <tr className="rk-summary-row">
-          <th scope="row" role="rowheader">ランク計</th>
-          {dates.map((date) => <td key={date}>{summaries.get(date)!.rankTotal}</td>)}
-        </tr>
       )}
 
       {visible.has('storeNote') && (

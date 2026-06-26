@@ -47,12 +47,8 @@ interface ManagerShiftScreenProps {
 }
 
 const SUMMARY_OPTIONS: { key: SummaryItemKey; label: string }[] = [
-  { key: 'sales', label: '売上計画' },
-  { key: 'salesPerHour', label: '人時売上高' },
   { key: 'workHours', label: '総労働時間' },
-  { key: 'laborCost', label: '人件費' },
   { key: 'modelShift', label: '全体モデルシフト' },
-  { key: 'rankTotal', label: 'ランク計' },
   { key: 'storeNote', label: '店舗メモ' },
   { key: 'positionNote', label: 'ポジションメモ' },
 ];
@@ -379,7 +375,7 @@ export function ManagerShiftScreen({
         showNotes: false,
         showSummary: true,
       });
-      setVisibleSummaryItems(['workHours', 'laborCost', 'modelShift', 'rankTotal']);
+      setVisibleSummaryItems(['workHours', 'modelShift']);
     }
   }
 
