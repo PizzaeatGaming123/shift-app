@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatDate, daysInMonth, getMonthDates, firstWeekdayOfMonth, shiftMonth } from './date';
+import { formatDate, daysInMonth, getMonthDates, firstWeekdayOfMonth, shiftMonth, previousMonth } from './date';
 
 describe('formatDate', () => {
   it('zero-pads month and day', () => {
@@ -41,5 +41,15 @@ describe('shiftMonth', () => {
   });
   it('moves backward across year boundary', () => {
     expect(shiftMonth(2026, 1, -1)).toEqual({ year: 2025, month: 12 });
+  });
+});
+
+describe('previousMonth', () => {
+  it('returns the previous YYYY-MM string', () => {
+    expect(previousMonth('2026-06')).toBe('2026-05');
+    expect(previousMonth('2026-10')).toBe('2026-09');
+  });
+  it('crosses year boundary', () => {
+    expect(previousMonth('2026-01')).toBe('2025-12');
   });
 });

@@ -36,6 +36,11 @@ interface ShiftStaffRowProps {
   ) => void;
   /** 空セルの「＋」ボタン押下。時間入力モーダルを開くトリガー。 */
   onOpenAssignTimeModal?: (staffId: string, date: string) => void;
+  /**
+   * 「先月と同じ」ボタン押下。スタッフ名の横に小さく出る。
+   * 渡されない場合はボタン自体を出さない（ShiftConfirmDialog や表示プリセットによっては不要なため）。
+   */
+  onCopyPreviousMonth?: (staffId: string) => void;
 }
 
 function slotClass(slot: WorkSlot | 'any' | 'off'): string {
@@ -67,6 +72,7 @@ export function ShiftStaffRow({
   shiftPatterns = DEFAULT_SHIFT_PATTERNS,
   onToggleAssignment,
   onOpenAssignTimeModal,
+  onCopyPreviousMonth,
 }: ShiftStaffRowProps) {
   const totalHours = staffMonthlyHours(assignments, person.id, dates, slotHours);
   const consecutiveDays = maxConsecutiveAssignedDays(
@@ -90,6 +96,16 @@ export function ShiftStaffRow({
           >
             !
           </span>
+        )}
+        {onCopyPreviousMonth && (
+          <button
+            type="button"
+            className="rk-shift-staff__copy"
+            aria-label={`${person.name}の先月と同じシフトを今月に複製`}
+            onClick={() => onCopyPreviousMonth(person.id)}
+          >
+            先月と同じ
+          </button>
         )}
       </th>
 

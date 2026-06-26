@@ -32,3 +32,13 @@ export function shiftMonth(
   const newMonth = ((zeroBased % 12) + 12) % 12 + 1;
   return { year: newYear, month: newMonth };
 }
+
+/**
+ * 'YYYY-MM' を受け取り、1か月前の 'YYYY-MM' を返す。
+ * 例: '2026-01' → '2025-12'、'2026-06' → '2026-05'
+ */
+export function previousMonth(month: string): string {
+  const [year, mon] = month.split('-').map(Number);
+  const prev = shiftMonth(year, mon, -1);
+  return `${prev.year}-${String(prev.month).padStart(2, '0')}`;
+}
