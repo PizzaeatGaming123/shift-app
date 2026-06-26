@@ -49,7 +49,7 @@ const NAV_GROUPS: {
     items: [
       { label: 'シフト表', section: 'shift-table' },
       { label: 'シフト設定', section: 'shift-settings' },
-      { label: '回収状況', section: 'collection' },
+      { label: '提出状況', section: 'collection' },
       { label: '追加募集', section: 'recruitment' },
       { label: '確定シフト', section: 'confirmed-shifts' },
       { label: 'メッセージ', section: 'messages' },

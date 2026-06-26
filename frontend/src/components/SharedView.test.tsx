@@ -14,7 +14,7 @@ vi.mock('../store/AppContext', () => ({
     storeId: 1,
     staff: [{
       id: '2', name: '田中太郎', storeId: '1', employmentType: 'パート',
-      role: 'STAFF', rank: 3, skills: [],
+      role: 'STAFF',
     }],
     assignments: [{
       date: '2026-07-01',

@@ -32,8 +32,8 @@ beforeEach(() => {
     if (url.endsWith('/api/stores')) return response([{ id: 1, name: '中島店' }]);
     if (url.includes('/staff')) {
       return response([
-        { id: 2, name: '田中太郎', employmentType: '正社員', role: 'STAFF', rank: 3, skills: 'キッチン' },
-        { id: 3, name: '山田花子', employmentType: 'パート', role: 'STAFF', rank: 2, skills: 'ホール' },
+        { id: 2, name: '田中太郎', employmentType: '正社員', role: 'STAFF' },
+        { id: 3, name: '山田花子', employmentType: 'パート', role: 'STAFF' },
       ]);
     }
     if (url.includes('/requests')) return response([]);

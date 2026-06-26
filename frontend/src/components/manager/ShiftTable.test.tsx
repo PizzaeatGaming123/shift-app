@@ -11,8 +11,6 @@ const staff = [
     storeId: '1',
     employmentType: '正社員' as const,
     role: 'STAFF' as const,
-    rank: 3,
-    skills: [],
   },
   {
     id: '2',
@@ -20,8 +18,6 @@ const staff = [
     storeId: '1',
     employmentType: 'パート' as const,
     role: 'STAFF' as const,
-    rank: 2,
-    skills: [],
   },
 ];
 

@@ -31,8 +31,6 @@ export function mockManagerShiftApi(vi: SpyApi) {
         name: '新田一郎',
         employmentType: '正社員',
         role: 'STAFF',
-        rank: 4,
-        skills: 'ホール',
       }]);
     }
     if (url.includes('/staff')) {
@@ -41,8 +39,6 @@ export function mockManagerShiftApi(vi: SpyApi) {
         name: '田中太郎',
         employmentType: '正社員',
         role: 'STAFF',
-        rank: 3,
-        skills: 'キッチン',
       }]);
     }
     if (url.includes('/requests')) return response([]);

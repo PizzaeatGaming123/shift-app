@@ -5,7 +5,6 @@ import {
 } from '../../constants';
 import {
   dailyLaborCost,
-  dailyRankTotal,
   dailyWorkHours,
   staffMonthlyHours,
 } from '../../store/labor';
@@ -194,7 +193,6 @@ export interface DailySummary {
   laborCost: number;
   laborCostRate: number;
   salesPerHour: number;
-  rankTotal: number;
 }
 
 export function getDailySummary({
@@ -220,6 +218,5 @@ export function getDailySummary({
       ? Math.round((laborCost / salesTarget) * 100)
       : 0,
     salesPerHour: workHours > 0 ? Math.round(salesTarget / workHours) : 0,
-    rankTotal: dailyRankTotal(assignments, staff, date),
   };
 }

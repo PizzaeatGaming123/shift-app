@@ -13,6 +13,7 @@ vi.mock('../store/AppContext', () => ({
   useApp: () => ({
     me: { id: 2, name: '田中太郎', role: 'STAFF', storeId: 1 },
     stores: [{ id: '1', name: '中島店' }],
+    staff: [{ id: '2', name: '田中太郎', storeId: '1', employmentType: '正社員', role: 'STAFF', hourlyWage: null, monthlyHourLimit: null }],
     storeId: 1,
     requests: [{ staffId: '2', date: '2026-07-01', slot: 'early' }],
     assignments: [],

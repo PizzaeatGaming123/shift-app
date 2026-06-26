@@ -10,8 +10,6 @@ const person = {
   storeId: '1',
   employmentType: '正社員' as const,
   role: 'STAFF' as const,
-  rank: 3,
-  skills: [],
 };
 
 const date = '2026-07-01';
