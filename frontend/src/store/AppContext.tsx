@@ -52,10 +52,7 @@ function toStaff(s: ApiStaff, storeId: number): Staff {
     id: String(s.id),
     name: s.name,
     storeId: String(storeId),
-    employmentType:
-      s.employmentType === '正社員' ? '正社員'
-      : s.employmentType === 'アルバイト' ? 'アルバイト'
-      : 'パート',
+    employmentType: s.employmentType === '正社員' ? '正社員' : 'パート',
     role: s.role === 'MANAGER' ? 'MANAGER' : 'STAFF',
     rank: s.rank ?? null,
     skills: s.skills ? s.skills.split(',').map((t) => t.trim()).filter(Boolean) : [],

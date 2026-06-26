@@ -94,7 +94,6 @@ public class DataSeeder implements CommandLineRunner {
             staff.setHourlyWage(switch (p.type()) {
                 case FULL_TIME -> 1800;
                 case PART_TIME -> 1100;
-                case ARUBAITO -> 1050;
             });
             saved.add(staffRepository.save(staff));
             idx++;

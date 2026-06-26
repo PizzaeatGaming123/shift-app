@@ -56,7 +56,6 @@ public class StaffService {
         Store store = storeRepository.findById(storeId).orElseThrow();
         EmploymentType type = switch (employmentType == null ? "" : employmentType) {
             case "正社員" -> EmploymentType.FULL_TIME;
-            case "アルバイト" -> EmploymentType.ARUBAITO;
             default -> EmploymentType.PART_TIME;
         };
         Role r = "MANAGER".equalsIgnoreCase(role) ? Role.MANAGER : Role.STAFF;
