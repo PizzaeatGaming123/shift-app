@@ -48,12 +48,11 @@ interface ShiftTableProps {
 }
 
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
-const SORT_ORDER: StaffSortMode[] = ['default', 'name', 'hours', 'rank'];
+const SORT_ORDER: StaffSortMode[] = ['default', 'name', 'hours'];
 const SORT_LABEL: Record<StaffSortMode, string> = {
   default: '標準',
   name: '氏名順',
   hours: '労働時間順',
-  rank: 'ランク順',
 };
 const DEFAULT_SUMMARY_ITEMS: SummaryItemKey[] = [
   'workHours',

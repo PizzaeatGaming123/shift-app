@@ -2,7 +2,7 @@ import type { RequestSlot } from '../../types';
 
 export type ManagerView = 'day' | 'week' | 'half-month' | 'month';
 export type ShiftTableDensity = 'small' | 'standard' | 'large';
-export type StaffSortMode = 'default' | 'name' | 'hours' | 'rank';
+export type StaffSortMode = 'default' | 'name' | 'hours';
 
 export interface ShiftLayerVisibility {
   pinHeader: boolean;
