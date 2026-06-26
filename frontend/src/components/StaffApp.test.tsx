@@ -5,6 +5,16 @@ import { AppProvider } from '../store/AppContext';
 import { ToastProvider } from './ui/Toast';
 import { StaffApp } from './StaffApp';
 
+function renderStaffApp() {
+  render(
+    <ToastProvider>
+      <AppProvider>
+        <StaffApp />
+      </AppProvider>
+    </ToastProvider>,
+  );
+}
+
 beforeEach(() => {
   vi.restoreAllMocks();
   localStorage.clear();
@@ -35,15 +45,15 @@ beforeEach(() => {
   });
 });
 
+it('スタッフナビのタブは「シフト確定」', async () => {
+  renderStaffApp();
+  expect(await screen.findByRole('button', { name: 'シフト確定' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /^確定シフト$/ })).toBeNull();
+});
+
 it('スタッフ画面: メッセージタブから店長へ送信できる', async () => {
   const user = userEvent.setup();
-  render(
-    <ToastProvider>
-      <AppProvider>
-        <StaffApp />
-      </AppProvider>
-    </ToastProvider>,
-  );
+  renderStaffApp();
 
   await user.click(await screen.findByRole('button', { name: 'メッセージ' }));
   expect(screen.getByText('店長とのメッセージ')).toBeInTheDocument();
