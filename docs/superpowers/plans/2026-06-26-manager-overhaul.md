@@ -451,6 +451,8 @@ git commit -m "fix(shared): 確定シフト画面から希望表示を削除"
 
 ### Task 2.1: 雇用形態優先ソート関数を追加
 
+**スコープ修正**: アルバイト廃止のため、ソート順は **パート → 正社員** の2区分のみ。
+
 **Files:**
 - Modify: `frontend/src/components/manager/shiftViewModel.ts`
 - Modify: `frontend/src/components/manager/shiftViewModel.test.ts`
@@ -461,14 +463,13 @@ git commit -m "fix(shared): 確定シフト画面から希望表示を削除"
 
 ```ts
 describe('sortShiftStaff default mode', () => {
-  it('雇用形態を パート→アルバイト→正社員 の順で並べる', () => {
+  it('雇用形態を パート→正社員 の順で並べる', () => {
     const staff = [
       mkStaff('s1', '田中', '正社員'),
       mkStaff('s2', '佐藤', 'パート'),
-      mkStaff('s3', '鈴木', 'アルバイト'),
     ];
     const sorted = sortShiftStaff({ staff, assignments: [], dates: [], mode: 'default' });
-    expect(sorted.map(s => s.name)).toEqual(['佐藤', '鈴木', '田中']);
+    expect(sorted.map(s => s.name)).toEqual(['佐藤', '田中']);
   });
 
   it('同区分内は氏名昇順', () => {
@@ -492,7 +493,7 @@ Run: `cd frontend && npm test -- --run shiftViewModel`
 
 ```ts
 const employmentOrder: Record<string, number> = {
-  'パート': 0, 'アルバイト': 1, '正社員': 2,
+  'パート': 0, '正社員': 1,
 };
 case 'default':
   return [...staff].sort((a, b) => {
