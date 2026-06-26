@@ -24,7 +24,6 @@ public class StaffController {
         Long callerStoreId = guard.requireSelf(auth).getStore().getId();
         // 操作対象スタッフが自店舗所属であることを確認（他店舗の時給を改竄できないように）
         guard.requireStaffInStore(id, callerStoreId);
-        staffService.updateRankSkills(id, body.rank(), body.skills(), body.hourlyWage(),
-                body.monthlyHourLimit());
+        staffService.updateStaff(id, body.hourlyWage(), body.monthlyHourLimit());
     }
 }

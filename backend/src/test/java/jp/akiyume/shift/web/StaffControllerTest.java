@@ -28,7 +28,7 @@ class StaffControllerTest {
         var staff = staffRepository.findByUsername("nakashima-1").orElseThrow();
         mvc.perform(put("/api/staff/" + staff.getId()).with(csrf())
                 .contentType("application/json")
-                .content("{\"rank\":null,\"skills\":\"\",\"hourlyWage\":null,\"monthlyHourLimit\":87}"))
+                .content("{\"hourlyWage\":null,\"monthlyHourLimit\":87}"))
            .andExpect(status().isOk());
         var updated = staffRepository.findById(staff.getId()).orElseThrow();
         assertThat(updated.getMonthlyHourLimit()).isEqualTo(87);
@@ -41,12 +41,12 @@ class StaffControllerTest {
         // 一度値を入れる
         mvc.perform(put("/api/staff/" + staff.getId()).with(csrf())
                 .contentType("application/json")
-                .content("{\"rank\":null,\"skills\":\"\",\"hourlyWage\":null,\"monthlyHourLimit\":87}"))
+                .content("{\"hourlyWage\":null,\"monthlyHourLimit\":87}"))
            .andExpect(status().isOk());
         // null で送っても上書きされない（既存ロジック踏襲）
         mvc.perform(put("/api/staff/" + staff.getId()).with(csrf())
                 .contentType("application/json")
-                .content("{\"rank\":null,\"skills\":\"\",\"hourlyWage\":null,\"monthlyHourLimit\":null}"))
+                .content("{\"hourlyWage\":null,\"monthlyHourLimit\":null}"))
            .andExpect(status().isOk());
         var updated = staffRepository.findById(staff.getId()).orElseThrow();
         assertThat(updated.getMonthlyHourLimit()).isEqualTo(87);

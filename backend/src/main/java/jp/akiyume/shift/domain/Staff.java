@@ -32,11 +32,6 @@ public class Staff {
 
     private Integer hourlyWage; // Phase 1 用、null 可
 
-    private Integer rank; // 1〜5 の労働力ランク、null 可
-
-    @Column(length = 200)
-    private String skills; // 保有スキル（カンマ区切り）、null 可
-
     @Column(name = "monthly_hour_limit")
     private Integer monthlyHourLimit; // 扶養等の月労働時間上限、null = 制限なし
 
@@ -60,12 +55,8 @@ public class Staff {
     public EmploymentType getEmploymentType() { return employmentType; }
     public Role getRole() { return role; }
     public Integer getHourlyWage() { return hourlyWage; }
-    public Integer getRank() { return rank; }
-    public String getSkills() { return skills; }
     public Integer getMonthlyHourLimit() { return monthlyHourLimit; }
 
-    public void setRank(Integer rank) { this.rank = rank; }
-    public void setSkills(String skills) { this.skills = skills; }
     public void setHourlyWage(Integer hourlyWage) { this.hourlyWage = hourlyWage; }
     public void setMonthlyHourLimit(Integer monthlyHourLimit) { this.monthlyHourLimit = monthlyHourLimit; }
 }
