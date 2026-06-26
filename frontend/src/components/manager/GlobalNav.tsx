@@ -13,9 +13,6 @@ export type ManagerSection =
   | 'rank-settings'
   | 'skill-settings'
   | 'fixed-shifts'
-  | 'sales-plan'
-  | 'labor-cost'
-  | 'sales-per-hour'
   | 'model-shift'
   | 'labor-status'
   | 'attendance'
@@ -72,15 +69,6 @@ const NAV_GROUPS: {
     ],
   },
   {
-    label: '計画',
-    items: [
-      { label: '売上計画', section: 'sales-plan' },
-      { label: '人件費', section: 'labor-cost' },
-      { label: '人時売上高', section: 'sales-per-hour' },
-      { label: 'モデルシフト', section: 'model-shift' },
-    ],
-  },
-  {
     label: '労務',
     items: [
       { label: '労務状況', section: 'labor-status' },
@@ -109,6 +97,7 @@ const NAV_GROUPS: {
   {
     label: '設定',
     items: [
+      { label: 'モデルシフト', section: 'model-shift' },
       { label: '表示設定', section: 'display-settings' },
       { label: '営業時間', section: 'business-hours' },
       { label: 'シフト回収設定', section: 'collection-settings' },
