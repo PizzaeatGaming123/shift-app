@@ -1,5 +1,6 @@
 import { maxConsecutiveAssignedDays, staffMonthlyHours } from '../../store/labor';
 import { SLOT_HOURS } from '../../constants';
+import { hourLimitLevel } from '../../lib/hourLimit';
 import {
   DEFAULT_SHIFT_PATTERNS,
   type ShiftPatterns,
@@ -69,12 +70,14 @@ export function ShiftStaffRow({
     dates,
   );
   const warnings = Number(consecutiveDays >= 6) + Number(totalHours > 180);
+  const limitLevel = hourLimitLevel(totalHours, person.monthlyHourLimit);
+  const hoursClass = `rk-shift-staff__hours rk-warn-${limitLevel}`;
 
   return (
     <tr className={`rk-shift-staff-row rk-shift-staff-row--${density}`}>
       <th scope="row" className="rk-shift-staff">
         <span className="rk-shift-staff__name">{person.name}</span>
-        <span className="rk-shift-staff__hours">{formatDuration(totalHours)}</span>
+        <span className={hoursClass}>{formatDuration(totalHours)}</span>
         {warnings > 0 && (
           <span
             className="rk-shift-staff__warning"

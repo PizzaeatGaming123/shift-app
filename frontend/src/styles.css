@@ -3982,6 +3982,34 @@ button.cal-cell:active {
   font-weight: 700;
 }
 
+/* 月労働時間が上限に近づいたときの色付け。扶養範囲超過などの可視化に使う。 */
+.rk-warn-none,
+.rk-warn-normal {
+  /* デフォルト表示。色は付けない。 */
+}
+
+.rk-warn-soft {
+  background-color: #fff3a3;
+  color: #5a4a00;
+  border-radius: 3px;
+  padding: 0 4px;
+}
+
+.rk-warn-medium {
+  background-color: #ffd49a;
+  color: #5a3000;
+  border-radius: 3px;
+  padding: 0 4px;
+}
+
+.rk-warn-hard {
+  background-color: #ffb3b3;
+  color: #6a0000;
+  border-radius: 3px;
+  padding: 0 4px;
+  font-weight: 700;
+}
+
 .rk-shift-cell {
   padding: 4px 3px !important;
   background: #fff;
