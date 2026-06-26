@@ -5,7 +5,6 @@ import {
 } from '../../constants';
 import {
   dailyLaborCost,
-  dailyRankTotal,
   dailyWorkHours,
   staffMonthlyHours,
 } from '../../store/labor';
@@ -57,6 +56,11 @@ export function getManagerDateWindow({
   return monthDates.slice(start, start + 7);
 }
 
+const EMPLOYMENT_ORDER: Record<string, number> = {
+  パート: 0,
+  正社員: 1,
+};
+
 export function sortShiftStaff({
   staff,
   assignments,
@@ -65,12 +69,16 @@ export function sortShiftStaff({
   slotHours,
 }: SortShiftStaffInput): Staff[] {
   const next = [...staff];
-  if (mode === 'default') return next;
+  if (mode === 'default') {
+    return next.sort((a, b) => {
+      const orderA = EMPLOYMENT_ORDER[a.employmentType] ?? 99;
+      const orderB = EMPLOYMENT_ORDER[b.employmentType] ?? 99;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.name.localeCompare(b.name, 'ja');
+    });
+  }
   if (mode === 'name') {
     return next.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
-  }
-  if (mode === 'rank') {
-    return next.sort((a, b) => (b.rank ?? 0) - (a.rank ?? 0));
   }
   return next.sort(
     (a, b) =>
@@ -92,9 +100,19 @@ interface ShiftDescriptor {
   time: string | null;
 }
 
+/**
+ * 割当セル用のディスクリプタ。基本は ShiftDescriptor と同じだが、パートの
+ * 任意時間割当を表現するため startTime/endTime を保持する。両方セットされていれば
+ * 表示は「9:00-13:00」のような時間ラベルを優先する。
+ */
+export interface AssignmentDescriptor extends ShiftDescriptor {
+  startTime: string | null;
+  endTime: string | null;
+}
+
 export interface ShiftCellModel {
   request: ShiftDescriptor | null;
-  assignment: ShiftDescriptor | null;
+  assignment: AssignmentDescriptor | null;
   note: string | null;
 }
 
@@ -114,14 +132,23 @@ export function getShiftCellModel({
   const request = requests.find(
     (item) => item.staffId === staffId && item.date === date,
   );
-  const assignment = WORK_SLOTS.find((slot) =>
-    assignments.some(
-      (item) =>
-        item.date === date
-        && item.slot === slot
-        && item.staffIds.includes(staffId),
-    ),
-  );
+  // 該当する割当（date + slot + staffIds に staffId を含む）と、staffIds 内の index を取得する。
+  // index は startTimes/endTimes（staffIds と並列の配列）から自分の時間を引くために使う。
+  let assignmentSlot: WorkSlot | undefined;
+  let startTime: string | null = null;
+  let endTime: string | null = null;
+  for (const slot of WORK_SLOTS) {
+    const found = assignments.find(
+      (item) => item.date === date && item.slot === slot && item.staffIds.includes(staffId),
+    );
+    if (found) {
+      assignmentSlot = slot;
+      const idx = found.staffIds.indexOf(staffId);
+      startTime = found.startTimes?.[idx] ?? null;
+      endTime = found.endTimes?.[idx] ?? null;
+      break;
+    }
+  }
   const note = notes.find(
     (item) => item.staffId === staffId && item.date === date,
   )?.text ?? null;
@@ -142,11 +169,18 @@ export function getShiftCellModel({
               : SLOT_TIMES[request.slot],
         }
       : null,
-    assignment: assignment
+    assignment: assignmentSlot
       ? {
-          slot: assignment,
-          label: SLOT_LABELS[assignment],
-          time: SLOT_TIMES[assignment],
+          slot: assignmentSlot,
+          // 任意時間が指定されていればそれをラベルにし、なければ "早番"/"遅番" を出す。
+          label: startTime && endTime
+            ? `${startTime}-${endTime}`
+            : SLOT_LABELS[assignmentSlot],
+          time: startTime && endTime
+            ? `${startTime}-${endTime}`
+            : SLOT_TIMES[assignmentSlot],
+          startTime,
+          endTime,
         }
       : null,
     note,
@@ -159,7 +193,6 @@ export interface DailySummary {
   laborCost: number;
   laborCostRate: number;
   salesPerHour: number;
-  rankTotal: number;
 }
 
 export function getDailySummary({
@@ -185,6 +218,5 @@ export function getDailySummary({
       ? Math.round((laborCost / salesTarget) * 100)
       : 0,
     salesPerHour: workHours > 0 ? Math.round(salesTarget / workHours) : 0,
-    rankTotal: dailyRankTotal(assignments, staff, date),
   };
 }

@@ -38,7 +38,7 @@ export function StaffApp() {
             ‹
           </button>
           <span className="line-head__title">
-            {tab === 'main' ? 'シフト提出＆確認' : tab === 'shared' ? '確定シフト' : 'メッセージ'}
+            {tab === 'main' ? 'シフト提出＆確認' : tab === 'shared' ? 'シフト確定' : 'メッセージ'}
           </span>
           <div className="line-head__actions">
             <button
@@ -65,7 +65,7 @@ export function StaffApp() {
               シフト提出
             </button>
             <button type="button" aria-current={tab === 'shared'} onClick={() => setTab('shared')}>
-              確定シフト
+              シフト確定
             </button>
             <button type="button" aria-current={tab === 'messages'} onClick={() => setTab('messages')}>
               メッセージ

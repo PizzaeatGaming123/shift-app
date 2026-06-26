@@ -10,8 +10,6 @@ const person = {
   storeId: '1',
   employmentType: '正社員' as const,
   role: 'STAFF' as const,
-  rank: 3,
-  skills: [],
 };
 
 const date = '2026-07-01';
@@ -124,6 +122,73 @@ describe('ShiftStaffRow', () => {
     expect(screen.getByText('06:30-15:30')).toBeInTheDocument();
   });
 
+  it('月時間が上限80%未満なら時間表示に soft 以上の warn class はつかない', () => {
+    // 1日 × early(9h) = 9h、上限 100 → 9% → normal
+    render(
+      <table>
+        <tbody>
+          <ShiftStaffRow
+            person={{ ...person, monthlyHourLimit: 100 }}
+            dates={[date]}
+            requests={[]}
+            assignments={[{ date, slot: 'early', staffIds: ['1'] }]}
+            notes={[]}
+            layers={DEFAULT_SHIFT_LAYERS}
+            density="standard"
+            onToggleAssignment={() => {}}
+          />
+        </tbody>
+      </table>,
+    );
+
+    const hours = screen.getByText('9:00');
+    expect(hours.className).toContain('rk-warn-normal');
+    expect(hours.className).not.toMatch(/rk-warn-(soft|medium|hard)/);
+  });
+
+  it('月時間が上限100%超なら hard class がつく', () => {
+    // 1日 × early(9h) = 9h、上限 5 → 180% → hard
+    render(
+      <table>
+        <tbody>
+          <ShiftStaffRow
+            person={{ ...person, monthlyHourLimit: 5 }}
+            dates={[date]}
+            requests={[]}
+            assignments={[{ date, slot: 'early', staffIds: ['1'] }]}
+            notes={[]}
+            layers={DEFAULT_SHIFT_LAYERS}
+            density="standard"
+            onToggleAssignment={() => {}}
+          />
+        </tbody>
+      </table>,
+    );
+
+    expect(screen.getByText('9:00').className).toContain('rk-warn-hard');
+  });
+
+  it('月上限が null なら warn class は none', () => {
+    render(
+      <table>
+        <tbody>
+          <ShiftStaffRow
+            person={{ ...person, monthlyHourLimit: null }}
+            dates={[date]}
+            requests={[]}
+            assignments={[{ date, slot: 'early', staffIds: ['1'] }]}
+            notes={[]}
+            layers={DEFAULT_SHIFT_LAYERS}
+            density="standard"
+            onToggleAssignment={() => {}}
+          />
+        </tbody>
+      </table>,
+    );
+
+    expect(screen.getByText('9:00').className).toContain('rk-warn-none');
+  });
+
   it('確定シフトのボタンから割り当て解除を実行する', async () => {
     const user = userEvent.setup();
     const onToggleAssignment = vi.fn();
@@ -156,7 +221,151 @@ describe('ShiftStaffRow', () => {
       'early',
       '1',
       true,
+      null,
+      null,
     );
     expect(screen.getByRole('row')).toHaveClass('rk-shift-staff-row--large');
+  });
+
+  it('空セルで onOpenAssignTimeModal を渡せば「＋」ボタンが出てクリックでコールバックされる', async () => {
+    const user = userEvent.setup();
+    const onOpen = vi.fn();
+
+    render(
+      <table>
+        <tbody>
+          <ShiftStaffRow
+            person={person}
+            dates={[date]}
+            requests={[]}
+            assignments={[]}
+            notes={[]}
+            layers={DEFAULT_SHIFT_LAYERS}
+            density="standard"
+            onToggleAssignment={() => {}}
+            onOpenAssignTimeModal={onOpen}
+          />
+        </tbody>
+      </table>,
+    );
+
+    await user.click(
+      screen.getByRole('button', {
+        name: '田中太郎 2026-07-01 に割当を追加',
+      }),
+    );
+
+    expect(onOpen).toHaveBeenCalledWith('1', '2026-07-01');
+  });
+
+  it('空セルでも onOpenAssignTimeModal を渡さなければ「＋」ボタンは出ない', () => {
+    render(
+      <table>
+        <tbody>
+          <ShiftStaffRow
+            person={person}
+            dates={[date]}
+            requests={[]}
+            assignments={[]}
+            notes={[]}
+            layers={DEFAULT_SHIFT_LAYERS}
+            density="standard"
+            onToggleAssignment={() => {}}
+          />
+        </tbody>
+      </table>,
+    );
+
+    expect(screen.queryByRole('button', { name: /に割当を追加/ })).not.toBeInTheDocument();
+  });
+
+  it('onCopyPreviousMonth が渡されると「先月と同じ」ボタンが出てクリックでコールバックされる', async () => {
+    const user = userEvent.setup();
+    const onCopy = vi.fn();
+
+    render(
+      <table>
+        <tbody>
+          <ShiftStaffRow
+            person={person}
+            dates={[date]}
+            requests={[]}
+            assignments={[]}
+            notes={[]}
+            layers={DEFAULT_SHIFT_LAYERS}
+            density="standard"
+            onToggleAssignment={() => {}}
+            onCopyPreviousMonth={onCopy}
+          />
+        </tbody>
+      </table>,
+    );
+
+    await user.click(screen.getByRole('button', { name: /先月と同じ/ }));
+    expect(onCopy).toHaveBeenCalledWith('1');
+  });
+
+  it('onCopyPreviousMonth を渡さなければ「先月と同じ」ボタンは出ない', () => {
+    render(
+      <table>
+        <tbody>
+          <ShiftStaffRow
+            person={person}
+            dates={[date]}
+            requests={[]}
+            assignments={[]}
+            notes={[]}
+            layers={DEFAULT_SHIFT_LAYERS}
+            density="standard"
+            onToggleAssignment={() => {}}
+          />
+        </tbody>
+      </table>,
+    );
+
+    expect(screen.queryByRole('button', { name: /先月と同じ/ })).not.toBeInTheDocument();
+  });
+
+  it('時間付き割当は時間ラベルを表示し、解除コールバックに時刻も渡す', async () => {
+    const user = userEvent.setup();
+    const onToggleAssignment = vi.fn();
+
+    render(
+      <table>
+        <tbody>
+          <ShiftStaffRow
+            person={person}
+            dates={[date]}
+            requests={[]}
+            assignments={[{
+              date,
+              slot: 'early',
+              staffIds: ['1'],
+              startTimes: ['09:00'],
+              endTimes: ['13:00'],
+            }]}
+            notes={[]}
+            layers={DEFAULT_SHIFT_LAYERS}
+            density="standard"
+            onToggleAssignment={onToggleAssignment}
+          />
+        </tbody>
+      </table>,
+    );
+
+    await user.click(
+      screen.getByRole('button', {
+        name: '田中太郎 2026-07-01 09:00-13:00の割り当てを解除',
+      }),
+    );
+
+    expect(onToggleAssignment).toHaveBeenCalledWith(
+      date,
+      'early',
+      '1',
+      true,
+      '09:00',
+      '13:00',
+    );
   });
 });

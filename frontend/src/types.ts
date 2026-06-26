@@ -1,4 +1,4 @@
-export type EmploymentType = '正社員' | 'パート' | 'アルバイト';
+export type EmploymentType = '正社員' | 'パート';
 
 /** 勤務できる時間帯 */
 export type WorkSlot = 'early' | 'late'; // 早番 / 遅番
@@ -23,10 +23,10 @@ export interface Staff {
   storeId: string;
   employmentType: EmploymentType;
   role: 'STAFF' | 'MANAGER';
-  rank: number | null;
-  skills: string[];
   /** 時給（円）。一般スタッフのビューでは権限分離のため null/省略。 */
   hourlyWage?: number | null;
+  /** 月の労働時間上限（時間）。null = 制限なし。扶養範囲などの警告に使う。 */
+  monthlyHourLimit?: number | null;
 }
 
 export interface ShiftRequest {
@@ -37,10 +37,31 @@ export interface ShiftRequest {
   endTime?: string | null;
 }
 
+/** らくしふ風モーダルで保存される割当の詳細データ（タスク・休憩・メモ） */
+export interface AssignmentBreak {
+  startTime: string; // 'HH:MM'
+  endTime: string;   // 'HH:MM'
+}
+
+export interface AssignmentDetail {
+  /** 業務タスクの選択肢。例: ["オープン", "レジ締め"] */
+  tasks: string[];
+  /** 休憩時間（0..N） */
+  breaks: AssignmentBreak[];
+  /** 勤務メモ（100 文字以内） */
+  workMemo: string;
+}
+
 export interface Assignment {
   date: string; // 'YYYY-MM-DD'
   slot: WorkSlot;
   staffIds: string[];
+  /** staffIds と同じ index で対応する開始時刻 'HH:MM'。未指定なら slot の既定時間。 */
+  startTimes?: (string | null)[];
+  /** staffIds と同じ index で対応する終了時刻 'HH:MM'。未指定なら slot の既定時間。 */
+  endTimes?: (string | null)[];
+  /** staffIds と同じ index で対応する詳細（タスク・休憩・メモ）。未指定なら全部空。 */
+  details?: AssignmentDetail[];
 }
 
 /** スタッフの日次ひとことメモ */

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -36,17 +37,73 @@ public class AssignmentService {
     }
 
     @Transactional
-    public void assign(Long storeId, LocalDate date, String slotCode, Long staffId, String changedBy) {
-        WorkSlot slot = WorkSlot.fromCode(slotCode);
-        if (assignmentRepository.findByStore_IdAndDateAndSlotAndStaff_Id(storeId, date, slot, staffId).isPresent()) {
-            return; // 冪等
-        }
-        Store store = storeRepository.findById(storeId).orElseThrow();
-        Staff staff = staffRepository.findById(staffId).orElseThrow();
-        assignmentRepository.save(new ShiftAssignment(store, date, slot, staff));
-        recordChangeIfApplicable(store, date, slot, staff,
-                ShiftChangeHistory.Action.ASSIGN, changedBy);
+    public void assign(Long storeId, LocalDate date, String slotCode, Long staffId,
+                       String startTime, String endTime, String changedBy) {
+        // 既存の単純版を維持。タスク/休憩/メモは触らない。
+        assign(storeId, date, slotCode, staffId, startTime, endTime, null, null, null, changedBy);
     }
+
+    /**
+     * らくしふ風モーダル用の拡張版。tasks / breaks / workMemo を同時に保存する。
+     * セマンティクス:
+     *   - tasks / breaks / workMemo に null が来たら「指定なし」= 既存値を維持する。
+     *   - 空リスト/空文字列が来たら「明示的にクリア」= 全消し。
+     * これは旧クライアント（時刻だけ送る toggleAssignment 経由）が既存のタスク/メモを
+     * 意図せず吹き飛ばさないために重要。
+     */
+    @Transactional
+    public void assign(Long storeId, LocalDate date, String slotCode, Long staffId,
+                       String startTime, String endTime,
+                       List<String> tasks, List<BreakInput> breaks, String workMemo,
+                       String changedBy) {
+        WorkSlot slot = WorkSlot.fromCode(slotCode);
+        var existing = assignmentRepository.findByStore_IdAndDateAndSlotAndStaff_Id(storeId, date, slot, staffId);
+        ShiftAssignment a;
+        boolean isNew;
+        if (existing.isPresent()) {
+            a = existing.get();
+            isNew = false;
+        } else {
+            Store store = storeRepository.findById(storeId).orElseThrow();
+            Staff staff = staffRepository.findById(staffId).orElseThrow();
+            a = new ShiftAssignment(store, date, slot, staff);
+            isNew = true;
+        }
+        a.setStartTime(startTime);
+        a.setEndTime(endTime);
+        if (tasks != null) a.setTasks(joinTasks(tasks));
+        if (workMemo != null) a.setWorkMemo(workMemo.isEmpty() ? null : workMemo);
+        if (breaks != null) {
+            List<ShiftAssignmentBreak> breakEntities = new ArrayList<>();
+            for (BreakInput b : breaks) {
+                if (b == null || b.startTime() == null || b.endTime() == null) continue;
+                breakEntities.add(new ShiftAssignmentBreak(b.startTime(), b.endTime()));
+            }
+            a.replaceBreaks(breakEntities);
+        }
+        if (isNew) {
+            assignmentRepository.save(a);
+            recordChangeIfApplicable(a.getStore(), date, slot, a.getStaff(),
+                    ShiftChangeHistory.Action.ASSIGN, changedBy);
+        }
+    }
+
+    /** タスクリストをカンマ区切り文字列にまとめる。空ならnull。 */
+    private String joinTasks(List<String> tasks) {
+        if (tasks == null || tasks.isEmpty()) return null;
+        StringBuilder sb = new StringBuilder();
+        for (String t : tasks) {
+            if (t == null) continue;
+            String trimmed = t.trim();
+            if (trimmed.isEmpty()) continue;
+            if (sb.length() > 0) sb.append(',');
+            sb.append(trimmed);
+        }
+        return sb.length() == 0 ? null : sb.toString();
+    }
+
+    /** 休憩時間の入力 DTO。Service が受け取る最小単位。 */
+    public record BreakInput(String startTime, String endTime) {}
 
     @Transactional
     public void unassign(Long storeId, LocalDate date, String slotCode, Long staffId, String changedBy) {

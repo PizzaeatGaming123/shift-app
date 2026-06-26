@@ -75,29 +75,25 @@ public class DataSeeder implements CommandLineRunner {
                 new Person("hayashima-4", "福田直樹", EmploymentType.PART_TIME, Role.STAFF)));
     }
 
-    private static final String[] SKILL_POOL = { "ホール", "キッチン", "レジ", "新人教育", "多言語対応" };
-
     private void seedStore(String storeName, List<Person> people) {
         Store store = storeRepository.findByName(storeName)
                 .orElseGet(() -> storeRepository.save(new Store(storeName)));
         String hash = passwordEncoder.encode(seedPassword);
         List<Staff> saved = new ArrayList<>();
-        int idx = 0;
         for (Person p : people) {
             Staff staff = staffRepository.findByUsername(p.username())
                     .orElseGet(() -> new Staff(p.username(), hash, p.name(), store, p.type(), p.role()));
-            staff.setRank(p.role() == Role.MANAGER ? 5 : (idx % 4) + 2); // 店長は5、スタッフは2〜5
-            staff.setSkills(p.role() == Role.MANAGER
-                    ? "ホール,キッチン,新人教育"
-                    : SKILL_POOL[idx % SKILL_POOL.length] + "," + SKILL_POOL[(idx + 2) % SKILL_POOL.length]);
             // デモ用の時給。雇用形態でばらつかせる。
             staff.setHourlyWage(switch (p.type()) {
                 case FULL_TIME -> 1800;
                 case PART_TIME -> 1100;
-                case ARUBAITO -> 1050;
+            });
+            // デモ用の月労働時間上限。パートは扶養範囲内の 87h、正社員は制限なし。
+            staff.setMonthlyHourLimit(switch (p.type()) {
+                case FULL_TIME -> null;
+                case PART_TIME -> 87;
             });
             saved.add(staffRepository.save(staff));
-            idx++;
         }
         LocalDate from = LocalDate.of(DEMO_YEAR, DEMO_MONTH, 1);
         LocalDate to = from.withDayOfMonth(from.lengthOfMonth());
@@ -126,7 +122,16 @@ public class DataSeeder implements CommandLineRunner {
                 requestRepository.save(new ShiftRequest(person, date, slot));
                 // 第1週（1..7日）は店長が希望どおりに割り当て済みにしておく
                 if (day <= 7 && slot != RequestSlot.OFF) {
-                    assignmentRepository.save(new ShiftAssignment(store, date, toWorkSlot(slot), person));
+                    ShiftAssignment assignment =
+                            new ShiftAssignment(store, date, toWorkSlot(slot), person);
+                    // パート × 早番のサンプルでは「9:00-13:00」の任意時間を設定し、
+                    // 時間メイン UI が機能していることを確認できるようにする。
+                    if (person.getEmploymentType() == EmploymentType.PART_TIME
+                            && toWorkSlot(slot) == WorkSlot.EARLY) {
+                        assignment.setStartTime("09:00");
+                        assignment.setEndTime("13:00");
+                    }
+                    assignmentRepository.save(assignment);
                 }
             }
         }

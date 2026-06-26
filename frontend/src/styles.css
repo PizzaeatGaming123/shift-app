@@ -1390,24 +1390,6 @@ button.cal-cell:active {
 .staff-li-sub { display: flex; flex-wrap: wrap; gap: 4px; }
 .staff-li-hours { font-weight: 600; white-space: nowrap; }
 
-.rank-badge {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--primary-dark);
-  background: var(--primary-soft);
-  border-radius: 4px;
-  padding: 1px 6px;
-}
-
-.skill-tag {
-  font-size: 11px;
-  color: var(--muted);
-  background: #f1f3f6;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  padding: 1px 6px;
-}
-
 .alert-tag {
   font-size: 11px;
   font-weight: 700;
@@ -2270,20 +2252,13 @@ button.cal-cell:active {
   width: min(1080px, 100%);
 }
 
-.rk-staff-management__metrics,
-.rk-ranks__metrics {
+.rk-staff-management__metrics {
   grid-template-columns: repeat(4, minmax(120px, 1fr));
   margin-bottom: 14px;
 }
 
 .rk-staff-management__filters {
   grid-template-columns: repeat(2, minmax(260px, 1fr));
-}
-
-.rk-staff-management__skills {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 4px;
 }
 
 .rk-staff-registration {
@@ -3353,117 +3328,6 @@ button.cal-cell:active {
   .rk-inline-form { grid-template-columns: 1fr; }
 }
 
-/* ランク・スキル一覧 */
-.rk-ranks {
-  width: min(1080px, 100%);
-}
-
-.rk-ranks__head {
-  align-items: stretch;
-}
-
-.rk-ranks__tabs {
-  display: flex;
-  gap: 0;
-  border: 1px solid #cbd8c9;
-  margin-bottom: 0;
-  background: #fff;
-}
-
-.rk-ranks__tabs button {
-  border: 0;
-  border-right: 1px solid #dfe6dc;
-  background: transparent;
-  padding: 7px 20px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #5d6873;
-  cursor: pointer;
-}
-
-.rk-ranks__tabs button:last-child { border-right: 0; }
-
-.rk-ranks__tabs button[aria-selected="true"] {
-  color: #2f80c4;
-  background: #edf6fc;
-}
-
-.rk-ranks__head input {
-  width: 210px;
-}
-
-.rk-ranks__table {
-  margin-top: 10px;
-}
-
-.rk-ranks__name {
-  font-weight: 700;
-  width: 120px;
-}
-
-.rk-ranks__del-col { width: 70px; text-align: center; }
-
-.rk-ranks__holders {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-.rk-ranks__chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  border: 1px solid #c9d8e4;
-  background: #f5f9fc;
-  color: #246aa6;
-  border-radius: 0;
-  padding: 3px 6px 3px 8px;
-  font-size: 12px;
-}
-
-.rk-ranks__chip button {
-  border: 1px solid #d5dce4;
-  background: #fff;
-  color: #66737e;
-  border-radius: 0;
-  width: 16px;
-  height: 16px;
-  line-height: 1;
-  cursor: pointer;
-  font-size: 11px;
-}
-
-.rk-ranks__add {
-  border: 1px dashed #2f80c4;
-  background: #fff;
-  color: #2f80c4;
-  border-radius: 0;
-  padding: 4px 10px;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.rk-ranks__count { color: var(--muted, #6b7785); font-size: 12px; margin-left: 2px; }
-
-.rk-ranks__del {
-  border: 1px solid #e6c3c3;
-  background: transparent;
-  color: #d64545;
-  cursor: pointer;
-  font-size: 12px;
-  padding: 3px 8px;
-}
-
-.rk-ranks__new {
-  display: flex;
-  gap: 8px;
-  margin-top: 16px;
-  max-width: 420px;
-}
-
-.rk-ranks__new .text-input { flex: 1; }
-
 .rk-shift-toolbar {
   border-bottom: 1px solid var(--rk-rule);
   background: #fff;
@@ -3887,11 +3751,16 @@ button.cal-cell:active {
 }
 
 .rk-shift-staff-row--standard {
-  height: 54px;
+  height: 48px;
 }
 
 .rk-shift-staff-row--large {
-  height: 72px;
+  height: 64px;
+}
+
+/* Phase 6: 標準サイズの行は 15 人をスクロールなしで収めるためにパディングを詰める。 */
+.rk-shift-staff-row--standard .rk-shift-cell {
+  padding: 0.35rem 0.4rem !important;
 }
 
 .rk-shift-table--small {
@@ -3932,7 +3801,8 @@ button.cal-cell:active {
 
 .rk-shift-staff {
   position: relative;
-  padding: 7px 8px !important;
+  min-width: 100px;
+  padding: 0.35rem 0.4rem !important;
   background: #fff;
   vertical-align: top !important;
 }
@@ -3979,6 +3849,62 @@ button.cal-cell:active {
   top: 6px;
   right: 7px;
   color: #e15c63;
+  font-weight: 700;
+}
+
+/* スタッフ名の下に並ぶ「先月と同じ」ボタン。ツールバー他ボタンと同じ角丸 1px / 白地。 */
+.rk-shift-staff__copy {
+  display: inline-block;
+  margin-top: 3px;
+  padding: 2px 8px;
+  border: 1px solid #d7dce0;
+  border-radius: 1px;
+  background: #fff;
+  color: var(--rk-text);
+  font-size: 10px;
+  line-height: 1.4;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.rk-shift-staff__copy:hover,
+.rk-shift-staff__copy:focus-visible {
+  border-color: #b9c2c9;
+  background: #f7f9fa;
+  box-shadow: 0 2px 7px rgba(41, 57, 70, .12);
+}
+
+.rk-shift-staff-row--large .rk-shift-staff__copy {
+  font-size: 12px;
+  padding: 3px 10px;
+}
+
+/* 月労働時間が上限に近づいたときの色付け。扶養範囲超過などの可視化に使う。 */
+.rk-warn-none,
+.rk-warn-normal {
+  /* デフォルト表示。色は付けない。 */
+}
+
+.rk-warn-soft {
+  background-color: #fff3a3;
+  color: #5a4a00;
+  border-radius: 3px;
+  padding: 0 4px;
+}
+
+.rk-warn-medium {
+  background-color: #ffd49a;
+  color: #5a3000;
+  border-radius: 3px;
+  padding: 0 4px;
+}
+
+.rk-warn-hard {
+  background-color: #ffb3b3;
+  color: #6a0000;
+  border-radius: 3px;
+  padding: 0 4px;
   font-weight: 700;
 }
 
@@ -4057,6 +3983,31 @@ button.rk-shift-chip:focus-visible {
   border-color: var(--rk-off);
   background: var(--rk-off-bg);
   color: var(--rk-off);
+}
+
+/* 空セル用の「＋」ボタン。1行15個以上並ぶことがあるので控えめに。 */
+.rk-shift-cell__empty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #bbb;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s ease-out;
+}
+
+.rk-shift-cell:hover .rk-shift-cell__empty,
+.rk-shift-cell__empty:focus-visible {
+  opacity: 1;
+  color: #8aa1c0;
 }
 
 .rk-shift-cell__note {
@@ -4641,10 +4592,10 @@ button.rk-shift-chip:focus-visible {
 }
 
 .rk-staff-submit__history {
-  border: 0;
-  background: transparent;
-  color: #2f80d8;
-  padding: 4px 0;
+  border: 1px solid #c0c5ca;
+  background: #fff;
+  color: #3a4045;
+  padding: 5px 16px;
   font-size: 10px;
   cursor: pointer;
 }

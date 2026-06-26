@@ -6,12 +6,14 @@ const mocks = vi.hoisted(() => ({
   submitRequests: vi.fn(),
   showToast: vi.fn(),
   setMonth: vi.fn(),
+  apiRequests: vi.fn(),
 }));
 
 vi.mock('../store/AppContext', () => ({
   useApp: () => ({
     me: { id: 2, name: '田中太郎', role: 'STAFF', storeId: 1 },
     stores: [{ id: '1', name: '中島店' }],
+    staff: [{ id: '2', name: '田中太郎', storeId: '1', employmentType: '正社員', role: 'STAFF', hourlyWage: null, monthlyHourLimit: null }],
     storeId: 1,
     requests: [{ staffId: '2', date: '2026-07-01', slot: 'early' }],
     assignments: [],
@@ -21,6 +23,12 @@ vi.mock('../store/AppContext', () => ({
     submitRequests: mocks.submitRequests,
     setMonth: mocks.setMonth,
   }),
+}));
+
+vi.mock('../api/client', () => ({
+  api: {
+    requests: mocks.apiRequests,
+  },
 }));
 
 vi.mock('./ui/Toast', () => ({
@@ -33,6 +41,7 @@ describe('RequestEditor', () => {
     mocks.submitRequests.mockReset().mockResolvedValue(undefined);
     mocks.showToast.mockReset();
     mocks.setMonth.mockReset();
+    mocks.apiRequests.mockReset().mockResolvedValue([]);
   });
 
   it('keeps submission available when a legacy browser setting says collection is closed', () => {
@@ -78,6 +87,34 @@ describe('RequestEditor', () => {
       date: '2026-07-02',
       value: 'off',
     });
+  });
+
+  it('「先月と同じ希望」ボタンを押すと先月の曜日パターンが draft にセットされる', async () => {
+    // 先月 (2026-06) の月曜: 6/1, 6/8, 6/15, 6/22, 6/29 で early (09:00-13:00)
+    mocks.apiRequests.mockResolvedValue([
+      { staffId: 2, date: '2026-06-01', slot: 'early', startTime: '09:00', endTime: '13:00' },
+      { staffId: 2, date: '2026-06-08', slot: 'early', startTime: '09:00', endTime: '13:00' },
+      { staffId: 2, date: '2026-06-15', slot: 'early', startTime: '09:00', endTime: '13:00' },
+      // 別スタッフの分はフィルタで除外されることを確認
+      { staffId: 9, date: '2026-06-02', slot: 'off' },
+    ]);
+    render(<RequestEditor year={2026} month={7} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /先月と同じ希望/ }));
+
+    await waitFor(() => expect(mocks.apiRequests).toHaveBeenCalledWith(1, '2026-06'));
+    // 7月の月曜の draft: 7/6 (Mon) → early 09:00〜13:00
+    await waitFor(() => {
+      const monday = screen.getByRole('button', { name: /7\/6\(月\)/ });
+      expect(monday.textContent).toMatch(/出勤 09:00〜13:00/);
+    });
+    expect(mocks.showToast).toHaveBeenCalledWith(expect.stringContaining('先月と同じ'));
+  });
+
+  it('旧ボタンラベル「提出履歴から自動入力」は無く、新ラベルが出る', () => {
+    render(<RequestEditor year={2026} month={7} />);
+    expect(screen.queryByRole('button', { name: '提出履歴から自動入力' })).toBeNull();
+    expect(screen.getByRole('button', { name: '先月と同じ希望' })).toBeInTheDocument();
   });
 
   it('staff month navigation stays within the current year', () => {

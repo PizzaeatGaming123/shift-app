@@ -10,12 +10,7 @@ export type ManagerSection =
   | 'staff-list'
   | 'staff-registration'
   | 'manager-registration'
-  | 'rank-settings'
-  | 'skill-settings'
   | 'fixed-shifts'
-  | 'sales-plan'
-  | 'labor-cost'
-  | 'sales-per-hour'
   | 'model-shift'
   | 'labor-status'
   | 'attendance'
@@ -54,7 +49,7 @@ const NAV_GROUPS: {
     items: [
       { label: 'シフト表', section: 'shift-table' },
       { label: 'シフト設定', section: 'shift-settings' },
-      { label: '回収状況', section: 'collection' },
+      { label: '提出状況', section: 'collection' },
       { label: '追加募集', section: 'recruitment' },
       { label: '確定シフト', section: 'confirmed-shifts' },
       { label: 'メッセージ', section: 'messages' },
@@ -66,18 +61,7 @@ const NAV_GROUPS: {
       { label: 'スタッフ一覧', section: 'staff-list' },
       { label: 'スタッフ登録', section: 'staff-registration' },
       { label: '管理者登録', section: 'manager-registration' },
-      { label: 'ランク設定', section: 'rank-settings' },
-      { label: 'スキル設定', section: 'skill-settings' },
       { label: '固定シフト', section: 'fixed-shifts' },
-    ],
-  },
-  {
-    label: '計画',
-    items: [
-      { label: '売上計画', section: 'sales-plan' },
-      { label: '人件費', section: 'labor-cost' },
-      { label: '人時売上高', section: 'sales-per-hour' },
-      { label: 'モデルシフト', section: 'model-shift' },
     ],
   },
   {
@@ -109,6 +93,7 @@ const NAV_GROUPS: {
   {
     label: '設定',
     items: [
+      { label: 'モデルシフト', section: 'model-shift' },
       { label: '表示設定', section: 'display-settings' },
       { label: '営業時間', section: 'business-hours' },
       { label: 'シフト回収設定', section: 'collection-settings' },

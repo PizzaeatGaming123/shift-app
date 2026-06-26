@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type {
   Assignment,
   DayNote,
@@ -6,7 +7,8 @@ import type {
   StoreNote,
   WorkSlot,
 } from '../../types';
-import type { ShiftPatterns } from '../../lib/shiftPatterns';
+import { DEFAULT_SHIFT_PATTERNS, type ShiftPatterns } from '../../lib/shiftPatterns';
+import { AssignTimeModal, type AssignTimeResult } from './AssignTimeModal';
 import { ShiftStaffRow } from './ShiftStaffRow';
 import {
   type RequiredByBand,
@@ -39,29 +41,28 @@ interface ShiftTableProps {
     slot: WorkSlot,
     staffId: string,
     assigned: boolean,
+    startTime?: string | null,
+    endTime?: string | null,
   ) => void;
   onStoreNoteChange: (date: string, text: string) => void;
   onPositionNoteChange: (date: string, text: string) => void;
   onSortChange: (mode: StaffSortMode) => void;
+  /** スタッフ名横の「先月と同じ」ボタンのコールバック。未指定ならボタンは出ない。 */
+  onCopyPreviousMonth?: (staffId: string) => void;
   slotHours?: Record<WorkSlot, number>;
   shiftPatterns?: ShiftPatterns;
 }
 
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
-const SORT_ORDER: StaffSortMode[] = ['default', 'name', 'hours', 'rank'];
+const SORT_ORDER: StaffSortMode[] = ['default', 'name', 'hours'];
 const SORT_LABEL: Record<StaffSortMode, string> = {
   default: '標準',
   name: '氏名順',
   hours: '労働時間順',
-  rank: 'ランク順',
 };
 const DEFAULT_SUMMARY_ITEMS: SummaryItemKey[] = [
-  'sales',
-  'salesPerHour',
   'workHours',
-  'laborCost',
   'modelShift',
-  'rankTotal',
   'storeNote',
   'positionNote',
 ];
@@ -105,6 +106,7 @@ export function ShiftTable({
   onStoreNoteChange,
   onPositionNoteChange,
   onSortChange,
+  onCopyPreviousMonth,
   slotHours,
   shiftPatterns,
 }: ShiftTableProps) {
@@ -125,6 +127,25 @@ export function ShiftTable({
     slotHours,
   });
   const wide = dates.length > 16;
+
+  // 「＋」ボタンで開く時間入力モーダル。対象の (staffId, date) を保持する。
+  const [assignTarget, setAssignTarget] = useState<{ staffId: string; date: string } | null>(null);
+  const targetStaff = assignTarget
+    ? staff.find((person) => person.id === assignTarget.staffId) ?? null
+    : null;
+
+  function handleAssignSave(result: AssignTimeResult) {
+    if (!assignTarget) return;
+    onToggleAssignment(
+      assignTarget.date,
+      result.slot,
+      assignTarget.staffId,
+      false,
+      result.startTime,
+      result.endTime,
+    );
+    setAssignTarget(null);
+  }
 
   return (
     <div className={`rk-shift-table-scroll${wide ? ' rk-shift-table-scroll--wide' : ''}`}>
@@ -184,6 +205,8 @@ export function ShiftTable({
               slotHours={slotHours}
               shiftPatterns={shiftPatterns}
               onToggleAssignment={onToggleAssignment}
+              onOpenAssignTimeModal={(staffId, date) => setAssignTarget({ staffId, date })}
+              onCopyPreviousMonth={onCopyPreviousMonth}
             />
           ))}
 
@@ -194,6 +217,17 @@ export function ShiftTable({
           )}
         </tbody>
       </table>
+
+      {targetStaff && (
+        <AssignTimeModal
+          open
+          staffName={targetStaff.name}
+          employmentType={targetStaff.employmentType}
+          patterns={shiftPatterns ?? DEFAULT_SHIFT_PATTERNS}
+          onSave={handleAssignSave}
+          onClose={() => setAssignTarget(null)}
+        />
+      )}
     </div>
   );
 }

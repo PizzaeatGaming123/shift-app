@@ -7,6 +7,7 @@ const enabledSections = new Set<ManagerSection>([
   'shift-table',
   'staff-list',
   'staff-registration',
+  'model-shift',
 ]);
 
 function renderNav(overrides: {
@@ -33,11 +34,10 @@ describe('GlobalNav', () => {
     renderNav();
 
     const labels = screen.getAllByRole('button').map((button) => button.textContent);
-    expect(labels.slice(0, 8)).toEqual([
+    expect(labels.slice(0, 7)).toEqual([
       '暁夢シフト',
       'シフト',
       'スタッフ',
-      '計画',
       '労務',
       '組織',
       'データ管理',
@@ -83,7 +83,22 @@ describe('GlobalNav', () => {
     await user.click(screen.getByRole('menuitem', { name: 'スタッフ一覧' }));
     expect(props.onOpenSection).toHaveBeenCalledWith('staff-list');
 
-    await user.click(screen.getByRole('button', { name: '計画' }));
-    expect(screen.getByRole('menuitem', { name: '売上計画' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: '労務' }));
+    expect(screen.getByRole('menuitem', { name: '労務状況' })).toBeDisabled();
   });
+
+  it('「計画」グループは存在しない', () => {
+    renderNav();
+    expect(screen.queryByRole('button', { name: /^計画/ })).toBeNull();
+  });
+
+  it('モデルシフトは「設定」グループから開ける', async () => {
+    const user = userEvent.setup();
+    const onOpen = vi.fn();
+    renderNav({ onOpenSection: onOpen });
+    await user.click(screen.getByRole('button', { name: /^設定/ }));
+    await user.click(screen.getByRole('menuitem', { name: 'モデルシフト' }));
+    expect(onOpen).toHaveBeenCalledWith('model-shift');
+  });
+
 });

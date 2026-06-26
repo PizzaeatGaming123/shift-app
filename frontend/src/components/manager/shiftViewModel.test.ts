@@ -25,8 +25,6 @@ const staff: Staff[] = [
     storeId: '1',
     employmentType: '正社員',
     role: 'STAFF',
-    rank: 3,
-    skills: [],
   },
   {
     id: '2',
@@ -34,8 +32,6 @@ const staff: Staff[] = [
     storeId: '1',
     employmentType: 'パート',
     role: 'STAFF',
-    rank: 5,
-    skills: [],
   },
 ];
 
@@ -108,15 +104,6 @@ describe('sortShiftStaff', () => {
     }).map((person) => person.id)).toEqual(['2', '1']);
   });
 
-  it('ランクが高い順に並べる', () => {
-    expect(sortShiftStaff({
-      staff,
-      assignments,
-      dates: monthDates,
-      mode: 'rank',
-    }).map((person) => person.id)).toEqual(['2', '1']);
-  });
-
   it('氏名順は日本語ロケールで並べる', () => {
     expect(sortShiftStaff({
       staff,
@@ -124,6 +111,34 @@ describe('sortShiftStaff', () => {
       dates: monthDates,
       mode: 'name',
     }).map((person) => person.name)).toEqual(['山田花子', '田中太郎']);
+  });
+});
+
+describe('sortShiftStaff default mode', () => {
+  const mkStaff = (id: string, name: string, employmentType: Staff['employmentType']): Staff => ({
+    id,
+    name,
+    storeId: '1',
+    employmentType,
+    role: 'STAFF',
+  });
+
+  it('雇用形態を パート→正社員 の順で並べる', () => {
+    const list = [
+      mkStaff('s1', '田中', '正社員'),
+      mkStaff('s2', '佐藤', 'パート'),
+    ];
+    const sorted = sortShiftStaff({ staff: list, assignments: [], dates: [], mode: 'default' });
+    expect(sorted.map((s) => s.name)).toEqual(['佐藤', '田中']);
+  });
+
+  it('同区分内は氏名昇順', () => {
+    const list = [
+      mkStaff('s1', '田中', 'パート'),
+      mkStaff('s2', '佐藤', 'パート'),
+    ];
+    const sorted = sortShiftStaff({ staff: list, assignments: [], dates: [], mode: 'default' });
+    expect(sorted.map((s) => s.name)).toEqual(['佐藤', '田中']);
   });
 });
 
@@ -144,7 +159,10 @@ describe('getShiftCellModel', () => {
       notes,
     })).toEqual({
       request: { slot: 'early', label: '早番', time: '7:00-16:00' },
-      assignment: { slot: 'early', label: '早番', time: '7:00-16:00' },
+      assignment: {
+        slot: 'early', label: '早番', time: '7:00-16:00',
+        startTime: null, endTime: null,
+      },
       note: '早番大丈夫です！',
     });
   });
@@ -162,10 +180,33 @@ describe('getShiftCellModel', () => {
       time: null,
     });
   });
+
+  it('割当に startTimes/endTimes が並列で入っていれば、その index の時間が assignment に載る', () => {
+    const result = getShiftCellModel({
+      staffId: '2',
+      date: '2026-07-10',
+      requests: [],
+      assignments: [{
+        date: '2026-07-10',
+        slot: 'early',
+        staffIds: ['1', '2'],
+        startTimes: [null, '09:00'],
+        endTimes: [null, '13:00'],
+      }],
+      notes: [],
+    });
+    expect(result.assignment).toEqual({
+      slot: 'early',
+      label: '09:00-13:00',
+      time: '09:00-13:00',
+      startTime: '09:00',
+      endTime: '13:00',
+    });
+  });
 });
 
 describe('getDailySummary', () => {
-  it('売上・労働時間・人件費・人時売上高・ランク計を算出する', () => {
+  it('売上・労働時間・人件費・人時売上高を算出する', () => {
     expect(getDailySummary({
       date: '2026-07-01',
       assignments,
@@ -177,7 +218,6 @@ describe('getDailySummary', () => {
       laborCost: 19800,
       laborCostRate: 22,
       salesPerHour: 5000,
-      rankTotal: 8,
     });
   });
 });

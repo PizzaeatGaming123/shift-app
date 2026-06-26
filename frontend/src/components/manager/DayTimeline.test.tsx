@@ -18,8 +18,6 @@ it('早番を7時から16時の位置に表示して編集できる', async () =
         storeId: '1',
         employmentType: '正社員',
         role: 'STAFF',
-        rank: 3,
-        skills: [],
       }]}
       assignments={[{
         date: '2026-07-01',

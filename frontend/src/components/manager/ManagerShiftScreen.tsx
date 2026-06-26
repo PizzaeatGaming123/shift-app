@@ -47,12 +47,8 @@ interface ManagerShiftScreenProps {
 }
 
 const SUMMARY_OPTIONS: { key: SummaryItemKey; label: string }[] = [
-  { key: 'sales', label: '売上計画' },
-  { key: 'salesPerHour', label: '人時売上高' },
   { key: 'workHours', label: '総労働時間' },
-  { key: 'laborCost', label: '人件費' },
   { key: 'modelShift', label: '全体モデルシフト' },
-  { key: 'rankTotal', label: 'ランク計' },
   { key: 'storeNote', label: '店舗メモ' },
   { key: 'positionNote', label: 'ポジションメモ' },
 ];
@@ -130,6 +126,7 @@ export function ManagerShiftScreen({
     toggleAssignment,
     setStoreNote,
     bulkAssignRequested,
+    copyPreviousMonthAssignments,
   } = useApp();
   const { showToast } = useToast();
   const [view, setView] = useState<ManagerView>('half-month');
@@ -227,11 +224,10 @@ export function ManagerShiftScreen({
 
   useEffect(() => {
     if (homeSignal === 0) return;
-    const defaultMonth = '2026-09';
-    setMonth(defaultMonth);
-    setAnchorDate(`${defaultMonth}-01`);
+    // ロゴクリックで月を切り替えると「保存した月が突然 9 月に戻る」と混乱するので、
+    // 月や anchor は触らず、ビューだけ半月に戻す。月は矢印操作でのみ変える。
     setView('half-month');
-  }, [homeSignal, setMonth]);
+  }, [homeSignal]);
 
   function moveManagerPeriod(direction: -1 | 1) {
     if (view === 'month') {
@@ -379,7 +375,7 @@ export function ManagerShiftScreen({
         showNotes: false,
         showSummary: true,
       });
-      setVisibleSummaryItems(['workHours', 'laborCost', 'modelShift', 'rankTotal']);
+      setVisibleSummaryItems(['workHours', 'modelShift']);
     }
   }
 
@@ -389,6 +385,26 @@ export function ManagerShiftScreen({
     slot: WorkSlot,
   ) {
     void toggleAssignment(date, slot, staffId, true);
+  }
+
+  async function handleCopyPreviousMonth(staffId: string) {
+    const person = staff.find((p) => p.id === staffId);
+    const label = person ? `${person.name}` : 'このスタッフ';
+    const ok = window.confirm(
+      `${label}の今月のシフトを、先月の曜日パターンで塗り直します。よろしいですか？\n（今月の${label}の既存割当は一度すべて解除されます）`,
+    );
+    if (!ok) return;
+    try {
+      const count = await copyPreviousMonthAssignments(staffId);
+      showToast(
+        count > 0
+          ? `${label}: 先月の曜日パターンから${count}日分を割り当てました`
+          : `${label}: 先月の割当が見つからなかったため何も変更しませんでした`,
+      );
+    } catch (error) {
+      console.error('copyPreviousMonthAssignments failed', error);
+      showToast('先月のコピーに失敗しました。もう一度お試しください');
+    }
   }
 
   return (
@@ -464,11 +480,12 @@ export function ManagerShiftScreen({
           salesTarget={salesTarget}
           requiredByBand={requiredByBand}
           visibleSummaryItems={visibleSummaryItems}
-          onToggleAssignment={(date, slot, staffId, assigned) =>
-            void toggleAssignment(date, slot, staffId, assigned)}
+          onToggleAssignment={(date, slot, staffId, assigned, startTime, endTime) =>
+            void toggleAssignment(date, slot, staffId, assigned, startTime, endTime)}
           onStoreNoteChange={editStoreNote}
           onPositionNoteChange={editPositionNote}
           onSortChange={setSortMode}
+          onCopyPreviousMonth={(staffId) => void handleCopyPreviousMonth(staffId)}
           slotHours={slotHours}
           shiftPatterns={shiftPatterns}
         />

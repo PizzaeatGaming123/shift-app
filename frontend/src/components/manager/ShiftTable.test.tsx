@@ -11,8 +11,6 @@ const staff = [
     storeId: '1',
     employmentType: '正社員' as const,
     role: 'STAFF' as const,
-    rank: 3,
-    skills: [],
   },
   {
     id: '2',
@@ -20,8 +18,6 @@ const staff = [
     storeId: '1',
     employmentType: 'パート' as const,
     role: 'STAFF' as const,
-    rank: 2,
-    skills: [],
   },
 ];
 
@@ -62,7 +58,7 @@ describe('ShiftTable', () => {
       />,
     );
 
-    expect(screen.queryByText('売上計画')).not.toBeInTheDocument();
+    expect(screen.queryByText('総労働時間')).not.toBeInTheDocument();
   });
 
   it('縮小拡大の表示サイズをテーブルへ反映する', () => {

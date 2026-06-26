@@ -5,6 +5,16 @@ import { AppProvider } from '../store/AppContext';
 import { ToastProvider } from './ui/Toast';
 import { StaffApp } from './StaffApp';
 
+function renderStaffApp() {
+  render(
+    <ToastProvider>
+      <AppProvider>
+        <StaffApp />
+      </AppProvider>
+    </ToastProvider>,
+  );
+}
+
 beforeEach(() => {
   vi.restoreAllMocks();
   localStorage.clear();
@@ -22,8 +32,8 @@ beforeEach(() => {
     if (url.endsWith('/api/stores')) return response([{ id: 1, name: '中島店' }]);
     if (url.includes('/staff')) {
       return response([
-        { id: 2, name: '田中太郎', employmentType: '正社員', role: 'STAFF', rank: 3, skills: 'キッチン' },
-        { id: 3, name: '山田花子', employmentType: 'パート', role: 'STAFF', rank: 2, skills: 'ホール' },
+        { id: 2, name: '田中太郎', employmentType: '正社員', role: 'STAFF' },
+        { id: 3, name: '山田花子', employmentType: 'パート', role: 'STAFF' },
       ]);
     }
     if (url.includes('/requests')) return response([]);
@@ -35,15 +45,15 @@ beforeEach(() => {
   });
 });
 
+it('スタッフナビのタブは「シフト確定」', async () => {
+  renderStaffApp();
+  expect(await screen.findByRole('button', { name: 'シフト確定' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /^確定シフト$/ })).toBeNull();
+});
+
 it('スタッフ画面: メッセージタブから店長へ送信できる', async () => {
   const user = userEvent.setup();
-  render(
-    <ToastProvider>
-      <AppProvider>
-        <StaffApp />
-      </AppProvider>
-    </ToastProvider>,
-  );
+  renderStaffApp();
 
   await user.click(await screen.findByRole('button', { name: 'メッセージ' }));
   expect(screen.getByText('店長とのメッセージ')).toBeInTheDocument();

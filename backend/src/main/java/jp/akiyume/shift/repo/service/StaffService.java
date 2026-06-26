@@ -28,21 +28,21 @@ public class StaffService {
         this.seedPassword = seedPassword;
     }
 
-    /** スタッフのランク（1〜5）・スキル・時給を更新する。null フィールドは更新しない。 */
+    /** スタッフの時給・月労働時間上限を更新する。null フィールドは更新しない。 */
     @Transactional
-    public void updateRankSkills(Long id, Integer rank, String skills, Integer hourlyWage) {
+    public void updateStaff(Long id, Integer hourlyWage, Integer monthlyHourLimit) {
         Staff staff = staffRepository.findById(id).orElseThrow();
-        if (rank != null) {
-            staff.setRank(Math.max(1, Math.min(5, rank)));
-        }
-        if (skills != null) {
-            staff.setSkills(skills.trim());
-        }
         if (hourlyWage != null) {
             if (hourlyWage < 0 || hourlyWage > 100000) {
                 throw new IllegalArgumentException("hourlyWage out of range");
             }
             staff.setHourlyWage(hourlyWage);
+        }
+        if (monthlyHourLimit != null) {
+            if (monthlyHourLimit < 0 || monthlyHourLimit > 1000) {
+                throw new IllegalArgumentException("monthlyHourLimit out of range");
+            }
+            staff.setMonthlyHourLimit(monthlyHourLimit);
         }
         staffRepository.save(staff);
     }
@@ -56,14 +56,12 @@ public class StaffService {
         Store store = storeRepository.findById(storeId).orElseThrow();
         EmploymentType type = switch (employmentType == null ? "" : employmentType) {
             case "正社員" -> EmploymentType.FULL_TIME;
-            case "アルバイト" -> EmploymentType.ARUBAITO;
             default -> EmploymentType.PART_TIME;
         };
         Role r = "MANAGER".equalsIgnoreCase(role) ? Role.MANAGER : Role.STAFF;
         String username = "u" + storeId + "-" + System.currentTimeMillis();
         String hash = passwordEncoder.encode(seedPassword);
         Staff staff = new Staff(username, hash, name.trim(), store, type, r);
-        staff.setRank(r == Role.MANAGER ? 5 : 3);
         return staffRepository.save(staff);
     }
 }

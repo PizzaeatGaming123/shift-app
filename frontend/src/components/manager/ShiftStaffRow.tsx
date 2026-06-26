@@ -1,5 +1,6 @@
 import { maxConsecutiveAssignedDays, staffMonthlyHours } from '../../store/labor';
 import { SLOT_HOURS } from '../../constants';
+import { hourLimitLevel } from '../../lib/hourLimit';
 import {
   DEFAULT_SHIFT_PATTERNS,
   type ShiftPatterns,
@@ -30,7 +31,16 @@ interface ShiftStaffRowProps {
     slot: WorkSlot,
     staffId: string,
     assigned: boolean,
+    startTime?: string | null,
+    endTime?: string | null,
   ) => void;
+  /** 空セルの「＋」ボタン押下。時間入力モーダルを開くトリガー。 */
+  onOpenAssignTimeModal?: (staffId: string, date: string) => void;
+  /**
+   * 「先月と同じ」ボタン押下。スタッフ名の横に小さく出る。
+   * 渡されない場合はボタン自体を出さない（ShiftConfirmDialog や表示プリセットによっては不要なため）。
+   */
+  onCopyPreviousMonth?: (staffId: string) => void;
 }
 
 function slotClass(slot: WorkSlot | 'any' | 'off'): string {
@@ -61,6 +71,8 @@ export function ShiftStaffRow({
   slotHours = SLOT_HOURS,
   shiftPatterns = DEFAULT_SHIFT_PATTERNS,
   onToggleAssignment,
+  onOpenAssignTimeModal,
+  onCopyPreviousMonth,
 }: ShiftStaffRowProps) {
   const totalHours = staffMonthlyHours(assignments, person.id, dates, slotHours);
   const consecutiveDays = maxConsecutiveAssignedDays(
@@ -69,12 +81,14 @@ export function ShiftStaffRow({
     dates,
   );
   const warnings = Number(consecutiveDays >= 6) + Number(totalHours > 180);
+  const limitLevel = hourLimitLevel(totalHours, person.monthlyHourLimit);
+  const hoursClass = `rk-shift-staff__hours rk-warn-${limitLevel}`;
 
   return (
     <tr className={`rk-shift-staff-row rk-shift-staff-row--${density}`}>
       <th scope="row" className="rk-shift-staff">
         <span className="rk-shift-staff__name">{person.name}</span>
-        <span className="rk-shift-staff__hours">{formatDuration(totalHours)}</span>
+        <span className={hoursClass}>{formatDuration(totalHours)}</span>
         {warnings > 0 && (
           <span
             className="rk-shift-staff__warning"
@@ -82,6 +96,16 @@ export function ShiftStaffRow({
           >
             !
           </span>
+        )}
+        {onCopyPreviousMonth && (
+          <button
+            type="button"
+            className="rk-shift-staff__copy"
+            aria-label={`${person.name}の先月と同じシフトを今月に複製`}
+            onClick={() => onCopyPreviousMonth(person.id)}
+          >
+            先月と同じ
+          </button>
         )}
       </th>
 
@@ -106,6 +130,8 @@ export function ShiftStaffRow({
         const taskSource: WorkSlot | null = assignmentVisible && cell.assignment && isWorkSlot(cell.assignment.slot)
           ? cell.assignment.slot
           : null;
+
+        const isEmpty = !requestVisible && !assignmentVisible;
 
         return (
           <td className="rk-shift-cell" key={date}>
@@ -155,10 +181,23 @@ export function ShiftStaffRow({
                     cell.assignment!.slot as WorkSlot,
                     person.id,
                     true,
+                    cell.assignment!.startTime,
+                    cell.assignment!.endTime,
                   );
                 }}
               >
                 {cell.assignment.label}
+              </button>
+            )}
+
+            {isEmpty && onOpenAssignTimeModal && (
+              <button
+                type="button"
+                className="rk-shift-cell__empty"
+                aria-label={`${person.name} ${date} に割当を追加`}
+                onClick={() => onOpenAssignTimeModal(person.id, date)}
+              >
+                ＋
               </button>
             )}
 

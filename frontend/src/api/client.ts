@@ -7,7 +7,7 @@ export interface Me {
   storeId: number;
 }
 export interface ApiStore { id: number; name: string; }
-export interface ApiStaff { id: number; name: string; employmentType: string; role: string; rank?: number | null; skills?: string | null; hourlyWage?: number | null; }
+export interface ApiStaff { id: number; name: string; employmentType: string; role: string; hourlyWage?: number | null; monthlyHourLimit?: number | null; }
 export type ApiRequestStatus =
   | 'DRAFT' | 'SUBMITTED' | 'CHANGE_REQUESTED' | 'CHANGE_APPROVED' | 'CHANGE_REJECTED' | 'CLOSED';
 export interface ApiRequest {
@@ -18,7 +18,20 @@ export interface ApiRequest {
   endTime?: string | null;
   status?: ApiRequestStatus;
 }
-export interface ApiAssignment { date: string; slot: 'early' | 'late'; staffId: number; }
+export interface ApiAssignmentBreak {
+  startTime: string;
+  endTime: string;
+}
+export interface ApiAssignment {
+  date: string;
+  slot: 'early' | 'late';
+  staffId: number;
+  startTime?: string | null;
+  endTime?: string | null;
+  tasks?: string[];
+  breaks?: ApiAssignmentBreak[];
+  workMemo?: string | null;
+}
 export interface RequestSubmissionEntry {
   date: string;
   value: DayRequestValue;
@@ -93,10 +106,10 @@ export const api = {
     return json<ApiStaff[]>(await fetch(`/api/stores/${storeId}/staff`, { credentials: 'include' }));
   },
 
-  async updateStaff(id: number, rank: number | null, skills: string, hourlyWage?: number | null): Promise<void> {
+  async updateStaff(id: number, hourlyWage?: number | null, monthlyHourLimit?: number | null): Promise<void> {
     await mutate(`/api/staff/${id}`, {
       method: 'PUT',
-      body: JSON.stringify({ rank, skills, hourlyWage }),
+      body: JSON.stringify({ hourlyWage, monthlyHourLimit }),
     });
   },
 
@@ -131,10 +144,31 @@ export const api = {
     return json<ApiAssignment[]>(await fetch(`/api/stores/${storeId}/assignments?month=${month}`, { credentials: 'include' }));
   },
 
-  async assign(storeId: number, date: string, slot: 'early' | 'late', staffId: number): Promise<void> {
+  async assign(
+    storeId: number,
+    date: string,
+    slot: 'early' | 'late',
+    staffId: number,
+    startTime?: string | null,
+    endTime?: string | null,
+    extras?: { tasks?: string[]; breaks?: ApiAssignmentBreak[]; workMemo?: string | null },
+  ): Promise<void> {
+    // tasks / breaks / workMemo は undefined のときだけ body から省略する。
+    // 空配列・空文字を渡されたら「明示クリア」としてサーバに送る。
+    const body: Record<string, unknown> = {
+      storeId,
+      date,
+      slot,
+      staffId,
+      startTime: startTime ?? null,
+      endTime: endTime ?? null,
+    };
+    if (extras?.tasks !== undefined) body.tasks = extras.tasks;
+    if (extras?.breaks !== undefined) body.breaks = extras.breaks;
+    if (extras?.workMemo !== undefined) body.workMemo = extras.workMemo;
     await mutate('/api/assignments', {
       method: 'POST',
-      body: JSON.stringify({ storeId, date, slot, staffId }),
+      body: JSON.stringify(body),
     });
   },
 
