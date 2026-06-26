@@ -22,6 +22,7 @@ import {
 import {
   collectionSettingKey,
   createDefaultCollectionSettings,
+  migrateCollectionSettings,
   type CollectionStatus,
 } from '../../lib/collectionSettings';
 import {
@@ -73,7 +74,7 @@ const FONT_SIZES: { value: 'small' | 'standard' | 'large'; label: string }[] = [
 ];
 
 interface DisplayDefaults {
-  initialView: 'day' | 'week' | 'half-month' | 'month';
+  initialView: 'day' | 'week' | 'month';
   showRequests: boolean;
   showNotes: boolean;
   showSummary: boolean;
@@ -81,7 +82,7 @@ interface DisplayDefaults {
 }
 
 const DEFAULT_DISPLAY_DEFAULTS: DisplayDefaults = {
-  initialView: 'half-month',
+  initialView: 'month',
   showRequests: true,
   showNotes: true,
   showSummary: false,
@@ -197,7 +198,7 @@ export function SectionBody({ section }: { section: ManagerSection }) {
     collectionSettingKey(storeId),
     collectionDefaults,
   );
-  const collect = { ...collectionDefaults, ...storedCollect };
+  const collect = { ...collectionDefaults, ...migrateCollectionSettings(storedCollect) };
   const [notify, setNotify] = useSetting(`akiyume-notify:${storeId}`, { onConfirm: true, onRecruit: true, onChange: false });
   const [integ, setInteg] = useSetting(`akiyume-integ:${storeId}`, { pos: false, attendance: false, payroll: false });
   const [fontSize, setFontSize] = useSetting<'small' | 'standard' | 'large'>(`akiyume-fontsize:${storeId}`, 'standard');
@@ -1090,7 +1091,6 @@ export function SectionBody({ section }: { section: ManagerSection }) {
               <span>シフト周期</span>
               <select aria-label="シフト周期" value={collect.cycle} onChange={(event) => setCollect({ ...collect, cycle: event.target.value as typeof collect.cycle })}>
                 <option value="month">1か月</option>
-                <option value="half-month">半月</option>
               </select>
             </label>
             <label>
@@ -1267,7 +1267,6 @@ export function SectionBody({ section }: { section: ManagerSection }) {
               >
                 <option value="day">日</option>
                 <option value="week">週</option>
-                <option value="half-month">半月</option>
                 <option value="month">月</option>
               </select>
             </label>
@@ -1321,7 +1320,7 @@ export function SectionBody({ section }: { section: ManagerSection }) {
           <div className={`rk-display-preview rk-display-preview--${fontSize}`}>
             <div className="rk-display-preview__head">
               <span>プレビュー</span>
-              <strong>{displayDefaults.initialView === 'half-month' ? '半月' : displayDefaults.initialView === 'month' ? '月' : displayDefaults.initialView === 'week' ? '週' : '日'}表示</strong>
+              <strong>{displayDefaults.initialView === 'month' ? '月' : displayDefaults.initialView === 'week' ? '週' : '日'}表示</strong>
             </div>
             <table>
               <tbody>
