@@ -39,7 +39,7 @@ interface AppContextValue {
   setDayNote: (date: string, text: string) => Promise<void>;
   setStoreNote: (date: string, text: string) => Promise<void>;
   setRecruitment: (date: string, message: string) => Promise<void>;
-  updateStaff: (id: string, rank: number | null, skills: string[], hourlyWage?: number | null) => Promise<void>;
+  updateStaff: (id: string, rank: number | null, skills: string[], hourlyWage?: number | null, monthlyHourLimit?: number | null) => Promise<void>;
   createStaff: (name: string, employmentType: string, role: string) => Promise<void>;
   bulkAssignRequested: (dates: string[]) => Promise<number>;
 }
@@ -57,6 +57,7 @@ function toStaff(s: ApiStaff, storeId: number): Staff {
     rank: s.rank ?? null,
     skills: s.skills ? s.skills.split(',').map((t) => t.trim()).filter(Boolean) : [],
     hourlyWage: s.hourlyWage ?? null,
+    monthlyHourLimit: s.monthlyHourLimit ?? null,
   };
 }
 function toRecruitment(r: ApiRecruitment): Recruitment {
@@ -244,8 +245,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await reloadStoreData();
   }, [storeId, reloadStoreData]);
 
-  const updateStaff = useCallback(async (id: string, rank: number | null, skills: string[], hourlyWage?: number | null) => {
-    await api.updateStaff(Number(id), rank, skills.join(','), hourlyWage);
+  const updateStaff = useCallback(async (id: string, rank: number | null, skills: string[], hourlyWage?: number | null, monthlyHourLimit?: number | null) => {
+    await api.updateStaff(Number(id), rank, skills.join(','), hourlyWage, monthlyHourLimit);
     await reloadStoreData();
   }, [reloadStoreData]);
 

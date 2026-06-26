@@ -27,6 +27,8 @@ export interface Staff {
   skills: string[];
   /** 時給（円）。一般スタッフのビューでは権限分離のため null/省略。 */
   hourlyWage?: number | null;
+  /** 月の労働時間上限（時間）。null = 制限なし。扶養範囲などの警告に使う。 */
+  monthlyHourLimit?: number | null;
 }
 
 export interface ShiftRequest {

@@ -7,7 +7,7 @@ export interface Me {
   storeId: number;
 }
 export interface ApiStore { id: number; name: string; }
-export interface ApiStaff { id: number; name: string; employmentType: string; role: string; rank?: number | null; skills?: string | null; hourlyWage?: number | null; }
+export interface ApiStaff { id: number; name: string; employmentType: string; role: string; rank?: number | null; skills?: string | null; hourlyWage?: number | null; monthlyHourLimit?: number | null; }
 export type ApiRequestStatus =
   | 'DRAFT' | 'SUBMITTED' | 'CHANGE_REQUESTED' | 'CHANGE_APPROVED' | 'CHANGE_REJECTED' | 'CLOSED';
 export interface ApiRequest {
@@ -93,10 +93,10 @@ export const api = {
     return json<ApiStaff[]>(await fetch(`/api/stores/${storeId}/staff`, { credentials: 'include' }));
   },
 
-  async updateStaff(id: number, rank: number | null, skills: string, hourlyWage?: number | null): Promise<void> {
+  async updateStaff(id: number, rank: number | null, skills: string, hourlyWage?: number | null, monthlyHourLimit?: number | null): Promise<void> {
     await mutate(`/api/staff/${id}`, {
       method: 'PUT',
-      body: JSON.stringify({ rank, skills, hourlyWage }),
+      body: JSON.stringify({ rank, skills, hourlyWage, monthlyHourLimit }),
     });
   },
 
