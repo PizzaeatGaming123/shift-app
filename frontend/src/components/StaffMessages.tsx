@@ -54,7 +54,7 @@ export function StaffMessages() {
       return {
         id: person.id,
         name: person.name,
-        caption: person.skills[0] ?? person.employmentType,
+        caption: person.employmentType,
         threadId: `staff:${pair}`,
         avatar: person.name.slice(0, 1),
         baseMessages: [

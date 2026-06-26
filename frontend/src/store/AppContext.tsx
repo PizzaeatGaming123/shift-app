@@ -4,10 +4,18 @@ import {
 import { api, type Me, type ApiStore, type ApiStaff, type ApiRequest, type ApiAssignment, type ApiDayNote, type ApiStoreNote, type ApiRecruitment, type ApiShiftPlanStatus } from '../api/client';
 import { getDayRequest } from './requests';
 import { isAssigned } from './assignments';
-import type { ShiftRequest, Assignment, Staff, Store, DayRequestValue, DayNote, StoreNote, Recruitment, WorkSlot } from '../types';
+import type { ShiftRequest, Assignment, AssignmentDetail, Staff, Store, DayRequestValue, DayNote, StoreNote, Recruitment, WorkSlot } from '../types';
 import type { ShiftPlanStatus } from '../lib/shiftStatus';
 import { getMonthDates, previousMonth } from '../lib/date';
 import { previousMonthByWeekday } from '../lib/previousMonthCopy';
+import { getSetting, setSetting } from '../lib/settings';
+
+/** 月選択をブラウザ間で持続させる localStorage キー。 */
+const MONTH_STORAGE_KEY = 'akiyume-month';
+function currentMonthIso(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
 
 interface AppContextValue {
   me: Me | null;
@@ -45,10 +53,24 @@ interface AppContextValue {
     startTime?: string | null,
     endTime?: string | null,
   ) => Promise<void>;
+  /**
+   * 参考UI風モーダルから「保存」したときに呼ぶ。
+   * tasks / breaks / workMemo は呼び出し時の値で常に上書きされる（空ならクリア）。
+   */
+  saveAssignmentDetails: (input: {
+    date: string;
+    slot: WorkSlot;
+    staffId: string;
+    startTime: string | null;
+    endTime: string | null;
+    tasks: string[];
+    breaks: { startTime: string; endTime: string }[];
+    workMemo: string;
+  }) => Promise<void>;
   setDayNote: (date: string, text: string) => Promise<void>;
   setStoreNote: (date: string, text: string) => Promise<void>;
   setRecruitment: (date: string, message: string) => Promise<void>;
-  updateStaff: (id: string, rank: number | null, skills: string[], hourlyWage?: number | null, monthlyHourLimit?: number | null) => Promise<void>;
+  updateStaff: (id: string, hourlyWage?: number | null, monthlyHourLimit?: number | null) => Promise<void>;
   createStaff: (name: string, employmentType: string, role: string) => Promise<void>;
   bulkAssignRequested: (dates: string[]) => Promise<number>;
   /**
@@ -70,8 +92,6 @@ function toStaff(s: ApiStaff, storeId: number): Staff {
     storeId: String(storeId),
     employmentType: s.employmentType === '正社員' ? '正社員' : 'パート',
     role: s.role === 'MANAGER' ? 'MANAGER' : 'STAFF',
-    rank: s.rank ?? null,
-    skills: s.skills ? s.skills.split(',').map((t) => t.trim()).filter(Boolean) : [],
     hourlyWage: s.hourlyWage ?? null,
     monthlyHourLimit: s.monthlyHourLimit ?? null,
   };
@@ -88,9 +108,18 @@ function toRequest(r: ApiRequest): ShiftRequest {
     endTime: r.endTime,
   };
 }
+/** API 行 1 件から、フロントの details スロット 1 要素を作る。 */
+function toDetail(a: ApiAssignment): AssignmentDetail {
+  return {
+    tasks: a.tasks ?? [],
+    breaks: a.breaks ?? [],
+    workMemo: a.workMemo ?? '',
+  };
+}
+
 /**
  * バックエンドの行（1スタッフ1レコード）を、フロントの集約形（date+slot で staffIds[]）に
- * まとめる。時間メタデータは staffIds と同じ index で startTimes/endTimes に並べる。
+ * まとめる。時間メタデータと details（タスク・休憩・メモ）は staffIds と同じ index で並べる。
  */
 function aggregateAssignments(list: ApiAssignment[]): Assignment[] {
   const map = new Map<string, Assignment>();
@@ -101,6 +130,7 @@ function aggregateAssignments(list: ApiAssignment[]): Assignment[] {
       existing.staffIds.push(String(a.staffId));
       existing.startTimes!.push(a.startTime ?? null);
       existing.endTimes!.push(a.endTime ?? null);
+      existing.details!.push(toDetail(a));
     } else {
       map.set(key, {
         date: a.date,
@@ -108,6 +138,7 @@ function aggregateAssignments(list: ApiAssignment[]): Assignment[] {
         staffIds: [String(a.staffId)],
         startTimes: [a.startTime ?? null],
         endTimes: [a.endTime ?? null],
+        details: [toDetail(a)],
       });
     }
   }
@@ -133,7 +164,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [storeId, setStoreId] = useState<number | null>(null);
   const [shiftPlanStatus, setShiftPlanStatusState] = useState<ShiftPlanStatus>('DRAFT');
   const reloadSeq = useRef(0);
-  const [month, setMonth] = useState('2026-09');
+  // 月の選択は localStorage に保持し、リロードやロゴクリックでもリセットしない。
+  // 初回かつ保存値が無い場合だけ実機の現在月を入れる。
+  const [month, setMonthState] = useState<string>(() => getSetting(MONTH_STORAGE_KEY, currentMonthIso()));
+  const setMonth = useCallback((next: string) => {
+    setMonthState(next);
+    setSetting(MONTH_STORAGE_KEY, next);
+  }, []);
 
   // 初回: ログイン状態を確認
   useEffect(() => {
@@ -308,6 +345,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     }, [storeId, reloadStoreData]);
 
+  const saveAssignmentDetails = useCallback(async (input: {
+    date: string;
+    slot: WorkSlot;
+    staffId: string;
+    startTime: string | null;
+    endTime: string | null;
+    tasks: string[];
+    breaks: { startTime: string; endTime: string }[];
+    workMemo: string;
+  }) => {
+    if (!storeId) return;
+    await api.assign(
+      storeId,
+      input.date,
+      input.slot,
+      Number(input.staffId),
+      input.startTime,
+      input.endTime,
+      {
+        tasks: input.tasks,
+        breaks: input.breaks,
+        workMemo: input.workMemo,
+      },
+    );
+    await reloadStoreData();
+  }, [storeId, reloadStoreData]);
+
   const setDayNote = useCallback(async (date: string, text: string) => {
     await api.setDayNote(date, text);
     await reloadStoreData();
@@ -325,8 +389,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await reloadStoreData();
   }, [storeId, reloadStoreData]);
 
-  const updateStaff = useCallback(async (id: string, rank: number | null, skills: string[], hourlyWage?: number | null, monthlyHourLimit?: number | null) => {
-    await api.updateStaff(Number(id), rank, skills.join(','), hourlyWage, monthlyHourLimit);
+  const updateStaff = useCallback(async (id: string, hourlyWage?: number | null, monthlyHourLimit?: number | null) => {
+    await api.updateStaff(Number(id), hourlyWage, monthlyHourLimit);
     await reloadStoreData();
   }, [reloadStoreData]);
 
@@ -418,10 +482,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AppContextValue>(() => ({
     me, loading, stores, staff, requests, assignments, dayNotes, storeNotes, recruitments, storeId, month,
     shiftPlanStatus, setShiftPlanStatus,
-    setStoreId, setMonth, login, logout, setDayRequest, bulkSetRequests, submitRequests, toggleAssignment, setDayNote, setStoreNote, setRecruitment, updateStaff, createStaff, bulkAssignRequested, copyPreviousMonthAssignments,
+    setStoreId, setMonth, login, logout, setDayRequest, bulkSetRequests, submitRequests, toggleAssignment, saveAssignmentDetails, setDayNote, setStoreNote, setRecruitment, updateStaff, createStaff, bulkAssignRequested, copyPreviousMonthAssignments,
   }), [me, loading, stores, staff, requests, assignments, dayNotes, storeNotes, recruitments, storeId, month,
        shiftPlanStatus, setShiftPlanStatus,
-       login, logout, setDayRequest, bulkSetRequests, submitRequests, toggleAssignment, setDayNote, setStoreNote, setRecruitment, updateStaff, createStaff, bulkAssignRequested, copyPreviousMonthAssignments]);
+       login, logout, setDayRequest, bulkSetRequests, submitRequests, toggleAssignment, saveAssignmentDetails, setDayNote, setStoreNote, setRecruitment, updateStaff, createStaff, bulkAssignRequested, copyPreviousMonthAssignments]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

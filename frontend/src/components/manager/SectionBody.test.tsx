@@ -155,11 +155,11 @@ it('色設定: シフト区分の色を保存して標準色へ戻せる', async
   expect(saved.earlyBg).toBe('#fff0f0');
 });
 
-it('回収状況: 提出済みと未提出を集計して表示する', async () => {
+it('提出状況: 提出済みと未提出を集計して表示する', async () => {
   renderSection('collection');
 
   expect(await screen.findByText('対象スタッフ')).toBeInTheDocument();
-  expect(screen.getByLabelText('回収状況の対象月')).toBeInTheDocument();
+  expect(screen.getByLabelText('提出状況の対象月')).toBeInTheDocument();
   expect(screen.getAllByText('未提出').length).toBeGreaterThanOrEqual(1);
   expect(screen.getByRole('button', { name: '未提出者へ一括通知' })).toBeInTheDocument();
 });

@@ -31,8 +31,15 @@ public class AssignmentController {
         if ((body.startTime() == null) != (body.endTime() == null)) {
             throw new IllegalArgumentException("startTime と endTime は両方指定するか両方省略してください");
         }
+        var breakInputs = body.breaks() == null ? null
+                : body.breaks().stream()
+                        .map(b -> new jp.akiyume.shift.repo.service.AssignmentService.BreakInput(
+                                b.startTime(), b.endTime()))
+                        .toList();
         assignmentService.assign(body.storeId(), LocalDate.parse(body.date()), body.slot(),
-                body.staffId(), body.startTime(), body.endTime(), auth.getName());
+                body.staffId(), body.startTime(), body.endTime(),
+                body.tasks(), breakInputs, body.workMemo(),
+                auth.getName());
     }
 
     @DeleteMapping("/assignments")

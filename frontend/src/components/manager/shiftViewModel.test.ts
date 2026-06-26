@@ -25,8 +25,6 @@ const staff: Staff[] = [
     storeId: '1',
     employmentType: '正社員',
     role: 'STAFF',
-    rank: 3,
-    skills: [],
   },
   {
     id: '2',
@@ -34,8 +32,6 @@ const staff: Staff[] = [
     storeId: '1',
     employmentType: 'パート',
     role: 'STAFF',
-    rank: 5,
-    skills: [],
   },
 ];
 
@@ -125,8 +121,6 @@ describe('sortShiftStaff default mode', () => {
     storeId: '1',
     employmentType,
     role: 'STAFF',
-    rank: 0,
-    skills: [],
   });
 
   it('雇用形態を パート→正社員 の順で並べる', () => {
@@ -212,7 +206,7 @@ describe('getShiftCellModel', () => {
 });
 
 describe('getDailySummary', () => {
-  it('売上・労働時間・人件費・人時売上高・ランク計を算出する', () => {
+  it('売上・労働時間・人件費・人時売上高を算出する', () => {
     expect(getDailySummary({
       date: '2026-07-01',
       assignments,
@@ -224,7 +218,6 @@ describe('getDailySummary', () => {
       laborCost: 19800,
       laborCostRate: 22,
       salesPerHour: 5000,
-      rankTotal: 8,
     });
   });
 });

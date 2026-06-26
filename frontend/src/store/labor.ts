@@ -56,17 +56,6 @@ export function staffMonthlyHours(
   return hours;
 }
 
-/** 指定日の割り当てスタッフのランク合計（その日の労働力の目安） */
-export function dailyRankTotal(assignments: Assignment[], staff: Staff[], date: string): number {
-  const rankById = new Map(staff.map((s) => [s.id, s.rank ?? 0]));
-  let total = 0;
-  for (const slot of WORK_SLOTS) {
-    const a = assignments.find((x) => x.date === date && x.slot === slot);
-    for (const id of a?.staffIds ?? []) total += rankById.get(id) ?? 0;
-  }
-  return total;
-}
-
 /** 指定スタッフが連続して割り当てられている最長日数（労務アラート用） */
 export function maxConsecutiveAssignedDays(
   assignments: Assignment[],

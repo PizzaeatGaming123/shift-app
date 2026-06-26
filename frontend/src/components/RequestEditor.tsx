@@ -50,7 +50,7 @@ function displayValue(v: DayRequestValue, time: { start: string; end: string }):
 interface RequestEditorProps { year: number; month: number; }
 
 export function RequestEditor({ year, month }: RequestEditorProps) {
-  const { me, stores, storeId, requests, assignments, dayNotes, submitRequests, setMonth } = useApp();
+  const { me, stores, staff, storeId, requests, assignments, dayNotes, submitRequests, setMonth } = useApp();
   const { showToast } = useToast();
   const [storedPatterns] = useSetting(
     shiftPatternSettingKey(storeId),
@@ -69,6 +69,9 @@ export function RequestEditor({ year, month }: RequestEditorProps) {
   const [shiftStatus] = useEffectiveShiftStatus(storeId, monthKey, assignments);
   const locked = isLockedStatus(shiftStatus);
   const myId = me ? String(me.id) : '';
+  // 早番/遅番のシフトパターンは正社員のみ。パートは出勤時間がばらばらなので
+  // 「何時から何時まで」を毎回手入力する運用にする。
+  const isFulltime = staff.find((person) => person.id === myId)?.employmentType === '正社員';
   const dates = getMonthDates(year, month);
 
   const [modalDate, setModalDate] = useState<string | null>(null);
@@ -82,6 +85,8 @@ export function RequestEditor({ year, month }: RequestEditorProps) {
   const [memoDrafts, setMemoDrafts] = useState<Record<string, string>>({});
   const [modalStart, setModalStart] = useState('07:00');
   const [modalEnd, setModalEnd] = useState('16:00');
+  const [bulkStart, setBulkStart] = useState('09:00');
+  const [bulkEnd, setBulkEnd] = useState('17:00');
 
   useEffect(() => {
     setSubmitted(false);
@@ -146,6 +151,26 @@ export function RequestEditor({ year, month }: RequestEditorProps) {
         : { start: patterns.late.start, end: patterns.late.end };
       setTimeDrafts(Object.fromEntries(dates.map((date) => [date, time])));
     }
+    setSubmitted(false);
+    setBulkOpen(false);
+    setBulkAttend(false);
+    showToast('一括で入力しました');
+  }
+  /** パート向け：任意の開始/終了時刻を全日に適用する。slot は開始時刻から推定。 */
+  function bulkApplyCustom() {
+    const startMinutes = parseHHMM(bulkStart);
+    const endMinutes = parseHHMM(bulkEnd);
+    if (startMinutes === null || endMinutes === null) {
+      showToast('時刻は HH:MM 形式で入力してください');
+      return;
+    }
+    if (endMinutes <= startMinutes) {
+      showToast('終了時刻は開始時刻より後にしてください');
+      return;
+    }
+    const slot: DayRequestValue = startMinutes < 12 * 60 ? 'early' : 'late';
+    setRequestDrafts(Object.fromEntries(dates.map((date) => [date, slot])));
+    setTimeDrafts(Object.fromEntries(dates.map((date) => [date, { start: bulkStart, end: bulkEnd }])));
     setSubmitted(false);
     setBulkOpen(false);
     setBulkAttend(false);
@@ -416,21 +441,25 @@ export function RequestEditor({ year, month }: RequestEditorProps) {
                   />
                 </label>
               </div>
-              <p className="rk-attend__hint">シフトパターンから入力</p>
-              <button type="button" className="rk-attend__slot" onClick={() => { setModalStart(patterns.early.start); setModalEnd(patterns.early.end); }}>
-                <strong>{patterns.early.label}</strong><small>{patterns.early.start}〜{patterns.early.end}</small>
-              </button>
-              <button type="button" className="rk-attend__slot" onClick={() => { setModalStart(patterns.late.start); setModalEnd(patterns.late.end); }}>
-                <strong>{patterns.late.label}</strong><small>{patterns.late.start}〜{patterns.late.end}</small>
-              </button>
-              <button
-                type="button"
-                className={`rk-attend__slot rk-attend__any${myValue(modalDate ?? '') === 'any' ? ' is-on' : ''}`}
-                onClick={() => pick(modalDate!, 'any')}
-              >
-                <strong>どちらでも可</strong>
-                <small>早番でも遅番でもOK</small>
-              </button>
+              {isFulltime && (
+                <>
+                  <p className="rk-attend__hint">シフトパターンから入力</p>
+                  <button type="button" className="rk-attend__slot" onClick={() => { setModalStart(patterns.early.start); setModalEnd(patterns.early.end); }}>
+                    <strong>{patterns.early.label}</strong><small>{patterns.early.start}〜{patterns.early.end}</small>
+                  </button>
+                  <button type="button" className="rk-attend__slot" onClick={() => { setModalStart(patterns.late.start); setModalEnd(patterns.late.end); }}>
+                    <strong>{patterns.late.label}</strong><small>{patterns.late.start}〜{patterns.late.end}</small>
+                  </button>
+                  <button
+                    type="button"
+                    className={`rk-attend__slot rk-attend__any${myValue(modalDate ?? '') === 'any' ? ' is-on' : ''}`}
+                    onClick={() => pick(modalDate!, 'any')}
+                  >
+                    <strong>どちらでも可</strong>
+                    <small>早番でも遅番でもOK</small>
+                  </button>
+                </>
+              )}
               <button type="button" className="rk-attend__save" onClick={saveWorkDay}>保存</button>
             </div>
           )}
@@ -444,18 +473,36 @@ export function RequestEditor({ year, month }: RequestEditorProps) {
             <button type="button" className="rk-attend__btn rk-attend__off" onClick={() => bulkApply('off')}>休み</button>
           </div>
           {bulkAttend && (
-            <div className="rk-attend__slots">
-              <p className="rk-attend__hint">勤務時間帯を選んでください</p>
-              <button type="button" className="rk-attend__slot" onClick={() => bulkApply('early')}>
-                <strong>{patterns.early.label}</strong><small>{patterns.early.start}〜{patterns.early.end}</small>
-              </button>
-              <button type="button" className="rk-attend__slot" onClick={() => bulkApply('late')}>
-                <strong>{patterns.late.label}</strong><small>{patterns.late.start}〜{patterns.late.end}</small>
-              </button>
-              <button type="button" className="rk-attend__slot rk-attend__any" onClick={() => bulkApply('any')}>
-                <strong>どちらでも可</strong><small>早番でも遅番でもOK</small>
-              </button>
-            </div>
+            isFulltime ? (
+              <div className="rk-attend__slots">
+                <p className="rk-attend__hint">勤務時間帯を選んでください</p>
+                <button type="button" className="rk-attend__slot" onClick={() => bulkApply('early')}>
+                  <strong>{patterns.early.label}</strong><small>{patterns.early.start}〜{patterns.early.end}</small>
+                </button>
+                <button type="button" className="rk-attend__slot" onClick={() => bulkApply('late')}>
+                  <strong>{patterns.late.label}</strong><small>{patterns.late.start}〜{patterns.late.end}</small>
+                </button>
+                <button type="button" className="rk-attend__slot rk-attend__any" onClick={() => bulkApply('any')}>
+                  <strong>どちらでも可</strong><small>早番でも遅番でもOK</small>
+                </button>
+              </div>
+            ) : (
+              <div className="rk-attend__slots">
+                <p className="rk-attend__hint">勤務時間を入力してください</p>
+                <div className="rk-attend__time-row">
+                  <label>
+                    開始
+                    <input type="time" value={bulkStart} onChange={(event) => setBulkStart(event.target.value)} />
+                  </label>
+                  <span aria-hidden="true">〜</span>
+                  <label>
+                    終了
+                    <input type="time" value={bulkEnd} onChange={(event) => setBulkEnd(event.target.value)} />
+                  </label>
+                </div>
+                <button type="button" className="rk-attend__save" onClick={bulkApplyCustom}>保存</button>
+              </div>
+            )
           )}
         </div>
       </Modal>

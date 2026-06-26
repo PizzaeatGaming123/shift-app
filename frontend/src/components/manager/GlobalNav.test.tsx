@@ -101,11 +101,4 @@ describe('GlobalNav', () => {
     expect(onOpen).toHaveBeenCalledWith('model-shift');
   });
 
-  it('スタッフグループにランク設定・スキル設定は出ない', async () => {
-    const user = userEvent.setup();
-    renderNav();
-    await user.click(screen.getByRole('button', { name: /^スタッフ/ }));
-    expect(screen.queryByRole('menuitem', { name: 'ランク設定' })).toBeNull();
-    expect(screen.queryByRole('menuitem', { name: 'スキル設定' })).toBeNull();
-  });
 });

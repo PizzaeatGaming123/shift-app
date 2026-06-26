@@ -39,7 +39,7 @@ import { BusinessHoursSection } from './sections/BusinessHoursSection';
 /** 各セクション画面のタイトル（GlobalNav のラベルと一致） */
 export const SECTION_TITLES: Partial<Record<ManagerSection, string>> = {
   'shift-settings': 'シフト設定',
-  collection: '回収状況',
+  collection: '提出状況',
   recruitment: '追加募集',
   'confirmed-shifts': '確定シフト',
   messages: 'メッセージ',
@@ -209,7 +209,7 @@ export function SectionBody({ section }: { section: ManagerSection }) {
   const [perms, setPerms] = useSetting(`akiyume-perms:${storeId}`, {
     submit: true, viewOwn: true, viewOthers: false, postMemo: true, viewCost: false,
     buildOwnStore: false, publishOwnStore: false, changePublished: false,
-    approveChanges: false, manageStaff: false, manageSkills: false,
+    approveChanges: false, manageStaff: false,
     manageRequired: false, viewAllStores: false, manageSupport: false, csvExport: false,
   });
   const [modelPos, setModelPos] = useState<string>(positions[0] ?? 'ホール');
@@ -268,7 +268,7 @@ export function SectionBody({ section }: { section: ManagerSection }) {
   });
   const businessUnits = ['未指定', '第一事業部', '事業部未所属'];
   const employmentTypes = ['未指定', ...Array.from(new Set(staff.map((person) => person.employmentType)))];
-  const alertTypes = ['未指定', '労働時間', '1日の労働時間', '連続勤務', 'シフト重複', '必要人数不足', '必須スキル不足'];
+  const alertTypes = ['未指定', '労働時間', '1日の労働時間', '連続勤務', 'シフト重複', '必要人数不足'];
   const targetStaff = staff.filter((person) => person.role === 'STAFF');
   const managerStaff = staff.filter((person) => person.role === 'MANAGER');
   const messageThreads: MessageThread[] = targetStaff.map((person, index) => {
@@ -304,7 +304,7 @@ export function SectionBody({ section }: { section: ManagerSection }) {
       unread: index < 2,
       unreadMinutes: index === 0 ? 1 : index === 1 ? 3 : (index + 1) * 10,
       preview: latest.text,
-      tags: person.skills.slice(0, 2),
+      tags: [person.employmentType],
       messages: [...baseMessages, ...extraMessages],
     };
   });
@@ -433,8 +433,7 @@ export function SectionBody({ section }: { section: ManagerSection }) {
       const matchesRole = effectiveRole === 'all' || person.role === effectiveRole;
       const matchesQuery = !query
         || person.name.toLowerCase().includes(query)
-        || person.employmentType.toLowerCase().includes(query)
-        || person.skills.some((skill) => skill.toLowerCase().includes(query));
+        || person.employmentType.toLowerCase().includes(query);
       return matchesRole && matchesQuery;
     });
     const staffCount = staff.filter((person) => person.role === 'STAFF').length;
@@ -455,7 +454,7 @@ export function SectionBody({ section }: { section: ManagerSection }) {
               aria-label="スタッフ検索"
               value={staffSearch}
               onChange={(event) => setStaffSearch(event.target.value)}
-              placeholder="氏名・雇用形態・スキル"
+              placeholder="氏名・雇用形態"
             />
           </label>
           <label>
@@ -480,8 +479,6 @@ export function SectionBody({ section }: { section: ManagerSection }) {
                 <th scope="col">氏名</th>
                 <th scope="col">区分</th>
                 <th scope="col">雇用形態</th>
-                <th scope="col">ランク</th>
-                <th scope="col">スキル</th>
                 <th scope="col">予定時間</th>
                 <th scope="col">月上限</th>
                 <th scope="col">提出状態</th>
@@ -496,14 +493,6 @@ export function SectionBody({ section }: { section: ManagerSection }) {
                     <th scope="row">{person.name}</th>
                     <td>{person.role === 'MANAGER' ? '管理者' : 'スタッフ'}</td>
                     <td>{person.employmentType}</td>
-                    <td>{person.rank != null ? `ランク${person.rank}` : '未設定'}</td>
-                    <td>
-                      <span className="rk-staff-management__skills">
-                        {person.skills.length > 0
-                          ? person.skills.map((skill) => <span key={skill} className="skill-tag">{skill}</span>)
-                          : <span className="muted-sm">未設定</span>}
-                      </span>
-                    </td>
                     <td>{hrs.toFixed(1)} h</td>
                     <td>
                       <input
@@ -517,8 +506,6 @@ export function SectionBody({ section }: { section: ManagerSection }) {
                           const next = raw === '' ? null : Number(raw);
                           void updateStaff(
                             person.id,
-                            person.rank,
-                            person.skills,
                             person.hourlyWage ?? null,
                             next,
                           );
@@ -1023,7 +1010,6 @@ export function SectionBody({ section }: { section: ManagerSection }) {
                 ['changePublished', '公開後のシフト変更', '公開済みシフトの変更を記録できます'],
                 ['approveChanges', '変更申請の承認', '期限後の変更申請を承認できます'],
                 ['manageStaff', 'スタッフ管理', 'スタッフ情報を登録・編集できます'],
-                ['manageSkills', 'スキル管理', 'ランク・スキルを編集できます'],
                 ['manageRequired', '必要人数設定', 'モデルシフトや必要人数を編集できます'],
                 ['viewAllStores', '全店舗シフト閲覧', '複数店舗の予定を閲覧できます'],
                 ['manageSupport', '店舗間応援管理', 'ヘルプ勤務を依頼・承認できます'],
@@ -1124,14 +1110,6 @@ export function SectionBody({ section }: { section: ManagerSection }) {
               </select>
             </label>
             <label>
-              <span>通知回数</span>
-              <select aria-label="提出依頼の通知回数" value={collect.reminders} onChange={(event) => setCollect({ ...collect, reminders: Number(event.target.value) })}>
-                {[0, 1, 2, 3, 5].map((value) => (
-                  <option key={value} value={value}>{value === 0 ? '送らない' : `${value} 回`}</option>
-                ))}
-              </select>
-            </label>
-            <label>
               <span>提出開始日時</span>
               <input
                 aria-label="提出開始日時"
@@ -1183,11 +1161,6 @@ export function SectionBody({ section }: { section: ManagerSection }) {
                   <td>{collect.publishAt.replace('T', ' ')}</td>
                   <td>公開後に確定シフトを表示</td>
                 </tr>
-                <tr>
-                  <th scope="row">リマインド</th>
-                  <td>{collect.reminders === 0 ? '送らない' : `${collect.reminders} 回`}</td>
-                  <td>未提出者へ通知</td>
-                </tr>
               </tbody>
             </table>
           </div>
@@ -1207,7 +1180,7 @@ export function SectionBody({ section }: { section: ManagerSection }) {
           <div className="rk-ref-toolbar rk-collection-status__actions">
             <label>
               <span>対象月</span>
-              <input aria-label="回収状況の対象月" type="month" value={collect.targetMonth} onChange={(event) => setCollect({ ...collect, targetMonth: event.target.value })} />
+              <input aria-label="提出状況の対象月" type="month" value={collect.targetMonth} onChange={(event) => setCollect({ ...collect, targetMonth: event.target.value })} />
             </label>
             <span>期限 {collect.deadlineAt.replace('T', ' ')}</span>
             <button type="button" className="tb-btn" onClick={() => showToast(`${unsubmittedStaff.length}名へリマインドを送りました`)}>

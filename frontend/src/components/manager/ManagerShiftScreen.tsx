@@ -224,11 +224,10 @@ export function ManagerShiftScreen({
 
   useEffect(() => {
     if (homeSignal === 0) return;
-    const defaultMonth = '2026-09';
-    setMonth(defaultMonth);
-    setAnchorDate(`${defaultMonth}-01`);
+    // ロゴクリックで月を切り替えると「保存した月が突然 9 月に戻る」と混乱するので、
+    // 月や anchor は触らず、ビューだけ半月に戻す。月は矢印操作でのみ変える。
     setView('half-month');
-  }, [homeSignal, setMonth]);
+  }, [homeSignal]);
 
   function moveManagerPeriod(direction: -1 | 1) {
     if (view === 'month') {
