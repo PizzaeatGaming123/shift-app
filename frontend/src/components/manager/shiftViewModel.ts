@@ -101,9 +101,19 @@ interface ShiftDescriptor {
   time: string | null;
 }
 
+/**
+ * 割当セル用のディスクリプタ。基本は ShiftDescriptor と同じだが、パートの
+ * 任意時間割当を表現するため startTime/endTime を保持する。両方セットされていれば
+ * 表示は「9:00-13:00」のような時間ラベルを優先する。
+ */
+export interface AssignmentDescriptor extends ShiftDescriptor {
+  startTime: string | null;
+  endTime: string | null;
+}
+
 export interface ShiftCellModel {
   request: ShiftDescriptor | null;
-  assignment: ShiftDescriptor | null;
+  assignment: AssignmentDescriptor | null;
   note: string | null;
 }
 
@@ -123,14 +133,23 @@ export function getShiftCellModel({
   const request = requests.find(
     (item) => item.staffId === staffId && item.date === date,
   );
-  const assignment = WORK_SLOTS.find((slot) =>
-    assignments.some(
-      (item) =>
-        item.date === date
-        && item.slot === slot
-        && item.staffIds.includes(staffId),
-    ),
-  );
+  // 該当する割当（date + slot + staffIds に staffId を含む）と、staffIds 内の index を取得する。
+  // index は startTimes/endTimes（staffIds と並列の配列）から自分の時間を引くために使う。
+  let assignmentSlot: WorkSlot | undefined;
+  let startTime: string | null = null;
+  let endTime: string | null = null;
+  for (const slot of WORK_SLOTS) {
+    const found = assignments.find(
+      (item) => item.date === date && item.slot === slot && item.staffIds.includes(staffId),
+    );
+    if (found) {
+      assignmentSlot = slot;
+      const idx = found.staffIds.indexOf(staffId);
+      startTime = found.startTimes?.[idx] ?? null;
+      endTime = found.endTimes?.[idx] ?? null;
+      break;
+    }
+  }
   const note = notes.find(
     (item) => item.staffId === staffId && item.date === date,
   )?.text ?? null;
@@ -151,11 +170,18 @@ export function getShiftCellModel({
               : SLOT_TIMES[request.slot],
         }
       : null,
-    assignment: assignment
+    assignment: assignmentSlot
       ? {
-          slot: assignment,
-          label: SLOT_LABELS[assignment],
-          time: SLOT_TIMES[assignment],
+          slot: assignmentSlot,
+          // 任意時間が指定されていればそれをラベルにし、なければ "早番"/"遅番" を出す。
+          label: startTime && endTime
+            ? `${startTime}-${endTime}`
+            : SLOT_LABELS[assignmentSlot],
+          time: startTime && endTime
+            ? `${startTime}-${endTime}`
+            : SLOT_TIMES[assignmentSlot],
+          startTime,
+          endTime,
         }
       : null,
     note,

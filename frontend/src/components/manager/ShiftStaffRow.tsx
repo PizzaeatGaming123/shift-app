@@ -31,7 +31,11 @@ interface ShiftStaffRowProps {
     slot: WorkSlot,
     staffId: string,
     assigned: boolean,
+    startTime?: string | null,
+    endTime?: string | null,
   ) => void;
+  /** 空セルの「＋」ボタン押下。時間入力モーダルを開くトリガー。 */
+  onOpenAssignTimeModal?: (staffId: string, date: string) => void;
 }
 
 function slotClass(slot: WorkSlot | 'any' | 'off'): string {
@@ -62,6 +66,7 @@ export function ShiftStaffRow({
   slotHours = SLOT_HOURS,
   shiftPatterns = DEFAULT_SHIFT_PATTERNS,
   onToggleAssignment,
+  onOpenAssignTimeModal,
 }: ShiftStaffRowProps) {
   const totalHours = staffMonthlyHours(assignments, person.id, dates, slotHours);
   const consecutiveDays = maxConsecutiveAssignedDays(
@@ -109,6 +114,8 @@ export function ShiftStaffRow({
         const taskSource: WorkSlot | null = assignmentVisible && cell.assignment && isWorkSlot(cell.assignment.slot)
           ? cell.assignment.slot
           : null;
+
+        const isEmpty = !requestVisible && !assignmentVisible;
 
         return (
           <td className="rk-shift-cell" key={date}>
@@ -158,10 +165,23 @@ export function ShiftStaffRow({
                     cell.assignment!.slot as WorkSlot,
                     person.id,
                     true,
+                    cell.assignment!.startTime,
+                    cell.assignment!.endTime,
                   );
                 }}
               >
                 {cell.assignment.label}
+              </button>
+            )}
+
+            {isEmpty && onOpenAssignTimeModal && (
+              <button
+                type="button"
+                className="rk-shift-cell__empty"
+                aria-label={`${person.name} ${date} に割当を追加`}
+                onClick={() => onOpenAssignTimeModal(person.id, date)}
+              >
+                ＋
               </button>
             )}
 

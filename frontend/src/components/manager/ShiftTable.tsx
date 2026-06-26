@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type {
   Assignment,
   DayNote,
@@ -6,7 +7,8 @@ import type {
   StoreNote,
   WorkSlot,
 } from '../../types';
-import type { ShiftPatterns } from '../../lib/shiftPatterns';
+import { DEFAULT_SHIFT_PATTERNS, type ShiftPatterns } from '../../lib/shiftPatterns';
+import { AssignTimeModal, type AssignTimeResult } from './AssignTimeModal';
 import { ShiftStaffRow } from './ShiftStaffRow';
 import {
   type RequiredByBand,
@@ -39,6 +41,8 @@ interface ShiftTableProps {
     slot: WorkSlot,
     staffId: string,
     assigned: boolean,
+    startTime?: string | null,
+    endTime?: string | null,
   ) => void;
   onStoreNoteChange: (date: string, text: string) => void;
   onPositionNoteChange: (date: string, text: string) => void;
@@ -121,6 +125,25 @@ export function ShiftTable({
   });
   const wide = dates.length > 16;
 
+  // 「＋」ボタンで開く時間入力モーダル。対象の (staffId, date) を保持する。
+  const [assignTarget, setAssignTarget] = useState<{ staffId: string; date: string } | null>(null);
+  const targetStaff = assignTarget
+    ? staff.find((person) => person.id === assignTarget.staffId) ?? null
+    : null;
+
+  function handleAssignSave(result: AssignTimeResult) {
+    if (!assignTarget) return;
+    onToggleAssignment(
+      assignTarget.date,
+      result.slot,
+      assignTarget.staffId,
+      false,
+      result.startTime,
+      result.endTime,
+    );
+    setAssignTarget(null);
+  }
+
   return (
     <div className={`rk-shift-table-scroll${wide ? ' rk-shift-table-scroll--wide' : ''}`}>
       <table className={`rk-shift-table rk-shift-table--${density}${wide ? ' rk-shift-table--wide' : ''}`}>
@@ -179,6 +202,7 @@ export function ShiftTable({
               slotHours={slotHours}
               shiftPatterns={shiftPatterns}
               onToggleAssignment={onToggleAssignment}
+              onOpenAssignTimeModal={(staffId, date) => setAssignTarget({ staffId, date })}
             />
           ))}
 
@@ -189,6 +213,17 @@ export function ShiftTable({
           )}
         </tbody>
       </table>
+
+      {targetStaff && (
+        <AssignTimeModal
+          open
+          staffName={targetStaff.name}
+          employmentType={targetStaff.employmentType}
+          patterns={shiftPatterns ?? DEFAULT_SHIFT_PATTERNS}
+          onSave={handleAssignSave}
+          onClose={() => setAssignTarget(null)}
+        />
+      )}
     </div>
   );
 }
