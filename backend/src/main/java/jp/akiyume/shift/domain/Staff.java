@@ -37,6 +37,9 @@ public class Staff {
     @Column(length = 200)
     private String skills; // 保有スキル（カンマ区切り）、null 可
 
+    @Column(name = "monthly_hour_limit")
+    private Integer monthlyHourLimit; // 扶養等の月労働時間上限、null = 制限なし
+
     protected Staff() {}
 
     public Staff(String username, String passwordHash, String name, Store store,
@@ -59,8 +62,10 @@ public class Staff {
     public Integer getHourlyWage() { return hourlyWage; }
     public Integer getRank() { return rank; }
     public String getSkills() { return skills; }
+    public Integer getMonthlyHourLimit() { return monthlyHourLimit; }
 
     public void setRank(Integer rank) { this.rank = rank; }
     public void setSkills(String skills) { this.skills = skills; }
     public void setHourlyWage(Integer hourlyWage) { this.hourlyWage = hourlyWage; }
+    public void setMonthlyHourLimit(Integer monthlyHourLimit) { this.monthlyHourLimit = monthlyHourLimit; }
 }

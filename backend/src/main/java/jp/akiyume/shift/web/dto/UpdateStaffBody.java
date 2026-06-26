@@ -1,3 +1,4 @@
 package jp.akiyume.shift.web.dto;
 
-public record UpdateStaffBody(Integer rank, String skills, Integer hourlyWage) {}
+public record UpdateStaffBody(Integer rank, String skills, Integer hourlyWage,
+                              Integer monthlyHourLimit) {}

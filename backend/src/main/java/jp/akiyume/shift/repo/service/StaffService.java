@@ -28,9 +28,10 @@ public class StaffService {
         this.seedPassword = seedPassword;
     }
 
-    /** スタッフのランク（1〜5）・スキル・時給を更新する。null フィールドは更新しない。 */
+    /** スタッフのランク（1〜5）・スキル・時給・月労働時間上限を更新する。null フィールドは更新しない。 */
     @Transactional
-    public void updateRankSkills(Long id, Integer rank, String skills, Integer hourlyWage) {
+    public void updateRankSkills(Long id, Integer rank, String skills, Integer hourlyWage,
+                                 Integer monthlyHourLimit) {
         Staff staff = staffRepository.findById(id).orElseThrow();
         if (rank != null) {
             staff.setRank(Math.max(1, Math.min(5, rank)));
@@ -43,6 +44,12 @@ public class StaffService {
                 throw new IllegalArgumentException("hourlyWage out of range");
             }
             staff.setHourlyWage(hourlyWage);
+        }
+        if (monthlyHourLimit != null) {
+            if (monthlyHourLimit < 0 || monthlyHourLimit > 1000) {
+                throw new IllegalArgumentException("monthlyHourLimit out of range");
+            }
+            staff.setMonthlyHourLimit(monthlyHourLimit);
         }
         staffRepository.save(staff);
     }
