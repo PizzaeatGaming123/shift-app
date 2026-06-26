@@ -2,7 +2,7 @@ export type CollectionStatus = 'BEFORE' | 'OPEN' | 'CLOSED';
 
 export interface CollectionSettings {
   targetMonth: string;
-  cycle: 'month' | 'half-month';
+  cycle: 'month';
   startAt: string;
   deadlineAt: string;
   publishAt: string;
@@ -20,6 +20,19 @@ export function createDefaultCollectionSettings(month: string): CollectionSettin
     status: 'OPEN',
     reminders: 2,
   };
+}
+
+/**
+ * 旧バージョンで保存された `cycle: 'half-month'` を `'month'` に正規化する。
+ * 他のキーはそのまま透過する。
+ */
+export function migrateCollectionSettings(raw: unknown): Partial<CollectionSettings> {
+  if (typeof raw !== 'object' || raw === null) return {};
+  const settings = raw as Record<string, unknown>;
+  if (settings.cycle === 'half-month') {
+    return { ...settings, cycle: 'month' } as Partial<CollectionSettings>;
+  }
+  return settings as Partial<CollectionSettings>;
 }
 
 export function collectionSettingKey(storeId: string | number | null): string {

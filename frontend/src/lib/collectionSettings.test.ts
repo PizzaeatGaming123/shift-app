@@ -3,6 +3,7 @@ import {
   collectionStatusLabel,
   createDefaultCollectionSettings,
   daysUntilDeadline,
+  migrateCollectionSettings,
 } from './collectionSettings';
 
 describe('collectionSettings', () => {
@@ -22,5 +23,28 @@ describe('collectionSettings', () => {
   it('calculates remaining whole days without becoming negative', () => {
     expect(daysUntilDeadline('2026-07-25T23:59', new Date('2026-07-23T10:00:00'))).toBe(3);
     expect(daysUntilDeadline('2026-07-20T23:59', new Date('2026-07-23T10:00:00'))).toBe(0);
+  });
+
+  it('migrates legacy half-month cycle to month', () => {
+    const legacy = {
+      targetMonth: '2026-07',
+      cycle: 'half-month',
+      reminders: 1,
+    };
+    expect(migrateCollectionSettings(legacy)).toEqual({
+      targetMonth: '2026-07',
+      cycle: 'month',
+      reminders: 1,
+    });
+  });
+
+  it('passes through non-legacy settings unchanged', () => {
+    const fresh = { targetMonth: '2026-08', cycle: 'month', reminders: 2 };
+    expect(migrateCollectionSettings(fresh)).toBe(fresh);
+  });
+
+  it('returns an empty object for non-object input', () => {
+    expect(migrateCollectionSettings(null)).toEqual({});
+    expect(migrateCollectionSettings('half-month')).toEqual({});
   });
 });
