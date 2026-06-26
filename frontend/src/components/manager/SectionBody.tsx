@@ -201,7 +201,7 @@ export function SectionBody({ section }: { section: ManagerSection }) {
   const collect = { ...collectionDefaults, ...migrateCollectionSettings(storedCollect) };
   const [notify, setNotify] = useSetting(`akiyume-notify:${storeId}`, { onConfirm: true, onRecruit: true, onChange: false });
   const [integ, setInteg] = useSetting(`akiyume-integ:${storeId}`, { pos: false, attendance: false, payroll: false });
-  const [fontSize, setFontSize] = useSetting<'small' | 'standard' | 'large'>(`akiyume-fontsize:${storeId}`, 'standard');
+  const [fontSize, setFontSize] = useSetting<'small' | 'standard' | 'large'>(`akiyume-fontsize:${storeId}`, 'large');
   const [displayDefaults, setDisplayDefaults] = useSetting<DisplayDefaults>(
     `akiyume-display-defaults:${storeId}`,
     DEFAULT_DISPLAY_DEFAULTS,
