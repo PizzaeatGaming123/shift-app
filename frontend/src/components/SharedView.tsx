@@ -58,7 +58,7 @@ export function SharedView({ year, month }: SharedViewProps) {
           pinHeader: false,
           onlyAssigned: false,
           showPatterns: true,
-          showRequests: true,
+          showRequests: false,
           showTasks: true,
           showNotes: true,
           visibleSlots: { early: true, late: true, any: true, off: true },
