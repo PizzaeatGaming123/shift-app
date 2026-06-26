@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useApp } from '../store/AppContext';
 import { getDayRequest } from '../store/requests';
-import { getMonthDates } from '../lib/date';
+import { getMonthDates, previousMonth } from '../lib/date';
+import { previousMonthByWeekday } from '../lib/previousMonthCopy';
+import { api } from '../api/client';
 import { useSetting } from '../lib/settings';
 import {
   DEFAULT_SHIFT_PATTERNS,
@@ -156,23 +158,49 @@ export function RequestEditor({ year, month }: RequestEditorProps) {
     setSubmitted(false);
     showToast('すべて削除しました');
   }
-  function restoreSubmittedValues() {
-    setRequestDrafts(Object.fromEntries(dates.map((date) => [
-      date,
-      getDayRequest(requests, myId, date),
-    ])));
-    setMemoDrafts(Object.fromEntries(dates.map((date) => [
-      date,
-      dayNotes.find((note) => note.staffId === myId && note.date === date)?.text ?? '',
-    ])));
-    setTimeDrafts(Object.fromEntries(dates.flatMap((date) => {
-      const request = requests.find((item) => item.staffId === myId && item.date === date);
-      return request?.startTime && request.endTime
-        ? [[date, { start: request.startTime, end: request.endTime }]]
-        : [];
-    })));
-    setSubmitted(false);
-    showToast('前回の提出内容を入力しました');
+  /**
+   * 「先月と同じ希望」: 先月の自分の希望を曜日パターン化し、今月の同曜日全てに draft として塗る。
+   *   - 提出はしない。あくまで下書きとしてセットするので、ユーザーは個別に直してから「シフトを提出」する。
+   *   - api.requests は店舗全員分を返すので、自分の staffId でフィルタしてから集約する。
+   *   - slot|start|end をシリアライズして previousMonthByWeekday に渡し、デシリアライズして draft へ。
+   */
+  async function copyPreviousMonth() {
+    if (!storeId) return;
+    const prev = previousMonth(`${year}-${String(month).padStart(2, '0')}`);
+    try {
+      const prevList = await api.requests(storeId, prev);
+      const myPrev = prevList.filter((r) => String(r.staffId) === myId);
+      const serialized = myPrev.map((r) => ({
+        date: r.date,
+        value: `${r.slot}|${r.startTime ?? ''}|${r.endTime ?? ''}`,
+      }));
+      const plan = previousMonthByWeekday(serialized, dates, (item) => item.value);
+
+      const nextReq: Record<string, DayRequestValue> = {};
+      const nextTime: Record<string, { start: string; end: string }> = {};
+      for (const [date, value] of Object.entries(plan)) {
+        if (!value) continue;
+        const [slot, start, end] = value.split('|');
+        // バックエンドの slot は 'early' | 'late' | 'off' | 'any' のいずれか。DayRequestValue と互換。
+        if (slot === 'early' || slot === 'late' || slot === 'off' || slot === 'any') {
+          nextReq[date] = slot;
+          if ((slot === 'early' || slot === 'late') && start && end) {
+            nextTime[date] = { start, end };
+          }
+        }
+      }
+      setRequestDrafts(nextReq);
+      setTimeDrafts(nextTime);
+      setSubmitted(false);
+      showToast(
+        Object.keys(nextReq).length > 0
+          ? '先月と同じ希望をセットしました'
+          : '先月の希望が見つかりませんでした',
+      );
+    } catch (error) {
+      console.error('copyPreviousMonth failed', error);
+      showToast('先月の希望を取得できませんでした');
+    }
   }
   async function submit() {
     setSubmitting(true);
@@ -295,7 +323,7 @@ export function RequestEditor({ year, month }: RequestEditorProps) {
       <div className="rk-staff-submit__tools" aria-disabled={locked}>
         <button type="button" className="rk-staff-submit__bulk" disabled={locked} onClick={() => setBulkOpen(true)}>一括入力</button>
         <div className="rk-staff-submit__subtools">
-          <button type="button" className="rk-staff-submit__history" disabled={locked} onClick={restoreSubmittedValues}>提出履歴から自動入力</button>
+          <button type="button" className="rk-staff-submit__history" disabled={locked} onClick={() => void copyPreviousMonth()}>先月と同じ希望</button>
           <button type="button" className="rk-staff-submit__clear" disabled={locked} onClick={clearAll}>全削除</button>
         </div>
       </div>
