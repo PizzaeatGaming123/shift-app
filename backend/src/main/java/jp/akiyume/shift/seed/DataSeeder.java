@@ -75,21 +75,14 @@ public class DataSeeder implements CommandLineRunner {
                 new Person("hayashima-4", "福田直樹", EmploymentType.PART_TIME, Role.STAFF)));
     }
 
-    private static final String[] SKILL_POOL = { "ホール", "キッチン", "レジ", "新人教育", "多言語対応" };
-
     private void seedStore(String storeName, List<Person> people) {
         Store store = storeRepository.findByName(storeName)
                 .orElseGet(() -> storeRepository.save(new Store(storeName)));
         String hash = passwordEncoder.encode(seedPassword);
         List<Staff> saved = new ArrayList<>();
-        int idx = 0;
         for (Person p : people) {
             Staff staff = staffRepository.findByUsername(p.username())
                     .orElseGet(() -> new Staff(p.username(), hash, p.name(), store, p.type(), p.role()));
-            staff.setRank(p.role() == Role.MANAGER ? 5 : (idx % 4) + 2); // 店長は5、スタッフは2〜5
-            staff.setSkills(p.role() == Role.MANAGER
-                    ? "ホール,キッチン,新人教育"
-                    : SKILL_POOL[idx % SKILL_POOL.length] + "," + SKILL_POOL[(idx + 2) % SKILL_POOL.length]);
             // デモ用の時給。雇用形態でばらつかせる。
             staff.setHourlyWage(switch (p.type()) {
                 case FULL_TIME -> 1800;
@@ -101,7 +94,6 @@ public class DataSeeder implements CommandLineRunner {
                 case PART_TIME -> 87;
             });
             saved.add(staffRepository.save(staff));
-            idx++;
         }
         LocalDate from = LocalDate.of(DEMO_YEAR, DEMO_MONTH, 1);
         LocalDate to = from.withDayOfMonth(from.lengthOfMonth());
