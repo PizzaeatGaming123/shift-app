@@ -62,7 +62,7 @@ describe('ShiftTable', () => {
       />,
     );
 
-    expect(screen.queryByText('売上計画')).not.toBeInTheDocument();
+    expect(screen.queryByText('総労働時間')).not.toBeInTheDocument();
   });
 
   it('縮小拡大の表示サイズをテーブルへ反映する', () => {
