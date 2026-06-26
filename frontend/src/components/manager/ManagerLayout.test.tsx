@@ -48,7 +48,7 @@ it('戻るボタンでシフト表へ戻る', async () => {
   renderLayout();
   await screen.findByText(/西村健一/);
 
-  await user.click(screen.getByRole('button', { name: '計画' }));
+  await user.click(screen.getByRole('button', { name: '設定' }));
   await user.click(screen.getByRole('menuitem', { name: 'モデルシフト' }));
   expect(screen.getByRole('heading', { name: 'モデルシフト' })).toBeInTheDocument();
 
