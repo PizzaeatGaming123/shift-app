@@ -72,8 +72,30 @@ function toRequest(r: ApiRequest): ShiftRequest {
     endTime: r.endTime,
   };
 }
-function toAssignment(a: ApiAssignment): Assignment {
-  return { date: a.date, slot: a.slot, staffIds: [String(a.staffId)] };
+/**
+ * バックエンドの行（1スタッフ1レコード）を、フロントの集約形（date+slot で staffIds[]）に
+ * まとめる。時間メタデータは staffIds と同じ index で startTimes/endTimes に並べる。
+ */
+function aggregateAssignments(list: ApiAssignment[]): Assignment[] {
+  const map = new Map<string, Assignment>();
+  for (const a of list) {
+    const key = `${a.date}|${a.slot}`;
+    const existing = map.get(key);
+    if (existing) {
+      existing.staffIds.push(String(a.staffId));
+      existing.startTimes!.push(a.startTime ?? null);
+      existing.endTimes!.push(a.endTime ?? null);
+    } else {
+      map.set(key, {
+        date: a.date,
+        slot: a.slot,
+        staffIds: [String(a.staffId)],
+        startTimes: [a.startTime ?? null],
+        endTimes: [a.endTime ?? null],
+      });
+    }
+  }
+  return Array.from(map.values());
 }
 function toDayNote(n: ApiDayNote): DayNote {
   return { staffId: String(n.staffId), date: n.date, text: n.text };
@@ -136,7 +158,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (requestSeq !== reloadSeq.current) return;
     setStaff(st.map((s) => toStaff(s, activeStoreId)));
     setRequests(rq.map(toRequest));
-    setAssignments(as.map(toAssignment));
+    setAssignments(aggregateAssignments(as));
     setDayNotes(dn.map(toDayNote));
     setStoreNotes(sn.map(toStoreNote));
     setRecruitments(rc.map(toRecruitment));

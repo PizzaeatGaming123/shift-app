@@ -18,7 +18,13 @@ export interface ApiRequest {
   endTime?: string | null;
   status?: ApiRequestStatus;
 }
-export interface ApiAssignment { date: string; slot: 'early' | 'late'; staffId: number; }
+export interface ApiAssignment {
+  date: string;
+  slot: 'early' | 'late';
+  staffId: number;
+  startTime?: string | null;
+  endTime?: string | null;
+}
 export interface RequestSubmissionEntry {
   date: string;
   value: DayRequestValue;
@@ -131,10 +137,24 @@ export const api = {
     return json<ApiAssignment[]>(await fetch(`/api/stores/${storeId}/assignments?month=${month}`, { credentials: 'include' }));
   },
 
-  async assign(storeId: number, date: string, slot: 'early' | 'late', staffId: number): Promise<void> {
+  async assign(
+    storeId: number,
+    date: string,
+    slot: 'early' | 'late',
+    staffId: number,
+    startTime?: string | null,
+    endTime?: string | null,
+  ): Promise<void> {
     await mutate('/api/assignments', {
       method: 'POST',
-      body: JSON.stringify({ storeId, date, slot, staffId }),
+      body: JSON.stringify({
+        storeId,
+        date,
+        slot,
+        staffId,
+        startTime: startTime ?? null,
+        endTime: endTime ?? null,
+      }),
     });
   },
 
