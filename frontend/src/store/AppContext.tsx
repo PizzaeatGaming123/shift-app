@@ -6,6 +6,8 @@ import { getDayRequest } from './requests';
 import { isAssigned } from './assignments';
 import type { ShiftRequest, Assignment, Staff, Store, DayRequestValue, DayNote, StoreNote, Recruitment, WorkSlot } from '../types';
 import type { ShiftPlanStatus } from '../lib/shiftStatus';
+import { getMonthDates, previousMonth } from '../lib/date';
+import { previousMonthByWeekday } from '../lib/previousMonthCopy';
 
 interface AppContextValue {
   me: Me | null;
@@ -49,6 +51,13 @@ interface AppContextValue {
   updateStaff: (id: string, rank: number | null, skills: string[], hourlyWage?: number | null, monthlyHourLimit?: number | null) => Promise<void>;
   createStaff: (name: string, employmentType: string, role: string) => Promise<void>;
   bulkAssignRequested: (dates: string[]) => Promise<number>;
+  /**
+   * 先月のそのスタッフの割当を曜日パターン化し、今月の同曜日全てに適用する。
+   * 今月の既存割当（同スタッフ分）は全削除してから付け直すので、
+   * 「先月と同じ」を押せば今月は先月の曜日パターンで完全に塗り直される。
+   * 返り値は新規に登録された割当の件数。
+   */
+  copyPreviousMonthAssignments: (staffId: string) => Promise<number>;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -333,6 +342,56 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setShiftPlanStatusState(plan.status as ShiftPlanStatus);
   }, [storeId, month]);
 
+  /**
+   * 「先月と同じ」を実装する。動作:
+   *   1) 先月の自分の割当を取得（バックエンドの 1 スタッフ 1 レコード形をそのまま使う）。
+   *   2) `previousMonthByWeekday` で「曜日 → 最頻 `slot|start|end` 文字列」へ畳む。
+   *   3) 今月の自分の既存割当を全削除（unassign）してから、計画分を順に assign する。
+   * 順次 await することで API のレース／部分適用を避ける。最後に reload してフロント状態を整合させる。
+   */
+  const copyPreviousMonthAssignments = useCallback(async (staffId: string): Promise<number> => {
+    if (!storeId) return 0;
+    const prev = previousMonth(month);
+    const [yearStr, monthStr] = month.split('-');
+    const targetDates = getMonthDates(Number(yearStr), Number(monthStr));
+    const prevList = await api.assignments(storeId, prev);
+    const myPrev = prevList.filter((a) => String(a.staffId) === staffId);
+    // slot|start|end をシリアライズして previousMonthByWeekday に渡す。null/undefined の時間は '' で表現。
+    const serialized = myPrev.map((a) => ({
+      date: a.date,
+      value: `${a.slot}|${a.startTime ?? ''}|${a.endTime ?? ''}`,
+    }));
+    const plan = previousMonthByWeekday(serialized, targetDates, (item) => item.value);
+
+    // 今月の既存割当（自分の分）を順次解除。バックエンドは date+slot+staffId 単位の DELETE。
+    const myCurrent = assignments.flatMap((a) => (
+      a.staffIds.includes(staffId) && targetDates.includes(a.date)
+        ? [{ date: a.date, slot: a.slot }]
+        : []
+    ));
+    for (const item of myCurrent) {
+      await api.unassign(storeId, item.date, item.slot, Number(staffId));
+    }
+
+    let assigned = 0;
+    for (const [date, value] of Object.entries(plan)) {
+      if (!value) continue;
+      const [slot, start, end] = value.split('|');
+      if (slot !== 'early' && slot !== 'late') continue; // off は今回は割当に変換しない
+      await api.assign(
+        storeId,
+        date,
+        slot,
+        Number(staffId),
+        start || null,
+        end || null,
+      );
+      assigned += 1;
+    }
+    await reloadStoreData();
+    return assigned;
+  }, [storeId, month, assignments, reloadStoreData]);
+
   // 希望（早/遅/どちらでも可）が出ていて未割り当てのセルを一括で割り当てる。割り当てた件数を返す。
   // - STAFF ロールだけが対象（店長は自分の希望で勝手に割り当てない）
   // - 'any'（どちらでも可）は既定で 'early' に解決する。サーバの WorkSlot は early/late のみのため
@@ -359,10 +418,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AppContextValue>(() => ({
     me, loading, stores, staff, requests, assignments, dayNotes, storeNotes, recruitments, storeId, month,
     shiftPlanStatus, setShiftPlanStatus,
-    setStoreId, setMonth, login, logout, setDayRequest, bulkSetRequests, submitRequests, toggleAssignment, setDayNote, setStoreNote, setRecruitment, updateStaff, createStaff, bulkAssignRequested,
+    setStoreId, setMonth, login, logout, setDayRequest, bulkSetRequests, submitRequests, toggleAssignment, setDayNote, setStoreNote, setRecruitment, updateStaff, createStaff, bulkAssignRequested, copyPreviousMonthAssignments,
   }), [me, loading, stores, staff, requests, assignments, dayNotes, storeNotes, recruitments, storeId, month,
        shiftPlanStatus, setShiftPlanStatus,
-       login, logout, setDayRequest, bulkSetRequests, submitRequests, toggleAssignment, setDayNote, setStoreNote, setRecruitment, updateStaff, createStaff, bulkAssignRequested]);
+       login, logout, setDayRequest, bulkSetRequests, submitRequests, toggleAssignment, setDayNote, setStoreNote, setRecruitment, updateStaff, createStaff, bulkAssignRequested, copyPreviousMonthAssignments]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

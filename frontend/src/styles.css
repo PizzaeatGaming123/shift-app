@@ -3982,6 +3982,30 @@ button.cal-cell:active {
   font-weight: 700;
 }
 
+/* スタッフ名の下に並ぶ「先月と同じ」ボタン。1 行で収まる小さなチップ。 */
+.rk-shift-staff__copy {
+  display: inline-block;
+  margin-top: 3px;
+  padding: 1px 6px;
+  border: 1px solid #c0c5ca;
+  border-radius: 9px;
+  background: #f3f5f7;
+  color: #3a4045;
+  font-size: 10px;
+  line-height: 1.4;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.rk-shift-staff__copy:hover {
+  background: #e7eaee;
+}
+
+.rk-shift-staff-row--large .rk-shift-staff__copy {
+  font-size: 12px;
+  padding: 2px 8px;
+}
+
 /* 月労働時間が上限に近づいたときの色付け。扶養範囲超過などの可視化に使う。 */
 .rk-warn-none,
 .rk-warn-normal {

@@ -281,6 +281,53 @@ describe('ShiftStaffRow', () => {
     expect(screen.queryByRole('button', { name: /に割当を追加/ })).not.toBeInTheDocument();
   });
 
+  it('onCopyPreviousMonth が渡されると「先月と同じ」ボタンが出てクリックでコールバックされる', async () => {
+    const user = userEvent.setup();
+    const onCopy = vi.fn();
+
+    render(
+      <table>
+        <tbody>
+          <ShiftStaffRow
+            person={person}
+            dates={[date]}
+            requests={[]}
+            assignments={[]}
+            notes={[]}
+            layers={DEFAULT_SHIFT_LAYERS}
+            density="standard"
+            onToggleAssignment={() => {}}
+            onCopyPreviousMonth={onCopy}
+          />
+        </tbody>
+      </table>,
+    );
+
+    await user.click(screen.getByRole('button', { name: /先月と同じ/ }));
+    expect(onCopy).toHaveBeenCalledWith('1');
+  });
+
+  it('onCopyPreviousMonth を渡さなければ「先月と同じ」ボタンは出ない', () => {
+    render(
+      <table>
+        <tbody>
+          <ShiftStaffRow
+            person={person}
+            dates={[date]}
+            requests={[]}
+            assignments={[]}
+            notes={[]}
+            layers={DEFAULT_SHIFT_LAYERS}
+            density="standard"
+            onToggleAssignment={() => {}}
+          />
+        </tbody>
+      </table>,
+    );
+
+    expect(screen.queryByRole('button', { name: /先月と同じ/ })).not.toBeInTheDocument();
+  });
+
   it('時間付き割当は時間ラベルを表示し、解除コールバックに時刻も渡す', async () => {
     const user = userEvent.setup();
     const onToggleAssignment = vi.fn();

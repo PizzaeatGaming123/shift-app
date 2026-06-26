@@ -47,6 +47,8 @@ interface ShiftTableProps {
   onStoreNoteChange: (date: string, text: string) => void;
   onPositionNoteChange: (date: string, text: string) => void;
   onSortChange: (mode: StaffSortMode) => void;
+  /** スタッフ名横の「先月と同じ」ボタンのコールバック。未指定ならボタンは出ない。 */
+  onCopyPreviousMonth?: (staffId: string) => void;
   slotHours?: Record<WorkSlot, number>;
   shiftPatterns?: ShiftPatterns;
 }
@@ -104,6 +106,7 @@ export function ShiftTable({
   onStoreNoteChange,
   onPositionNoteChange,
   onSortChange,
+  onCopyPreviousMonth,
   slotHours,
   shiftPatterns,
 }: ShiftTableProps) {
@@ -203,6 +206,7 @@ export function ShiftTable({
               shiftPatterns={shiftPatterns}
               onToggleAssignment={onToggleAssignment}
               onOpenAssignTimeModal={(staffId, date) => setAssignTarget({ staffId, date })}
+              onCopyPreviousMonth={onCopyPreviousMonth}
             />
           ))}
 
