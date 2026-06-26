@@ -108,15 +108,6 @@ describe('sortShiftStaff', () => {
     }).map((person) => person.id)).toEqual(['2', '1']);
   });
 
-  it('ランクが高い順に並べる', () => {
-    expect(sortShiftStaff({
-      staff,
-      assignments,
-      dates: monthDates,
-      mode: 'rank',
-    }).map((person) => person.id)).toEqual(['2', '1']);
-  });
-
   it('氏名順は日本語ロケールで並べる', () => {
     expect(sortShiftStaff({
       staff,
@@ -124,6 +115,36 @@ describe('sortShiftStaff', () => {
       dates: monthDates,
       mode: 'name',
     }).map((person) => person.name)).toEqual(['山田花子', '田中太郎']);
+  });
+});
+
+describe('sortShiftStaff default mode', () => {
+  const mkStaff = (id: string, name: string, employmentType: Staff['employmentType']): Staff => ({
+    id,
+    name,
+    storeId: '1',
+    employmentType,
+    role: 'STAFF',
+    rank: 0,
+    skills: [],
+  });
+
+  it('雇用形態を パート→正社員 の順で並べる', () => {
+    const list = [
+      mkStaff('s1', '田中', '正社員'),
+      mkStaff('s2', '佐藤', 'パート'),
+    ];
+    const sorted = sortShiftStaff({ staff: list, assignments: [], dates: [], mode: 'default' });
+    expect(sorted.map((s) => s.name)).toEqual(['佐藤', '田中']);
+  });
+
+  it('同区分内は氏名昇順', () => {
+    const list = [
+      mkStaff('s1', '田中', 'パート'),
+      mkStaff('s2', '佐藤', 'パート'),
+    ];
+    const sorted = sortShiftStaff({ staff: list, assignments: [], dates: [], mode: 'default' });
+    expect(sorted.map((s) => s.name)).toEqual(['佐藤', '田中']);
   });
 });
 

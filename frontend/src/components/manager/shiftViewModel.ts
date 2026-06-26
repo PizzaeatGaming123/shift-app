@@ -57,6 +57,11 @@ export function getManagerDateWindow({
   return monthDates.slice(start, start + 7);
 }
 
+const EMPLOYMENT_ORDER: Record<string, number> = {
+  パート: 0,
+  正社員: 1,
+};
+
 export function sortShiftStaff({
   staff,
   assignments,
@@ -65,12 +70,16 @@ export function sortShiftStaff({
   slotHours,
 }: SortShiftStaffInput): Staff[] {
   const next = [...staff];
-  if (mode === 'default') return next;
+  if (mode === 'default') {
+    return next.sort((a, b) => {
+      const orderA = EMPLOYMENT_ORDER[a.employmentType] ?? 99;
+      const orderB = EMPLOYMENT_ORDER[b.employmentType] ?? 99;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.name.localeCompare(b.name, 'ja');
+    });
+  }
   if (mode === 'name') {
     return next.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
-  }
-  if (mode === 'rank') {
-    return next.sort((a, b) => (b.rank ?? 0) - (a.rank ?? 0));
   }
   return next.sort(
     (a, b) =>
