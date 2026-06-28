@@ -132,6 +132,6 @@ describe('ShiftTable', () => {
     await user.click(
       screen.getAllByRole('button', { name: /に割当を追加/ })[0],
     );
-    expect(screen.getByLabelText('勤務開始時刻')).toBeInTheDocument();
+    expect(screen.getByLabelText('勤務開始時刻 時')).toBeInTheDocument();
   });
 });

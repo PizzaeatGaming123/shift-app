@@ -26,8 +26,10 @@ describe('ShiftCellEditorModal', () => {
 
   it('initial 未指定なら 10:00-18:00 の初期値が入る', () => {
     render(<ShiftCellEditorModal {...defaultProps} />);
-    expect(screen.getByLabelText('勤務開始時刻')).toHaveValue('10:00');
-    expect(screen.getByLabelText('勤務終了時刻')).toHaveValue('18:00');
+    expect(screen.getByLabelText('勤務開始時刻 時')).toHaveValue('10');
+    expect(screen.getByLabelText('勤務開始時刻 分')).toHaveValue('00');
+    expect(screen.getByLabelText('勤務終了時刻 時')).toHaveValue('18');
+    expect(screen.getByLabelText('勤務終了時刻 分')).toHaveValue('00');
   });
 
   it('initial 指定なら既存値を反映する', () => {
@@ -38,8 +40,10 @@ describe('ShiftCellEditorModal', () => {
         initial={{ startTime: '09:30', endTime: '17:30', tasks: ['レジ'], breaks: [], workMemo: 'メモ' }}
       />,
     );
-    expect(screen.getByLabelText('勤務開始時刻')).toHaveValue('09:30');
-    expect(screen.getByLabelText('勤務終了時刻')).toHaveValue('17:30');
+    expect(screen.getByLabelText('勤務開始時刻 時')).toHaveValue('09');
+    expect(screen.getByLabelText('勤務開始時刻 分')).toHaveValue('30');
+    expect(screen.getByLabelText('勤務終了時刻 時')).toHaveValue('17');
+    expect(screen.getByLabelText('勤務終了時刻 分')).toHaveValue('30');
     expect(screen.getByLabelText('レジ')).toBeChecked();
     expect(screen.getByDisplayValue('メモ')).toBeInTheDocument();
   });
@@ -99,8 +103,8 @@ describe('ShiftCellEditorModal', () => {
     const user = userEvent.setup();
     render(<ShiftCellEditorModal {...defaultProps} onSave={onSave} />);
     await user.click(screen.getByRole('button', { name: /早番/, pressed: false }));
-    await user.clear(screen.getByLabelText('勤務開始時刻'));
-    await user.type(screen.getByLabelText('勤務開始時刻'), '09:00');
+    await user.selectOptions(screen.getByLabelText('勤務開始時刻 時'), '09');
+    await user.selectOptions(screen.getByLabelText('勤務開始時刻 分'), '00');
     await user.click(screen.getByRole('button', { name: '保存' }));
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
       mode: 'time',
