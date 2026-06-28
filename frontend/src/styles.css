@@ -3854,29 +3854,30 @@ button.cal-cell:active {
 
 /* スタッフ名の下に並ぶ「先月と同じ」ボタン。ツールバー他ボタンと同じ角丸 1px / 白地。 */
 .rk-shift-staff__copy {
-  display: inline;
-  margin-left: 6px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--rk-text-muted);
-  font-size: 11px;
+  display: inline-block;
+  margin-top: 3px;
+  padding: 2px 8px;
+  border: 1px solid #d7dce0;
+  border-radius: 1px;
+  background: #fff;
+  color: var(--rk-text);
+  font-size: 10px;
   line-height: 1.4;
-  text-decoration: underline dotted;
   cursor: pointer;
   white-space: nowrap;
-  transition: color 120ms ease, text-decoration-style 120ms ease;
+  transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
 }
 
 .rk-shift-staff__copy:hover,
 .rk-shift-staff__copy:focus-visible {
-  color: var(--rk-text);
-  text-decoration: underline solid;
-  outline: none;
+  border-color: #b9c2c9;
+  background: #f7f9fa;
+  box-shadow: 0 2px 7px rgba(41, 57, 70, .12);
 }
 
 .rk-shift-staff-row--large .rk-shift-staff__copy {
   font-size: 12px;
+  padding: 3px 10px;
 }
 
 /* 月労働時間が上限に近づいたときの色付け。扶養範囲超過などの可視化に使う。 */
@@ -5184,4 +5185,376 @@ button.rk-shift-chip:focus-visible {
     padding: 4px 6px;
     min-width: 44px;
   }
+}
+
+/* ===== ShiftCellEditorModal（らくしふ風セル編集） ===== */
+
+/* このモーダルは資料の参照画像に合わせて幅広・密度高めで使う。 */
+.rk-cell-editor {
+  font-size: 14px;
+  color: var(--rk-text);
+  min-width: 0;
+}
+
+.rk-cell-editor__topbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: -8px 0 8px;
+}
+
+.rk-cell-editor__delete {
+  border: 1px solid #d04040;
+  background: #d04040;
+  color: #fff;
+  padding: 6px 18px;
+  border-radius: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rk-cell-editor__delete:hover,
+.rk-cell-editor__delete:focus-visible {
+  background: #b83333;
+  border-color: #b83333;
+  outline: none;
+}
+
+.rk-cell-editor__print {
+  border: 1px solid #d7dce0;
+  background: #fff;
+  color: var(--rk-text);
+  padding: 6px 16px;
+  border-radius: 2px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.rk-cell-editor__print:hover,
+.rk-cell-editor__print:focus-visible {
+  background: #f7f9fa;
+  border-color: #b9c2c9;
+  outline: none;
+}
+
+.rk-cell-editor__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.rk-cell-editor__row label {
+  display: block;
+}
+
+.rk-cell-editor__row label > span {
+  display: block;
+  font-size: 12px;
+  color: var(--rk-text-muted);
+  margin-bottom: 4px;
+}
+
+.rk-cell-editor__row select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d7dce0;
+  border-radius: 2px;
+  background: #fff;
+  font-size: 14px;
+  color: var(--rk-text);
+}
+
+.rk-cell-editor__section {
+  margin-bottom: 18px;
+}
+
+.rk-cell-editor__heading {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--rk-text);
+  margin: 0 0 8px;
+}
+
+.rk-cell-editor__heading-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.rk-cell-editor__heading-row .rk-cell-editor__heading {
+  margin: 0;
+}
+
+.rk-cell-editor__heading-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rk-cell-editor__store-break {
+  padding: 4px 22px 4px 10px;
+  border: 1px solid #d7dce0;
+  border-radius: 2px;
+  background: #fff;
+  font-size: 12px;
+  color: var(--rk-text-muted);
+  cursor: pointer;
+}
+
+.rk-cell-editor__hint {
+  font-size: 12px;
+  color: var(--rk-text-muted);
+}
+
+/* タブ */
+.rk-cell-editor__tabs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 0;
+  background: #f1f3f5;
+  border-radius: 2px;
+  padding: 0;
+}
+
+.rk-cell-editor__tab {
+  border: none;
+  background: transparent;
+  padding: 12px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--rk-text-muted);
+  cursor: pointer;
+  text-align: center;
+}
+
+.rk-cell-editor__tab.is-active {
+  background: #2773d6;
+  color: #fff;
+}
+
+.rk-cell-editor__tab:focus-visible {
+  outline: 2px solid #2773d6;
+  outline-offset: -2px;
+}
+
+/* 勤務時間 */
+.rk-cell-editor__time-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 18px;
+}
+
+.rk-cell-editor__time-row input[type="time"] {
+  font-size: 18px;
+  padding: 8px 12px;
+  border: 1px solid #d7dce0;
+  border-radius: 2px;
+  background: #fff;
+  color: var(--rk-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 休憩 */
+.rk-cell-editor__placeholder {
+  font-size: 13px;
+  color: var(--rk-text-muted);
+  margin: 4px 0 8px;
+}
+
+.rk-cell-editor__break-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.rk-cell-editor__break-row input[type="time"] {
+  font-size: 14px;
+  padding: 6px 10px;
+  border: 1px solid #d7dce0;
+  border-radius: 2px;
+  background: #fff;
+  color: var(--rk-text);
+}
+
+.rk-cell-editor__break-delete {
+  border: none;
+  background: transparent;
+  color: var(--rk-text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.rk-cell-editor__break-delete:hover,
+.rk-cell-editor__break-delete:focus-visible {
+  color: #d04040;
+  text-decoration: underline;
+  outline: none;
+}
+
+.rk-cell-editor__break-add {
+  border: none;
+  background: transparent;
+  color: #2773d6;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 0;
+  font-weight: 600;
+}
+
+.rk-cell-editor__break-add:hover,
+.rk-cell-editor__break-add:focus-visible {
+  text-decoration: underline;
+  outline: none;
+}
+
+/* タスク */
+.rk-cell-editor__task-search {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d7dce0;
+  border-radius: 2px;
+  background: #fff;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+.rk-cell-editor__tasks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rk-cell-editor__task {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid #d7dce0;
+  border-radius: 2px;
+  background: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.rk-cell-editor__task:hover {
+  border-color: #b9c2c9;
+  background: #f7f9fa;
+}
+
+.rk-cell-editor__task input[type="checkbox"] {
+  margin: 0;
+  width: 14px;
+  height: 14px;
+  accent-color: #2773d6;
+}
+
+/* メモ */
+.rk-cell-editor__memo {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d7dce0;
+  border-radius: 2px;
+  background: #fff;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--rk-text);
+  resize: vertical;
+}
+
+/* フッタ */
+.rk-cell-editor__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 16px;
+  border-top: 1px solid var(--rk-line, #e5e7eb);
+  margin-top: 8px;
+}
+
+.rk-cell-editor__cancel {
+  border: 1px solid #d7dce0;
+  background: #fff;
+  color: var(--rk-text);
+  padding: 8px 22px;
+  border-radius: 2px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.rk-cell-editor__cancel:hover,
+.rk-cell-editor__cancel:focus-visible {
+  background: #f7f9fa;
+  border-color: #b9c2c9;
+  outline: none;
+}
+
+.rk-cell-editor__save {
+  border: none;
+  background: #2773d6;
+  color: #fff;
+  padding: 10px 36px;
+  border-radius: 2px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rk-cell-editor__save:hover,
+.rk-cell-editor__save:focus-visible:enabled {
+  background: #1e62b8;
+  outline: none;
+}
+
+.rk-cell-editor__save:disabled {
+  background: #b8c4d0;
+  cursor: not-allowed;
+}
+
+/* パターン（正社員のシフトパターン入力タブ） */
+.rk-cell-editor__patterns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.rk-cell-editor__pattern {
+  border: 1px solid #d7dce0;
+  background: #fff;
+  padding: 12px;
+  border-radius: 2px;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rk-cell-editor__pattern strong {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.rk-cell-editor__pattern small {
+  font-size: 12px;
+  color: var(--rk-text-muted);
+}
+
+.rk-cell-editor__pattern:hover {
+  border-color: #2773d6;
+  background: #f0f7ff;
+}
+
+/* このモーダル専用に、Modal の最大幅を広げる。 */
+.modal:has(.rk-cell-editor) {
+  max-width: 780px;
 }
