@@ -140,9 +140,11 @@ export function ManagerShiftScreen({
     'akiyume-shift-layers',
     DEFAULT_SHIFT_LAYERS,
   );
+  // 既定はデスクトップで 15 人がスクロールなしで見える 'small'。
+  // 表示控え（控えめ）に変えたいユーザーは表示設定の「小/標準/大」で切替できる。
   const [density, setDensity] = useSetting<ShiftTableDensity>(
     'akiyume-display-density',
-    'standard',
+    'small',
   );
   const [sortMode, setSortMode] = useState<StaffSortMode>('default');
   const [shiftMode, setShiftMode] = useState<'assignment' | 'confirmed'>(
