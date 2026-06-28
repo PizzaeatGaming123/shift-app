@@ -45,6 +45,36 @@ describe('ShiftStaffRow', () => {
     expect(assignedChip.tagName).toBe('SPAN');
   });
 
+  it('shiftMode="assignment" で assignment があれば、それを点線チップで表示する', () => {
+    render(
+      <table>
+        <tbody>
+          <ShiftStaffRow
+            person={person}
+            dates={[date]}
+            requests={[]}
+            assignments={[{
+              date,
+              slot: 'early',
+              staffIds: ['1'],
+              startTimes: ['09:00'],
+              endTimes: ['11:00'],
+            }]}
+            notes={[]}
+            layers={DEFAULT_SHIFT_LAYERS}
+            density="standard"
+            shiftMode="assignment"
+            onToggleAssignment={() => {}}
+          />
+        </tbody>
+      </table>,
+    );
+    const chip = screen.getByText('09:00-11:00', { selector: '.rk-shift-chip--request' });
+    expect(chip).toBeInTheDocument();
+    expect(screen.queryByText('09:00-11:00', { selector: '.rk-shift-chip--assigned' }))
+      .not.toBeInTheDocument();
+  });
+
   it('shiftMode="assignment" は点線希望のみ描画し、ベタ塗り割当は出ない', () => {
     render(
       <table>
