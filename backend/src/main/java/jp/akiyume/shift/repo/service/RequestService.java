@@ -1,6 +1,7 @@
 package jp.akiyume.shift.repo.service;
 
 import jp.akiyume.shift.domain.*;
+import jp.akiyume.shift.repo.ShiftAssignmentRepository;
 import jp.akiyume.shift.repo.ShiftRequestRepository;
 import jp.akiyume.shift.repo.StaffRepository;
 import jp.akiyume.shift.repo.DayNoteRepository;
@@ -21,14 +22,25 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 public class RequestService {
 
     private final ShiftRequestRepository requestRepository;
+    private final ShiftAssignmentRepository assignmentRepository;
     private final StaffRepository staffRepository;
     private final DayNoteRepository dayNoteRepository;
 
-    public RequestService(ShiftRequestRepository requestRepository, StaffRepository staffRepository,
+    public RequestService(ShiftRequestRepository requestRepository,
+                          ShiftAssignmentRepository assignmentRepository,
+                          StaffRepository staffRepository,
                           DayNoteRepository dayNoteRepository) {
         this.requestRepository = requestRepository;
+        this.assignmentRepository = assignmentRepository;
         this.staffRepository = staffRepository;
         this.dayNoteRepository = dayNoteRepository;
+    }
+
+    /** 希望が「休み」になった日は既存の割当（早番/遅番）も解除する。 */
+    private void clearAssignmentsIfOff(Staff staff, LocalDate date, RequestSlot slot) {
+        if (slot != RequestSlot.OFF) return;
+        assignmentRepository.findByStaff_IdAndDate(staff.getId(), date)
+                .forEach(assignmentRepository::delete);
     }
 
     /** その日の希望をまるごと置き換える（none/early/late/off）。更新後の当日レコードを返す。 */
@@ -45,6 +57,9 @@ public class RequestService {
             case "off" -> added.add(new ShiftRequest(staff, date, RequestSlot.OFF));
             case "none" -> { /* 何も追加しない */ }
             default -> throw new ResponseStatusException(BAD_REQUEST, "Unknown request value");
+        }
+        if ("off".equals(value)) {
+            clearAssignmentsIfOff(staff, date, RequestSlot.OFF);
         }
         return requestRepository.saveAll(added);
     }
@@ -92,6 +107,7 @@ public class RequestService {
                 ShiftRequest request = new ShiftRequest(staff, date, slot, startTime, endTime);
                 request.setStatus(RequestStatus.SUBMITTED);
                 requestRepository.save(request);
+                clearAssignmentsIfOff(staff, date, slot);
             }
 
             var existingNote = dayNoteRepository.findByStaff_IdAndDate(staff.getId(), date);
