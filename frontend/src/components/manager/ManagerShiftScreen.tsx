@@ -147,7 +147,11 @@ export function ManagerShiftScreen({
     'small',
   );
   const [sortMode, setSortMode] = useState<StaffSortMode>('default');
-  const [shiftMode, setShiftMode] = useState<'assignment' | 'confirmed'>(
+  // 「希望確認・割り当て」「確定シフト」モードはリロードでも維持する。
+  // シフト確定ボタンを押した直後は 'confirmed' に切り替わり、その後リロードしても
+  // 確定済みのベタ塗りが表示され続ける。
+  const [shiftMode, setShiftMode] = useSetting<'assignment' | 'confirmed'>(
+    'akiyume-shift-mode',
     'assignment',
   );
   const [shiftTypesOpen, setShiftTypesOpen] = useState(false);
