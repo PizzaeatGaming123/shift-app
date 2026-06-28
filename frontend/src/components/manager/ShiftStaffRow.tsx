@@ -26,6 +26,12 @@ interface ShiftStaffRowProps {
   /** 店舗ごとの slot あたりの時間。未指定なら既定の早9h・遅9h で集計する。 */
   slotHours?: Record<WorkSlot, number>;
   shiftPatterns?: ShiftPatterns;
+  /**
+   * シフトモード。'assignment' は点線希望のみ＋空セルに「＋」、
+   * 'confirmed' はベタ塗り割当のみ、
+   * 'readonly' は両方を <span> で同時表示する（クリック不可）。
+   */
+  shiftMode?: 'assignment' | 'confirmed' | 'readonly';
   onToggleAssignment: (
     date: string,
     slot: WorkSlot,
@@ -34,8 +40,12 @@ interface ShiftStaffRowProps {
     startTime?: string | null,
     endTime?: string | null,
   ) => void;
-  /** 空セルの「＋」ボタン押下。時間入力モーダルを開くトリガー。 */
-  onOpenAssignTimeModal?: (staffId: string, date: string) => void;
+  /** チップ・空セル「+」クリック時のエディタ起動。指定時のみ起動する。 */
+  onOpenEditor?: (input: {
+    staffId: string;
+    date: string;
+    existing?: { slot: WorkSlot; startTime: string | null; endTime: string | null };
+  }) => void;
   /**
    * 「先月と同じ」ボタン押下。スタッフ名の横に小さく出る。
    * 渡されない場合はボタン自体を出さない（ShiftConfirmDialog や表示プリセットによっては不要なため）。
@@ -70,8 +80,8 @@ export function ShiftStaffRow({
   density,
   slotHours = SLOT_HOURS,
   shiftPatterns = DEFAULT_SHIFT_PATTERNS,
-  onToggleAssignment,
-  onOpenAssignTimeModal,
+  shiftMode = 'assignment',
+  onOpenEditor,
   onCopyPreviousMonth,
 }: ShiftStaffRowProps) {
   const totalHours = staffMonthlyHours(assignments, person.id, dates, slotHours);
@@ -83,6 +93,7 @@ export function ShiftStaffRow({
   const warnings = Number(consecutiveDays >= 6) + Number(totalHours > 180);
   const limitLevel = hourLimitLevel(totalHours, person.monthlyHourLimit);
   const hoursClass = `rk-shift-staff__hours rk-warn-${limitLevel}`;
+  const interactive = shiftMode !== 'readonly';
 
   return (
     <tr className={`rk-shift-staff-row rk-shift-staff-row--${density}`}>
@@ -117,85 +128,84 @@ export function ShiftStaffRow({
           assignments,
           notes,
         });
-        const requestVisible = cell.request
-          && layers.showRequests
+        const showRequest = shiftMode !== 'confirmed'
+          && cell.request
+          && (shiftMode === 'readonly' || layers.showRequests)
           && layers.visibleSlots[cell.request.slot];
-        const assignmentVisible = cell.assignment
+        const showAssignment = shiftMode !== 'assignment'
+          && cell.assignment
           && layers.visibleSlots[cell.assignment.slot];
-        const patternSource: WorkSlot | null = assignmentVisible && cell.assignment && isWorkSlot(cell.assignment.slot)
+        const patternSource: WorkSlot | null = showAssignment && cell.assignment && isWorkSlot(cell.assignment.slot)
           ? cell.assignment.slot
-          : requestVisible && cell.request && isWorkSlot(cell.request.slot)
+          : showRequest && cell.request && isWorkSlot(cell.request.slot)
             ? cell.request.slot
             : null;
-        const taskSource: WorkSlot | null = assignmentVisible && cell.assignment && isWorkSlot(cell.assignment.slot)
+        const taskSource: WorkSlot | null = showAssignment && cell.assignment && isWorkSlot(cell.assignment.slot)
           ? cell.assignment.slot
           : null;
 
-        const isEmpty = !requestVisible && !assignmentVisible;
+        const isEmpty = !showRequest && !showAssignment;
+
+        function openEditorForRequest() {
+          if (!onOpenEditor) return;
+          onOpenEditor({ staffId: person.id, date });
+        }
+
+        function openEditorForAssignment() {
+          if (!onOpenEditor || !cell.assignment) return;
+          onOpenEditor({
+            staffId: person.id,
+            date,
+            existing: {
+              slot: cell.assignment.slot as WorkSlot,
+              startTime: cell.assignment.startTime,
+              endTime: cell.assignment.endTime,
+            },
+          });
+        }
 
         return (
           <td className="rk-shift-cell" key={date}>
-            {requestVisible && cell.request && (
-              cell.request.slot === 'off' ? (
-                <span
-                  className={[
-                    'rk-shift-chip',
-                    'rk-shift-chip--request',
-                    slotClass(cell.request.slot),
-                  ].join(' ')}
-                >
-                  {cell.request.label}
-                </span>
-              ) : (
+            {showRequest && cell.request && (
+              interactive && cell.request.slot !== 'off' ? (
                 <button
                   type="button"
-                  className={[
-                    'rk-shift-chip',
-                    'rk-shift-chip--request',
-                    slotClass(cell.request.slot),
-                  ].join(' ')}
-                  aria-label={`${person.name} ${date} ${cell.request.label}を割り当て`}
-                  onClick={() => {
-                    // 'any' は早番に解決（バックエンドの WorkSlot は early/late のみ）。
-                    const slot: WorkSlot = cell.request!.slot === 'late' ? 'late' : 'early';
-                    onToggleAssignment(date, slot, person.id, false);
-                  }}
+                  className={['rk-shift-chip', 'rk-shift-chip--request', slotClass(cell.request.slot)].join(' ')}
+                  aria-label={`${person.name} ${date} ${cell.request.label}を編集`}
+                  onClick={openEditorForRequest}
                 >
                   {cell.request.label}
                 </button>
+              ) : (
+                <span className={['rk-shift-chip', 'rk-shift-chip--request', slotClass(cell.request.slot)].join(' ')}>
+                  {cell.request.label}
+                </span>
               )
             )}
 
-            {assignmentVisible && cell.assignment && (
-              <button
-                type="button"
-                className={[
-                  'rk-shift-chip',
-                  'rk-shift-chip--assigned',
-                  slotClass(cell.assignment.slot),
-                ].join(' ')}
-                aria-label={`${person.name} ${date} ${cell.assignment.label}の割り当てを解除`}
-                onClick={() => {
-                  onToggleAssignment(
-                    date,
-                    cell.assignment!.slot as WorkSlot,
-                    person.id,
-                    true,
-                    cell.assignment!.startTime,
-                    cell.assignment!.endTime,
-                  );
-                }}
-              >
-                {cell.assignment.label}
-              </button>
+            {showAssignment && cell.assignment && (
+              interactive ? (
+                <button
+                  type="button"
+                  className={['rk-shift-chip', 'rk-shift-chip--assigned', slotClass(cell.assignment.slot)].join(' ')}
+                  aria-label={`${person.name} ${date} ${cell.assignment.label}を編集`}
+                  onClick={openEditorForAssignment}
+                >
+                  {cell.assignment.label}
+                </button>
+              ) : (
+                <span className={['rk-shift-chip', 'rk-shift-chip--assigned', slotClass(cell.assignment.slot)].join(' ')}>
+                  {cell.assignment.label}
+                </span>
+              )
             )}
 
-            {isEmpty && onOpenAssignTimeModal && (
+            {isEmpty && interactive && shiftMode === 'assignment' && onOpenEditor && (
               <button
                 type="button"
                 className="rk-shift-cell__empty"
                 aria-label={`${person.name} ${date} に割当を追加`}
-                onClick={() => onOpenAssignTimeModal(person.id, date)}
+                onClick={() => onOpenEditor({ staffId: person.id, date })}
               >
                 ＋
               </button>

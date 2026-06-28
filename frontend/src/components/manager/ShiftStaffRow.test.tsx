@@ -15,7 +15,7 @@ const person = {
 const date = '2026-07-01';
 
 describe('ShiftStaffRow', () => {
-  it('氏名、月間時間、希望、確定シフト、勤務メモを分けて表示する', () => {
+  it('readonly モードでは点線と確定の両方を <span> で同時表示する', () => {
     render(
       <table>
         <tbody>
@@ -27,6 +27,7 @@ describe('ShiftStaffRow', () => {
             notes={[{ staffId: '1', date, text: '早番大丈夫です！' }]}
             layers={DEFAULT_SHIFT_LAYERS}
             density="standard"
+            shiftMode="readonly"
             onToggleAssignment={() => {}}
           />
         </tbody>
@@ -38,13 +39,13 @@ describe('ShiftStaffRow', () => {
     expect(screen.getByText('07:00-16:00')).toBeInTheDocument();
     expect(screen.getByText('開店作業')).toBeInTheDocument();
     expect(screen.getByText('早番大丈夫です！')).toBeInTheDocument();
-    expect(screen.getByText('早番', { selector: '.rk-shift-chip--request' }))
-      .toBeInTheDocument();
-    expect(screen.getByText('早番', { selector: '.rk-shift-chip--assigned' }))
-      .toBeInTheDocument();
+    const requestChip = screen.getByText('早番', { selector: '.rk-shift-chip--request' });
+    const assignedChip = screen.getByText('早番', { selector: '.rk-shift-chip--assigned' });
+    expect(requestChip.tagName).toBe('SPAN');
+    expect(assignedChip.tagName).toBe('SPAN');
   });
 
-  it('希望シフトと勤務メモを個別に非表示にできる', () => {
+  it('shiftMode="assignment" は点線希望のみ描画し、ベタ塗り割当は出ない', () => {
     render(
       <table>
         <tbody>
@@ -52,22 +53,44 @@ describe('ShiftStaffRow', () => {
             person={person}
             dates={[date]}
             requests={[{ staffId: '1', date, slot: 'early' }]}
-            assignments={[]}
-            notes={[{ staffId: '1', date, text: '早番大丈夫です！' }]}
-            layers={{
-              ...DEFAULT_SHIFT_LAYERS,
-              showRequests: false,
-              showNotes: false,
-            }}
+            assignments={[{ date, slot: 'early', staffIds: ['1'] }]}
+            notes={[]}
+            layers={DEFAULT_SHIFT_LAYERS}
             density="standard"
+            shiftMode="assignment"
             onToggleAssignment={() => {}}
           />
         </tbody>
       </table>,
     );
+    expect(screen.getByText('早番', { selector: '.rk-shift-chip--request' }))
+      .toBeInTheDocument();
+    expect(screen.queryByText('早番', { selector: '.rk-shift-chip--assigned' }))
+      .not.toBeInTheDocument();
+  });
 
-    expect(screen.queryByText('早番大丈夫です！')).not.toBeInTheDocument();
-    expect(screen.queryByText('早番')).not.toBeInTheDocument();
+  it('shiftMode="confirmed" はベタ塗り割当のみ描画し、希望は出ない', () => {
+    render(
+      <table>
+        <tbody>
+          <ShiftStaffRow
+            person={person}
+            dates={[date]}
+            requests={[{ staffId: '1', date, slot: 'early' }]}
+            assignments={[{ date, slot: 'early', staffIds: ['1'] }]}
+            notes={[]}
+            layers={DEFAULT_SHIFT_LAYERS}
+            density="standard"
+            shiftMode="confirmed"
+            onToggleAssignment={() => {}}
+          />
+        </tbody>
+      </table>,
+    );
+    expect(screen.queryByText('早番', { selector: '.rk-shift-chip--request' }))
+      .not.toBeInTheDocument();
+    expect(screen.getByText('早番', { selector: '.rk-shift-chip--assigned' }))
+      .toBeInTheDocument();
   });
 
   it('シフトパターンとタスクを個別に非表示にできる', () => {
@@ -86,6 +109,7 @@ describe('ShiftStaffRow', () => {
               showTasks: false,
             }}
             density="standard"
+            shiftMode="confirmed"
             onToggleAssignment={() => {}}
           />
         </tbody>
@@ -109,6 +133,7 @@ describe('ShiftStaffRow', () => {
             notes={[]}
             layers={DEFAULT_SHIFT_LAYERS}
             density="standard"
+            shiftMode="confirmed"
             shiftPatterns={{
               early: { label: '朝番', start: '06:30', end: '15:30' },
               late: { label: '夜番', start: '15:00', end: '24:00' },
@@ -123,7 +148,6 @@ describe('ShiftStaffRow', () => {
   });
 
   it('月時間が上限80%未満なら時間表示に soft 以上の warn class はつかない', () => {
-    // 1日 × early(9h) = 9h、上限 100 → 9% → normal
     render(
       <table>
         <tbody>
@@ -135,6 +159,7 @@ describe('ShiftStaffRow', () => {
             notes={[]}
             layers={DEFAULT_SHIFT_LAYERS}
             density="standard"
+            shiftMode="confirmed"
             onToggleAssignment={() => {}}
           />
         </tbody>
@@ -147,7 +172,6 @@ describe('ShiftStaffRow', () => {
   });
 
   it('月時間が上限100%超なら hard class がつく', () => {
-    // 1日 × early(9h) = 9h、上限 5 → 180% → hard
     render(
       <table>
         <tbody>
@@ -159,6 +183,7 @@ describe('ShiftStaffRow', () => {
             notes={[]}
             layers={DEFAULT_SHIFT_LAYERS}
             density="standard"
+            shiftMode="confirmed"
             onToggleAssignment={() => {}}
           />
         </tbody>
@@ -180,6 +205,7 @@ describe('ShiftStaffRow', () => {
             notes={[]}
             layers={DEFAULT_SHIFT_LAYERS}
             density="standard"
+            shiftMode="confirmed"
             onToggleAssignment={() => {}}
           />
         </tbody>
@@ -189,9 +215,9 @@ describe('ShiftStaffRow', () => {
     expect(screen.getByText('9:00').className).toContain('rk-warn-none');
   });
 
-  it('確定シフトのボタンから割り当て解除を実行する', async () => {
+  it('confirmed モードで割当チップをクリックすると onOpenEditor が既存データつきで呼ばれる', async () => {
     const user = userEvent.setup();
-    const onToggleAssignment = vi.fn();
+    const onOpenEditor = vi.fn();
 
     render(
       <table>
@@ -200,36 +226,66 @@ describe('ShiftStaffRow', () => {
             person={person}
             dates={[date]}
             requests={[]}
-            assignments={[{ date, slot: 'early', staffIds: ['1'] }]}
+            assignments={[{
+              date,
+              slot: 'early',
+              staffIds: ['1'],
+              startTimes: ['09:00'],
+              endTimes: ['13:00'],
+            }]}
             notes={[]}
             layers={DEFAULT_SHIFT_LAYERS}
-            density="large"
-            onToggleAssignment={onToggleAssignment}
+            density="standard"
+            shiftMode="confirmed"
+            onToggleAssignment={() => {}}
+            onOpenEditor={onOpenEditor}
           />
         </tbody>
       </table>,
     );
 
     await user.click(
-      screen.getByRole('button', {
-        name: '田中太郎 2026-07-01 早番の割り当てを解除',
-      }),
+      screen.getByRole('button', { name: '田中太郎 2026-07-01 09:00-13:00を編集' }),
     );
 
-    expect(onToggleAssignment).toHaveBeenCalledWith(
+    expect(onOpenEditor).toHaveBeenCalledWith({
+      staffId: '1',
       date,
-      'early',
-      '1',
-      true,
-      null,
-      null,
-    );
-    expect(screen.getByRole('row')).toHaveClass('rk-shift-staff-row--large');
+      existing: { slot: 'early', startTime: '09:00', endTime: '13:00' },
+    });
   });
 
-  it('空セルで onOpenAssignTimeModal を渡せば「＋」ボタンが出てクリックでコールバックされる', async () => {
+  it('assignment モードで点線希望をクリックすると onOpenEditor が existing なしで呼ばれる', async () => {
     const user = userEvent.setup();
-    const onOpen = vi.fn();
+    const onOpenEditor = vi.fn();
+
+    render(
+      <table>
+        <tbody>
+          <ShiftStaffRow
+            person={person}
+            dates={[date]}
+            requests={[{ staffId: '1', date, slot: 'early' }]}
+            assignments={[]}
+            notes={[]}
+            layers={DEFAULT_SHIFT_LAYERS}
+            density="standard"
+            shiftMode="assignment"
+            onToggleAssignment={() => {}}
+            onOpenEditor={onOpenEditor}
+          />
+        </tbody>
+      </table>,
+    );
+
+    await user.click(screen.getByRole('button', { name: '田中太郎 2026-07-01 早番を編集' }));
+
+    expect(onOpenEditor).toHaveBeenCalledWith({ staffId: '1', date });
+  });
+
+  it('assignment モードかつ空セルなら「＋」ボタンが出てクリックで onOpenEditor が呼ばれる', async () => {
+    const user = userEvent.setup();
+    const onOpenEditor = vi.fn();
 
     render(
       <table>
@@ -242,23 +298,22 @@ describe('ShiftStaffRow', () => {
             notes={[]}
             layers={DEFAULT_SHIFT_LAYERS}
             density="standard"
+            shiftMode="assignment"
             onToggleAssignment={() => {}}
-            onOpenAssignTimeModal={onOpen}
+            onOpenEditor={onOpenEditor}
           />
         </tbody>
       </table>,
     );
 
     await user.click(
-      screen.getByRole('button', {
-        name: '田中太郎 2026-07-01 に割当を追加',
-      }),
+      screen.getByRole('button', { name: '田中太郎 2026-07-01 に割当を追加' }),
     );
 
-    expect(onOpen).toHaveBeenCalledWith('1', '2026-07-01');
+    expect(onOpenEditor).toHaveBeenCalledWith({ staffId: '1', date });
   });
 
-  it('空セルでも onOpenAssignTimeModal を渡さなければ「＋」ボタンは出ない', () => {
+  it('confirmed モードでは空セルに「＋」ボタンが出ない', () => {
     render(
       <table>
         <tbody>
@@ -270,7 +325,32 @@ describe('ShiftStaffRow', () => {
             notes={[]}
             layers={DEFAULT_SHIFT_LAYERS}
             density="standard"
+            shiftMode="confirmed"
             onToggleAssignment={() => {}}
+            onOpenEditor={() => {}}
+          />
+        </tbody>
+      </table>,
+    );
+
+    expect(screen.queryByRole('button', { name: /に割当を追加/ })).not.toBeInTheDocument();
+  });
+
+  it('readonly モードでは空セルに「＋」ボタンが出ない', () => {
+    render(
+      <table>
+        <tbody>
+          <ShiftStaffRow
+            person={person}
+            dates={[date]}
+            requests={[]}
+            assignments={[]}
+            notes={[]}
+            layers={DEFAULT_SHIFT_LAYERS}
+            density="standard"
+            shiftMode="readonly"
+            onToggleAssignment={() => {}}
+            onOpenEditor={() => {}}
           />
         </tbody>
       </table>,
@@ -294,6 +374,7 @@ describe('ShiftStaffRow', () => {
             notes={[]}
             layers={DEFAULT_SHIFT_LAYERS}
             density="standard"
+            shiftMode="assignment"
             onToggleAssignment={() => {}}
             onCopyPreviousMonth={onCopy}
           />
@@ -317,6 +398,7 @@ describe('ShiftStaffRow', () => {
             notes={[]}
             layers={DEFAULT_SHIFT_LAYERS}
             density="standard"
+            shiftMode="assignment"
             onToggleAssignment={() => {}}
           />
         </tbody>
@@ -324,48 +406,5 @@ describe('ShiftStaffRow', () => {
     );
 
     expect(screen.queryByRole('button', { name: /先月と同じ/ })).not.toBeInTheDocument();
-  });
-
-  it('時間付き割当は時間ラベルを表示し、解除コールバックに時刻も渡す', async () => {
-    const user = userEvent.setup();
-    const onToggleAssignment = vi.fn();
-
-    render(
-      <table>
-        <tbody>
-          <ShiftStaffRow
-            person={person}
-            dates={[date]}
-            requests={[]}
-            assignments={[{
-              date,
-              slot: 'early',
-              staffIds: ['1'],
-              startTimes: ['09:00'],
-              endTimes: ['13:00'],
-            }]}
-            notes={[]}
-            layers={DEFAULT_SHIFT_LAYERS}
-            density="standard"
-            onToggleAssignment={onToggleAssignment}
-          />
-        </tbody>
-      </table>,
-    );
-
-    await user.click(
-      screen.getByRole('button', {
-        name: '田中太郎 2026-07-01 09:00-13:00の割り当てを解除',
-      }),
-    );
-
-    expect(onToggleAssignment).toHaveBeenCalledWith(
-      date,
-      'early',
-      '1',
-      true,
-      '09:00',
-      '13:00',
-    );
   });
 });
