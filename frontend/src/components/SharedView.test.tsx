@@ -80,14 +80,14 @@ describe('SharedView', () => {
       { date: '2026-07-01', slot: 'early', staffIds: ['3'] },
     ];
 
-    render(<SharedView year={2026} month={7} />);
+    const { container } = render(<SharedView year={2026} month={7} />);
 
-    const chips = screen.getAllByText('早番', { selector: '.rk-shift-chip--assigned' });
+    const chips = container.querySelectorAll('.rk-shift-chip--assigned');
     expect(chips.length).toBeGreaterThan(0);
     for (const chip of chips) {
       expect(chip.tagName).toBe('SPAN');
     }
-    await user.click(chips[0]);
+    await user.click(chips[0] as HTMLElement);
     expect(toggleAssignment).not.toHaveBeenCalled();
   });
 });
