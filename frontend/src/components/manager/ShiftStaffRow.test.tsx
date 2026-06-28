@@ -99,7 +99,7 @@ describe('ShiftStaffRow', () => {
       .not.toBeInTheDocument();
   });
 
-  it('shiftMode="confirmed" はベタ塗り割当のみ描画し、希望は出ない', () => {
+  it('shiftMode="confirmed" は希望（点線）と割当（ベタ塗り）を両方描画する', () => {
     render(
       <table>
         <tbody>
@@ -117,8 +117,8 @@ describe('ShiftStaffRow', () => {
         </tbody>
       </table>,
     );
-    expect(screen.queryByText('早番', { selector: '.rk-shift-chip--request' }))
-      .not.toBeInTheDocument();
+    expect(screen.getByText('早番', { selector: '.rk-shift-chip--request' }))
+      .toBeInTheDocument();
     expect(screen.getByText('早番', { selector: '.rk-shift-chip--assigned' }))
       .toBeInTheDocument();
   });

@@ -131,17 +131,18 @@ export function ShiftStaffRow({
         });
         // 'assignment' モードでは、保存済みの assignment があれば assignment を点線チップとして表示する
         // （= 編集結果がすぐ反映される）。assignment が無ければ希望（request）を点線で表示する。
-        // 'confirmed' は assignment のみベタ塗り、'readonly' は両方を <span> で表示する。
+        // 'confirmed' / 'readonly' では、希望（点線）と確定（ベタ塗り）の両方を上下に積んで表示する。
         const inAssignment = shiftMode === 'assignment';
-        const inConfirmed = shiftMode === 'confirmed';
         const assignmentVisible = cell.assignment && layers.visibleSlots[cell.assignment.slot];
         const requestVisible = cell.request && layers.showRequests && layers.visibleSlots[cell.request.slot];
-        const showAssignment = !inAssignment && assignmentVisible;
-        // assignment モードでも assignment を点線として描画するので別フラグを持つ
+        // assignment モード: 既存割当があればそれを点線で描画
         const showAssignmentDraft = inAssignment && assignmentVisible;
-        const showRequest = !inConfirmed
-          && !showAssignmentDraft
-          && requestVisible;
+        // confirmed / readonly: 確定（ベタ塗り）を描画
+        const showAssignment = !inAssignment && assignmentVisible;
+        // 希望（点線）: assignment モードで draft が出ているときは出さず、それ以外は希望があれば常に出す
+        const showRequest = inAssignment
+          ? !assignmentVisible && requestVisible
+          : requestVisible;
         const patternSource: WorkSlot | null = showAssignment && cell.assignment && isWorkSlot(cell.assignment.slot)
           ? cell.assignment.slot
           : showRequest && cell.request && isWorkSlot(cell.request.slot)
