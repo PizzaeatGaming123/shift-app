@@ -108,4 +108,30 @@ describe('ShiftTable', () => {
     await user.click(screen.getByRole('button', { name: 'スタッフ並び替え 標準' }));
     expect(onSortChange).toHaveBeenCalledWith('name');
   });
+
+  it('shiftMode="readonly" のとき空セルに「+」ボタンが出ない', () => {
+    render(
+      <ShiftTable
+        {...baseProps}
+        shiftMode="readonly"
+      />,
+    );
+    expect(screen.queryByRole('button', { name: /に割当を追加/ })).not.toBeInTheDocument();
+  });
+
+  it('shiftMode="assignment" で空セル「＋」を押すと ShiftCellEditorModal が開く', async () => {
+    const user = userEvent.setup();
+    render(
+      <ShiftTable
+        {...baseProps}
+        shiftMode="assignment"
+        taskOptions={['開店作業']}
+        onSaveAssignmentDetails={() => {}}
+      />,
+    );
+    await user.click(
+      screen.getAllByRole('button', { name: /に割当を追加/ })[0],
+    );
+    expect(screen.getByLabelText('勤務開始時刻')).toBeInTheDocument();
+  });
 });
