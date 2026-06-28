@@ -132,13 +132,11 @@ export function ShiftStaffRow({
         // 'assignment' モードでは、保存済みの assignment があれば assignment を点線チップとして表示する
         // （= 編集結果がすぐ反映される）。assignment が無ければ希望（request）を点線で表示する。
         // 'confirmed' / 'readonly' では、希望（点線）と確定（ベタ塗り）の両方を上下に積んで表示する。
+        // 表示設定の「希望シフト」チェックを外しているときは、どのモードでも点線は隠す。
         const inAssignment = shiftMode === 'assignment';
-        const inConfirmed = shiftMode === 'confirmed';
         const assignmentVisible = cell.assignment && layers.visibleSlots[cell.assignment.slot];
-        // 確定モードでは layers.showRequests を無視して必ず希望（点線）も表示する
-        // （古い localStorage が false のまま残っていても点線が隠れないように）。
         const requestVisible = cell.request
-          && (inConfirmed || layers.showRequests)
+          && layers.showRequests
           && layers.visibleSlots[cell.request.slot];
         // assignment モード: 既存割当があれば点線（draft）で描画。
         // 「希望シフト」チェックを外しているときは点線も隠す（draft も希望系の表示として扱う）。
