@@ -151,7 +151,7 @@ describe('ShiftStaffRow', () => {
       .toBeInTheDocument();
   });
 
-  it('shiftMode="confirmed" は layers.showRequests=false でも希望（点線）を描画する', () => {
+  it('shiftMode="confirmed" で layers.showRequests=false なら希望（点線）は隠し、確定（ベタ塗り）だけ残す', () => {
     render(
       <table>
         <tbody>
@@ -169,8 +169,8 @@ describe('ShiftStaffRow', () => {
         </tbody>
       </table>,
     );
-    expect(screen.getByText('早番', { selector: '.rk-shift-chip--request' }))
-      .toBeInTheDocument();
+    expect(screen.queryByText('早番', { selector: '.rk-shift-chip--request' }))
+      .not.toBeInTheDocument();
     expect(screen.getByText('早番', { selector: '.rk-shift-chip--assigned' }))
       .toBeInTheDocument();
   });
