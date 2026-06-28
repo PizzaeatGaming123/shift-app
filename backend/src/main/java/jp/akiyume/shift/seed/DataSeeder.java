@@ -31,6 +31,9 @@ public class DataSeeder implements CommandLineRunner {
     /** true にすると起動時に全ての ShiftAssignment を削除する。ローカルでの「確定リセット」用。 */
     private final boolean resetAssignments;
 
+    /** true にすると起動時に全ての ShiftRequest を削除する。投入パターンを変えたいときの「希望リセット」用。 */
+    private final boolean resetRequests;
+
     /** シード時の初期パスワード。application.yml から注入し、本番では必ず環境変数で上書きする。 */
     private final String seedPassword;
 
@@ -40,6 +43,7 @@ public class DataSeeder implements CommandLineRunner {
                       PasswordEncoder passwordEncoder,
                       @Value("${app.seed-demo-shifts:false}") boolean seedDemoShifts,
                       @Value("${app.reset-assignments:false}") boolean resetAssignments,
+                      @Value("${app.reset-requests:false}") boolean resetRequests,
                       @Value("${app.seed-password:change-me-on-deploy}") String seedPassword) {
         this.storeRepository = storeRepository;
         this.staffRepository = staffRepository;
@@ -50,6 +54,7 @@ public class DataSeeder implements CommandLineRunner {
         this.passwordEncoder = passwordEncoder;
         this.seedDemoShifts = seedDemoShifts;
         this.resetAssignments = resetAssignments;
+        this.resetRequests = resetRequests;
         this.seedPassword = seedPassword;
     }
 
@@ -60,6 +65,12 @@ public class DataSeeder implements CommandLineRunner {
         if (resetAssignments) {
             // 既存の割当を全削除。希望シフト・スタッフは触らない。
             assignmentRepository.deleteAllInBatch();
+        }
+        if (resetRequests) {
+            // 既存の希望を全削除。投入パターンを変えたいときに使う。
+            // 割当 → 希望の参照は無いが、依存関係安全のため割当も一緒に消す。
+            assignmentRepository.deleteAllInBatch();
+            requestRepository.deleteAllInBatch();
         }
         seedStore("中島店", List.of(
                 new Person("nakashima-mgr", "西村健一", EmploymentType.FULL_TIME, Role.MANAGER),
@@ -137,10 +148,26 @@ public class DataSeeder implements CommandLineRunner {
         RequestSlot[] pattern4 = { RequestSlot.OFF, RequestSlot.EARLY, RequestSlot.LATE, RequestSlot.LATE, RequestSlot.EARLY, RequestSlot.OFF, RequestSlot.LATE };
         List<RequestSlot[]> patterns = List.of(pattern1, pattern2, pattern3, pattern4);
 
+        // パート用の任意時間レンジ。早番側・遅番側それぞれ4種類用意し、
+        // 人と曜日で異なる組み合わせになるようローテートする。
+        String[][] partEarly = {
+                {"09:00", "13:00"},
+                {"08:00", "12:00"},
+                {"07:00", "11:00"},
+                {"10:00", "14:00"},
+        };
+        String[][] partLate = {
+                {"17:00", "21:00"},
+                {"18:00", "22:00"},
+                {"16:00", "20:00"},
+                {"19:00", "23:00"},
+        };
+
         // index 0 は店長（MANAGER）。1 以降がスタッフ。
         for (int i = 1; i < staff.size(); i++) {
             Staff person = staff.get(i);
             RequestSlot[] pattern = patterns.get((i - 1) % patterns.size());
+            boolean isPart = person.getEmploymentType() == EmploymentType.PART_TIME;
             for (int month = 7; month <= 9; month++) {
                 LocalDate firstOfMonth = LocalDate.of(DEMO_YEAR, month, 1);
                 LocalDate lastOfMonth = firstOfMonth.withDayOfMonth(firstOfMonth.lengthOfMonth());
@@ -156,7 +183,15 @@ public class DataSeeder implements CommandLineRunner {
                 for (int day = 1; day <= lengthOfMonth; day++) {
                     LocalDate date = LocalDate.of(DEMO_YEAR, month, day);
                     RequestSlot slot = pattern[(day - 1) % pattern.length];
-                    requestRepository.save(new ShiftRequest(person, date, slot));
+                    // 正社員は時間指定なし（チップは「早番」「遅番」ラベル）。
+                    // パートは時間指定（チップは「09:00-13:00」のような数字ラベル）。
+                    if (!isPart || slot == RequestSlot.OFF || slot == RequestSlot.ANY) {
+                        requestRepository.save(new ShiftRequest(person, date, slot));
+                    } else {
+                        String[] range = (slot == RequestSlot.EARLY ? partEarly : partLate)
+                                [(i - 1 + day) % 4];
+                        requestRepository.save(new ShiftRequest(person, date, slot, range[0], range[1]));
+                    }
                 }
             }
         }

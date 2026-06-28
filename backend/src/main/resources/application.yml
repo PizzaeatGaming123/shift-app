@@ -32,5 +32,8 @@ app:
   # 必要なときだけ true にすると、起動時に全ての ShiftAssignment（確定済み）を削除する。
   # 普段は false。
   reset-assignments: false
+  # 必要なときだけ true にすると、起動時に全ての ShiftRequest（希望）と ShiftAssignment を
+  # 削除して、次の seed で投入パターンを反映し直す。普段は false。
+  reset-requests: true
   seed-password: "${APP_SEED_PASSWORD:password}"
   h2-console-enabled: true
