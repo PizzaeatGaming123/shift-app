@@ -473,9 +473,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const v = getDayRequest(requests, person.id, date);
         if (v === 'off' || v === 'none') continue;
         const slot: WorkSlot = v === 'late' ? 'late' : 'early';
-        if (!isAssigned(assignments, date, slot, person.id)) {
-          tasks.push(api.assign(storeId, date, slot, Number(person.id)));
-        }
+        if (isAssigned(assignments, date, slot, person.id)) continue;
+        // 希望に startTime/endTime が指定されていれば、その時間も割当に引き継ぐ。
+        // これで「希望が 9:00-13:00 だったのに確定したら『早番』表示」を防ぐ。
+        const matchedRequest = requests.find(
+          (r) => r.staffId === person.id
+            && r.date === date
+            && (r.slot === 'early' || r.slot === 'late' || r.slot === 'any'),
+        );
+        const startTime = matchedRequest?.startTime ?? null;
+        const endTime = matchedRequest?.endTime ?? null;
+        tasks.push(api.assign(storeId, date, slot, Number(person.id), startTime, endTime));
       }
     }
     await Promise.all(tasks);
