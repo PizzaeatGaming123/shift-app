@@ -58,7 +58,23 @@ public class DataSeeder implements CommandLineRunner {
                 new Person("nakashima-1", "田中太郎", EmploymentType.FULL_TIME, Role.STAFF),
                 new Person("nakashima-2", "山田花子", EmploymentType.PART_TIME, Role.STAFF),
                 new Person("nakashima-3", "岡健太郎", EmploymentType.PART_TIME, Role.STAFF),
-                new Person("nakashima-4", "貴島小夜子", EmploymentType.PART_TIME, Role.STAFF)));
+                new Person("nakashima-4", "貴島小夜子", EmploymentType.PART_TIME, Role.STAFF),
+                // 15 人表示の確認用に追加したデモスタッフ。
+                new Person("nakashima-5", "佐藤一郎", EmploymentType.FULL_TIME, Role.STAFF),
+                new Person("nakashima-6", "鈴木二郎", EmploymentType.PART_TIME, Role.STAFF),
+                new Person("nakashima-7", "高橋三郎", EmploymentType.PART_TIME, Role.STAFF),
+                new Person("nakashima-8", "伊藤四郎", EmploymentType.PART_TIME, Role.STAFF),
+                new Person("nakashima-9", "渡辺五郎", EmploymentType.FULL_TIME, Role.STAFF),
+                new Person("nakashima-10", "山本六美", EmploymentType.PART_TIME, Role.STAFF),
+                new Person("nakashima-11", "中村七海", EmploymentType.PART_TIME, Role.STAFF),
+                new Person("nakashima-12", "小林八重", EmploymentType.PART_TIME, Role.STAFF),
+                new Person("nakashima-13", "加納九子", EmploymentType.FULL_TIME, Role.STAFF),
+                new Person("nakashima-14", "吉田十和", EmploymentType.PART_TIME, Role.STAFF),
+                new Person("nakashima-15", "斉藤光", EmploymentType.PART_TIME, Role.STAFF),
+                new Person("nakashima-16", "松本葵", EmploymentType.PART_TIME, Role.STAFF),
+                new Person("nakashima-17", "井上陸", EmploymentType.PART_TIME, Role.STAFF),
+                new Person("nakashima-18", "木村結衣", EmploymentType.FULL_TIME, Role.STAFF),
+                new Person("nakashima-19", "林希美", EmploymentType.PART_TIME, Role.STAFF)));
 
         seedStore("新田店", List.of(
                 new Person("nitta-mgr", "三浦誠", EmploymentType.FULL_TIME, Role.MANAGER),
