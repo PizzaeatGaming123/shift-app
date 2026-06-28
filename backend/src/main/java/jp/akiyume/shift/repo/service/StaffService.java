@@ -47,11 +47,21 @@ public class StaffService {
         staffRepository.save(staff);
     }
 
-    /** スタッフ／管理者を新規登録する。初期パスワードは app.seed-password。 */
+    /** スタッフ／管理者を新規登録する。初期パスワードは app.seed-password、ユーザー名は呼び出し側指定。 */
     @Transactional
-    public Staff create(Long storeId, String name, String employmentType, String role) {
+    public Staff create(Long storeId, String name, String employmentType, String role, String username) {
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("name is required");
+        }
+        if (username == null || username.trim().isEmpty()) {
+            throw new IllegalArgumentException("username is required");
+        }
+        String normalized = username.trim();
+        if (!normalized.matches("[a-zA-Z0-9_-]+")) {
+            throw new IllegalArgumentException("username must contain only [A-Za-z0-9_-]");
+        }
+        if (staffRepository.findByUsername(normalized).isPresent()) {
+            throw new IllegalArgumentException("duplicate username: " + normalized);
         }
         Store store = storeRepository.findById(storeId).orElseThrow();
         EmploymentType type = switch (employmentType == null ? "" : employmentType) {
@@ -59,9 +69,8 @@ public class StaffService {
             default -> EmploymentType.PART_TIME;
         };
         Role r = "MANAGER".equalsIgnoreCase(role) ? Role.MANAGER : Role.STAFF;
-        String username = "u" + storeId + "-" + System.currentTimeMillis();
         String hash = passwordEncoder.encode(seedPassword);
-        Staff staff = new Staff(username, hash, name.trim(), store, type, r);
+        Staff staff = new Staff(normalized, hash, name.trim(), store, type, r);
         return staffRepository.save(staff);
     }
 }

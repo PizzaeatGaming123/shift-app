@@ -9,7 +9,6 @@ export type ManagerSection =
   | 'messages'
   | 'staff-list'
   | 'staff-registration'
-  | 'manager-registration'
   | 'fixed-shifts'
   | 'model-shift'
   | 'labor-status'
@@ -60,7 +59,6 @@ const NAV_GROUPS: {
     items: [
       { label: 'スタッフ一覧', section: 'staff-list' },
       { label: 'スタッフ登録', section: 'staff-registration' },
-      { label: '管理者登録', section: 'manager-registration' },
       { label: '固定シフト', section: 'fixed-shifts' },
     ],
   },

@@ -75,7 +75,7 @@ interface AppContextValue {
   setStoreNote: (date: string, text: string) => Promise<void>;
   setRecruitment: (date: string, message: string) => Promise<void>;
   updateStaff: (id: string, hourlyWage?: number | null, monthlyHourLimit?: number | null) => Promise<void>;
-  createStaff: (name: string, employmentType: string, role: string) => Promise<void>;
+  createStaff: (name: string, employmentType: string, role: string, username: string) => Promise<void>;
   bulkAssignRequested: (dates: string[]) => Promise<number>;
   /**
    * 先月のそのスタッフの割当を曜日パターン化し、今月の同曜日全てに適用する。
@@ -398,9 +398,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await reloadStoreData();
   }, [reloadStoreData]);
 
-  const createStaff = useCallback(async (name: string, employmentType: string, role: string) => {
+  const createStaff = useCallback(async (name: string, employmentType: string, role: string, username: string) => {
     if (!storeId) return;
-    await api.createStaff(storeId, name, employmentType, role);
+    await api.createStaff(storeId, name, employmentType, role, username);
     await reloadStoreData();
   }, [storeId, reloadStoreData]);
 

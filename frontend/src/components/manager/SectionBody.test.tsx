@@ -87,14 +87,8 @@ it('スタッフ登録: 検索欄を出さず登録入力だけを表示する',
   expect(screen.getByLabelText('登録区分')).toHaveValue('スタッフ');
   expect(screen.getByLabelText('登録する雇用形態')).toBeInTheDocument();
   expect(screen.getByLabelText('登録する氏名')).toHaveAttribute('placeholder', '例：山田太郎');
+  expect(screen.getByLabelText('登録するユーザー名')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'スタッフを登録' })).toBeInTheDocument();
-});
-
-it('管理者登録: 管理者登録だけの入力画面を表示する', async () => {
-  renderSection('manager-registration');
-  expect(await screen.findByRole('form', { name: '管理者登録' })).toBeInTheDocument();
-  expect(screen.getByLabelText('登録区分')).toHaveValue('管理者');
-  expect(screen.getByRole('button', { name: '管理者を登録' })).toBeInTheDocument();
 });
 
 it('シフトパターン: 早番と遅番の時刻を店舗ごとに保存する', async () => {

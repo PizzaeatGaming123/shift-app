@@ -113,11 +113,16 @@ export const api = {
     });
   },
 
-  async createStaff(storeId: number, name: string, employmentType: string, role: string): Promise<void> {
-    await mutate(`/api/stores/${storeId}/staff`, {
+  async createStaff(storeId: number, name: string, employmentType: string, role: string, username: string): Promise<void> {
+    const res = await mutate(`/api/stores/${storeId}/staff`, {
       method: 'POST',
-      body: JSON.stringify({ name, employmentType, role }),
+      body: JSON.stringify({ name, employmentType, role, username }),
     });
+    if (!res.ok) {
+      // 400 ボディの message を投げる（重複ユーザー名などをトーストで出すため）
+      const detail = await res.json().catch(() => ({}));
+      throw new Error(typeof detail?.message === 'string' ? detail.message : `createStaff failed (${res.status})`);
+    }
   },
 
   async requests(storeId: number, month: string): Promise<ApiRequest[]> {
