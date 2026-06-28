@@ -267,7 +267,16 @@ export function ShiftCellEditorModal({
 
             <div className="rk-cell-editor__section">
               <div className="rk-cell-editor__heading-row">
-                <p className="rk-cell-editor__heading">休憩時間</p>
+                <div className="rk-cell-editor__heading-left">
+                  <p className="rk-cell-editor__heading">休憩時間</p>
+                  <select
+                    className="rk-cell-editor__store-break"
+                    aria-label="所属店舗の休憩時間設定"
+                    defaultValue=""
+                  >
+                    <option value="">所属店舗の休憩時間設定</option>
+                  </select>
+                </div>
                 <span className="rk-cell-editor__hint">指定した休憩時間 {breakTotal}分</span>
               </div>
               {breaks.length === 0 && (
