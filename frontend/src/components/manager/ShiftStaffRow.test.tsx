@@ -123,6 +123,30 @@ describe('ShiftStaffRow', () => {
       .toBeInTheDocument();
   });
 
+  it('shiftMode="confirmed" は layers.showRequests=false でも希望（点線）を描画する', () => {
+    render(
+      <table>
+        <tbody>
+          <ShiftStaffRow
+            person={person}
+            dates={[date]}
+            requests={[{ staffId: '1', date, slot: 'early' }]}
+            assignments={[{ date, slot: 'early', staffIds: ['1'] }]}
+            notes={[]}
+            layers={{ ...DEFAULT_SHIFT_LAYERS, showRequests: false }}
+            density="standard"
+            shiftMode="confirmed"
+            onToggleAssignment={() => {}}
+          />
+        </tbody>
+      </table>,
+    );
+    expect(screen.getByText('早番', { selector: '.rk-shift-chip--request' }))
+      .toBeInTheDocument();
+    expect(screen.getByText('早番', { selector: '.rk-shift-chip--assigned' }))
+      .toBeInTheDocument();
+  });
+
   it('シフトパターンとタスクを個別に非表示にできる', () => {
     render(
       <table>
