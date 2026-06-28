@@ -122,12 +122,18 @@ export function getShiftCellModel({
   requests,
   assignments,
   notes,
+  employmentType,
 }: {
   staffId: string;
   date: string;
   requests: ShiftRequest[];
   assignments: Assignment[];
   notes: DayNote[];
+  /**
+   * チップラベルの出し分けに使う。パートは「早番/遅番」のラベルを使わず常に時間表示。
+   * 未指定なら 正社員 と同じ挙動（後方互換）。
+   */
+  employmentType?: '正社員' | 'パート';
 }): ShiftCellModel {
   const request = requests.find(
     (item) => item.staffId === staffId && item.date === date,
@@ -153,15 +159,33 @@ export function getShiftCellModel({
     (item) => item.staffId === staffId && item.date === date,
   )?.text ?? null;
 
+  // パートの場合、早番/遅番のラベル概念は使わず常に時間で表示する（任意時間が
+  // 未指定なら slot の既定時間にフォールバック）。
+  const isPart = employmentType === 'パート';
+  const requestLabel = request
+    ? request.slot === 'off'
+      ? '休み'
+      : request.slot === 'any'
+        ? 'どちらでも'
+        : isPart
+          ? (request.startTime && request.endTime
+              ? `${request.startTime}-${request.endTime}`
+              : SLOT_TIMES[request.slot])
+          : SLOT_LABELS[request.slot]
+    : null;
+  const assignmentLabel = assignmentSlot
+    ? (startTime && endTime
+        ? `${startTime}-${endTime}`
+        : isPart
+          ? SLOT_TIMES[assignmentSlot]
+          : SLOT_LABELS[assignmentSlot])
+    : null;
+
   return {
     request: request
       ? {
           slot: request.slot,
-          label: request.slot === 'off'
-            ? '休み'
-            : request.slot === 'any'
-              ? 'どちらでも'
-              : SLOT_LABELS[request.slot],
+          label: requestLabel ?? '',
           time: request.slot === 'off' || request.slot === 'any'
             ? null
             : request.startTime && request.endTime
@@ -172,10 +196,7 @@ export function getShiftCellModel({
     assignment: assignmentSlot
       ? {
           slot: assignmentSlot,
-          // 任意時間が指定されていればそれをラベルにし、なければ "早番"/"遅番" を出す。
-          label: startTime && endTime
-            ? `${startTime}-${endTime}`
-            : SLOT_LABELS[assignmentSlot],
+          label: assignmentLabel ?? '',
           time: startTime && endTime
             ? `${startTime}-${endTime}`
             : SLOT_TIMES[assignmentSlot],

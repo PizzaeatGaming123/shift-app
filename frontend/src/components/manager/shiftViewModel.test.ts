@@ -203,6 +203,45 @@ describe('getShiftCellModel', () => {
       endTime: '13:00',
     });
   });
+
+  it('パートには早番/遅番のラベルを使わず、希望と割当を時間表示に切り替える', () => {
+    const result = getShiftCellModel({
+      staffId: '1',
+      date: '2026-07-01',
+      requests: [{ staffId: '1', date: '2026-07-01', slot: 'late' }],
+      assignments: [{ date: '2026-07-01', slot: 'late', staffIds: ['1'] }],
+      notes: [],
+      employmentType: 'パート',
+    });
+    expect(result.request?.label).toBe('15:00-24:00');
+    expect(result.assignment?.label).toBe('15:00-24:00');
+  });
+
+  it('パートでも任意時間が指定されていれば、その時間ラベルが使われる', () => {
+    const result = getShiftCellModel({
+      staffId: '1',
+      date: '2026-07-01',
+      requests: [{ staffId: '1', date: '2026-07-01', slot: 'early', startTime: '09:00', endTime: '11:00' }],
+      assignments: [{ date: '2026-07-01', slot: 'early', staffIds: ['1'], startTimes: ['09:00'], endTimes: ['11:00'] }],
+      notes: [],
+      employmentType: 'パート',
+    });
+    expect(result.request?.label).toBe('09:00-11:00');
+    expect(result.assignment?.label).toBe('09:00-11:00');
+  });
+
+  it('正社員には従来どおり早番/遅番のラベルを使う', () => {
+    const result = getShiftCellModel({
+      staffId: '1',
+      date: '2026-07-01',
+      requests: [{ staffId: '1', date: '2026-07-01', slot: 'late' }],
+      assignments: [{ date: '2026-07-01', slot: 'late', staffIds: ['1'] }],
+      notes: [],
+      employmentType: '正社員',
+    });
+    expect(result.request?.label).toBe('遅番');
+    expect(result.assignment?.label).toBe('遅番');
+  });
 });
 
 describe('getDailySummary', () => {

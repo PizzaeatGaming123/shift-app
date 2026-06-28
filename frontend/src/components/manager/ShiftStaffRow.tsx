@@ -127,6 +127,7 @@ export function ShiftStaffRow({
           requests,
           assignments,
           notes,
+          employmentType: person.employmentType,
         });
         const showRequest = shiftMode !== 'confirmed'
           && cell.request
