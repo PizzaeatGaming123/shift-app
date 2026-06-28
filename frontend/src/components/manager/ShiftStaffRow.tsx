@@ -140,8 +140,9 @@ export function ShiftStaffRow({
         const requestVisible = cell.request
           && (inConfirmed || layers.showRequests)
           && layers.visibleSlots[cell.request.slot];
-        // assignment モード: 既存割当があればそれを点線で描画
-        const showAssignmentDraft = inAssignment && assignmentVisible;
+        // assignment モード: 既存割当があれば点線（draft）で描画。
+        // 「希望シフト」チェックを外しているときは点線も隠す（draft も希望系の表示として扱う）。
+        const showAssignmentDraft = inAssignment && assignmentVisible && layers.showRequests;
         // confirmed / readonly: 確定（ベタ塗り）を描画
         const showAssignment = !inAssignment && assignmentVisible;
         // 希望（点線）: assignment モードで draft が出ているときは出さず、それ以外は希望があれば常に出す
@@ -157,7 +158,9 @@ export function ShiftStaffRow({
           ? cell.assignment.slot
           : null;
 
-        const isEmpty = !showRequest && !showAssignment && !showAssignmentDraft;
+        // 表示上「空」かを判定。データがあるが希望シフトを隠している間は ＋ も出さない（誤上書き防止）。
+        const hasAnyData = !!cell.request || !!cell.assignment;
+        const isEmpty = !showRequest && !showAssignment && !showAssignmentDraft && !hasAnyData;
 
         function openEditorForRequest() {
           if (!onOpenEditor) return;

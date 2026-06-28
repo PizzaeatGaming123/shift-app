@@ -45,6 +45,34 @@ describe('ShiftStaffRow', () => {
     expect(assignedChip.tagName).toBe('SPAN');
   });
 
+  it('shiftMode="assignment" で layers.showRequests=false なら assignment の点線 draft も隠す', () => {
+    render(
+      <table>
+        <tbody>
+          <ShiftStaffRow
+            person={person}
+            dates={[date]}
+            requests={[]}
+            assignments={[{ date, slot: 'early', staffIds: ['1'] }]}
+            notes={[]}
+            layers={{ ...DEFAULT_SHIFT_LAYERS, showRequests: false }}
+            density="standard"
+            shiftMode="assignment"
+            onToggleAssignment={() => {}}
+            onOpenEditor={() => {}}
+          />
+        </tbody>
+      </table>,
+    );
+    expect(screen.queryByText('早番', { selector: '.rk-shift-chip--request' }))
+      .not.toBeInTheDocument();
+    expect(screen.queryByText('早番', { selector: '.rk-shift-chip--assigned' }))
+      .not.toBeInTheDocument();
+    // 既存割当があるセルに「＋」も出さない（誤上書き防止）
+    expect(screen.queryByRole('button', { name: /に割当を追加/ }))
+      .not.toBeInTheDocument();
+  });
+
   it('shiftMode="assignment" で assignment があれば、それを点線チップで表示する', () => {
     render(
       <table>
