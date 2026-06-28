@@ -8,7 +8,7 @@ import type {
   WorkSlot,
 } from '../../types';
 import { DEFAULT_SHIFT_PATTERNS, type ShiftPatterns } from '../../lib/shiftPatterns';
-import { AssignTimeModal, type AssignTimeResult } from './AssignTimeModal';
+import { ShiftCellEditorModal, type ShiftCellSaveData } from './ShiftCellEditorModal';
 import { ShiftStaffRow } from './ShiftStaffRow';
 import {
   type RequiredByBand,
@@ -36,6 +36,17 @@ interface ShiftTableProps {
   salesTarget: number;
   requiredByBand: (date: string) => RequiredByBand;
   visibleSummaryItems?: SummaryItemKey[];
+  /**
+   * シフト編集モード。'assignment' は点線希望のみ＋空セル「＋」、
+   * 'confirmed' はベタ塗り割当のみ、'readonly' は両方を <span> でクリック不可。
+   */
+  shiftMode?: 'assignment' | 'confirmed' | 'readonly';
+  /** モーダル右上に表示する店舗名（無ければ '店舗'）。 */
+  storeName?: string;
+  /** モーダル右上に表示するポジション名（無ければ 'ホール'）。 */
+  position?: string;
+  /** タスクチェックボックスの選択肢。未指定なら空配列。 */
+  taskOptions?: string[];
   onToggleAssignment: (
     date: string,
     slot: WorkSlot,
@@ -44,6 +55,17 @@ interface ShiftTableProps {
     startTime?: string | null,
     endTime?: string | null,
   ) => void;
+  /** ShiftCellEditorModal で保存したときの永続化。confirmed/assignment 共通。 */
+  onSaveAssignmentDetails?: (input: {
+    date: string;
+    slot: WorkSlot;
+    staffId: string;
+    startTime: string | null;
+    endTime: string | null;
+    tasks: string[];
+    breaks: { startTime: string; endTime: string }[];
+    workMemo: string;
+  }) => void;
   onStoreNoteChange: (date: string, text: string) => void;
   onPositionNoteChange: (date: string, text: string) => void;
   onSortChange: (mode: StaffSortMode) => void;
@@ -88,6 +110,11 @@ function nextSortMode(mode: StaffSortMode): StaffSortMode {
   return SORT_ORDER[(index + 1) % SORT_ORDER.length];
 }
 
+function dateLabel(date: string): string {
+  const parsed = new Date(`${date}T00:00:00`);
+  return `${parsed.getDate()}(${WEEKDAYS[parsed.getDay()]})`;
+}
+
 export function ShiftTable({
   dates,
   staff,
@@ -102,7 +129,12 @@ export function ShiftTable({
   salesTarget,
   requiredByBand,
   visibleSummaryItems = DEFAULT_SUMMARY_ITEMS,
+  shiftMode = 'assignment',
+  storeName,
+  position,
+  taskOptions,
   onToggleAssignment,
+  onSaveAssignmentDetails,
   onStoreNoteChange,
   onPositionNoteChange,
   onSortChange,
@@ -128,23 +160,56 @@ export function ShiftTable({
   });
   const wide = dates.length > 16;
 
-  // 「＋」ボタンで開く時間入力モーダル。対象の (staffId, date) を保持する。
-  const [assignTarget, setAssignTarget] = useState<{ staffId: string; date: string } | null>(null);
-  const targetStaff = assignTarget
-    ? staff.find((person) => person.id === assignTarget.staffId) ?? null
-    : null;
+  // ShiftCellEditorModal を開いている対象（staffId, date, 既存割当）。
+  const [editTarget, setEditTarget] = useState<{
+    staffId: string;
+    date: string;
+    existing?: { slot: WorkSlot; startTime: string | null; endTime: string | null };
+  } | null>(null);
+  const targetStaff = editTarget ? staff.find((p) => p.id === editTarget.staffId) ?? null : null;
 
-  function handleAssignSave(result: AssignTimeResult) {
-    if (!assignTarget) return;
+  function handleSave(data: ShiftCellSaveData) {
+    if (!editTarget) return;
+    if (data.mode === 'off') {
+      if (editTarget.existing) {
+        onToggleAssignment(
+          editTarget.date,
+          editTarget.existing.slot,
+          editTarget.staffId,
+          true,
+          editTarget.existing.startTime,
+          editTarget.existing.endTime,
+        );
+      }
+      setEditTarget(null);
+      return;
+    }
+    if (onSaveAssignmentDetails && data.slot && data.startTime && data.endTime) {
+      onSaveAssignmentDetails({
+        date: editTarget.date,
+        slot: data.slot,
+        staffId: editTarget.staffId,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        tasks: data.tasks,
+        breaks: data.breaks,
+        workMemo: data.workMemo,
+      });
+    }
+    setEditTarget(null);
+  }
+
+  function handleDelete() {
+    if (!editTarget?.existing) return;
     onToggleAssignment(
-      assignTarget.date,
-      result.slot,
-      assignTarget.staffId,
-      false,
-      result.startTime,
-      result.endTime,
+      editTarget.date,
+      editTarget.existing.slot,
+      editTarget.staffId,
+      true,
+      editTarget.existing.startTime,
+      editTarget.existing.endTime,
     );
-    setAssignTarget(null);
+    setEditTarget(null);
   }
 
   return (
@@ -202,10 +267,11 @@ export function ShiftTable({
               notes={notes}
               layers={layers}
               density={density}
+              shiftMode={shiftMode}
               slotHours={slotHours}
               shiftPatterns={shiftPatterns}
               onToggleAssignment={onToggleAssignment}
-              onOpenAssignTimeModal={(staffId, date) => setAssignTarget({ staffId, date })}
+              onOpenEditor={shiftMode === 'readonly' ? undefined : (input) => setEditTarget(input)}
               onCopyPreviousMonth={onCopyPreviousMonth}
             />
           ))}
@@ -218,14 +284,29 @@ export function ShiftTable({
         </tbody>
       </table>
 
-      {targetStaff && (
-        <AssignTimeModal
+      {targetStaff && editTarget && (
+        <ShiftCellEditorModal
           open
           staffName={targetStaff.name}
+          storeName={storeName ?? '店舗'}
+          position={position ?? 'ホール'}
+          dateLabel={dateLabel(editTarget.date)}
           employmentType={targetStaff.employmentType}
           patterns={shiftPatterns ?? DEFAULT_SHIFT_PATTERNS}
-          onSave={handleAssignSave}
-          onClose={() => setAssignTarget(null)}
+          taskOptions={taskOptions ?? []}
+          initial={editTarget.existing && editTarget.existing.startTime && editTarget.existing.endTime
+            ? {
+                startTime: editTarget.existing.startTime,
+                endTime: editTarget.existing.endTime,
+                tasks: [],
+                breaks: [],
+                workMemo: '',
+              }
+            : undefined}
+          isEditing={Boolean(editTarget.existing)}
+          onSave={handleSave}
+          onDelete={editTarget.existing ? handleDelete : undefined}
+          onClose={() => setEditTarget(null)}
         />
       )}
     </div>
