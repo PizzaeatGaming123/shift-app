@@ -129,13 +129,19 @@ export function ShiftStaffRow({
           notes,
           employmentType: person.employmentType,
         });
-        const showRequest = shiftMode !== 'confirmed'
-          && cell.request
-          && layers.showRequests
-          && layers.visibleSlots[cell.request.slot];
-        const showAssignment = shiftMode !== 'assignment'
-          && cell.assignment
-          && layers.visibleSlots[cell.assignment.slot];
+        // 'assignment' モードでは、保存済みの assignment があれば assignment を点線チップとして表示する
+        // （= 編集結果がすぐ反映される）。assignment が無ければ希望（request）を点線で表示する。
+        // 'confirmed' は assignment のみベタ塗り、'readonly' は両方を <span> で表示する。
+        const inAssignment = shiftMode === 'assignment';
+        const inConfirmed = shiftMode === 'confirmed';
+        const assignmentVisible = cell.assignment && layers.visibleSlots[cell.assignment.slot];
+        const requestVisible = cell.request && layers.showRequests && layers.visibleSlots[cell.request.slot];
+        const showAssignment = !inAssignment && assignmentVisible;
+        // assignment モードでも assignment を点線として描画するので別フラグを持つ
+        const showAssignmentDraft = inAssignment && assignmentVisible;
+        const showRequest = !inConfirmed
+          && !showAssignmentDraft
+          && requestVisible;
         const patternSource: WorkSlot | null = showAssignment && cell.assignment && isWorkSlot(cell.assignment.slot)
           ? cell.assignment.slot
           : showRequest && cell.request && isWorkSlot(cell.request.slot)
@@ -145,7 +151,7 @@ export function ShiftStaffRow({
           ? cell.assignment.slot
           : null;
 
-        const isEmpty = !showRequest && !showAssignment;
+        const isEmpty = !showRequest && !showAssignment && !showAssignmentDraft;
 
         function openEditorForRequest() {
           if (!onOpenEditor) return;
@@ -182,6 +188,17 @@ export function ShiftStaffRow({
                   {cell.request.label}
                 </span>
               )
+            )}
+
+            {showAssignmentDraft && cell.assignment && (
+              <button
+                type="button"
+                className={['rk-shift-chip', 'rk-shift-chip--request', slotClass(cell.assignment.slot)].join(' ')}
+                aria-label={`${person.name} ${date} ${cell.assignment.label}を編集`}
+                onClick={openEditorForAssignment}
+              >
+                {cell.assignment.label}
+              </button>
             )}
 
             {showAssignment && cell.assignment && (

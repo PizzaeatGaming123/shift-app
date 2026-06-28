@@ -159,33 +159,21 @@ export function getShiftCellModel({
     (item) => item.staffId === staffId && item.date === date,
   )?.text ?? null;
 
-  // パートの場合、早番/遅番のラベル概念は使わず常に時間で表示する（任意時間が
-  // 未指定なら slot の既定時間にフォールバック）。
-  const isPart = employmentType === 'パート';
-  const requestLabel = request
-    ? request.slot === 'off'
-      ? '休み'
-      : request.slot === 'any'
-        ? 'どちらでも'
-        : isPart
-          ? (request.startTime && request.endTime
-              ? `${request.startTime}-${request.endTime}`
-              : SLOT_TIMES[request.slot])
-          : SLOT_LABELS[request.slot]
-    : null;
-  const assignmentLabel = assignmentSlot
-    ? (startTime && endTime
-        ? `${startTime}-${endTime}`
-        : isPart
-          ? SLOT_TIMES[assignmentSlot]
-          : SLOT_LABELS[assignmentSlot])
-    : null;
-
+  // チップのラベルは employmentType を問わず以下のルール:
+  //   任意時間（startTime/endTime）が指定されていれば時間ラベル "HH:MM-HH:MM"
+  //   未指定なら早番/遅番ラベル（slot に依存）
+  void employmentType; // 現状は employmentType を使わないが、将来の拡張用に受け取る
   return {
     request: request
       ? {
           slot: request.slot,
-          label: requestLabel ?? '',
+          label: request.slot === 'off'
+            ? '休み'
+            : request.slot === 'any'
+              ? 'どちらでも'
+              : request.startTime && request.endTime
+                ? `${request.startTime}-${request.endTime}`
+                : SLOT_LABELS[request.slot],
           time: request.slot === 'off' || request.slot === 'any'
             ? null
             : request.startTime && request.endTime
@@ -196,7 +184,9 @@ export function getShiftCellModel({
     assignment: assignmentSlot
       ? {
           slot: assignmentSlot,
-          label: assignmentLabel ?? '',
+          label: startTime && endTime
+            ? `${startTime}-${endTime}`
+            : SLOT_LABELS[assignmentSlot],
           time: startTime && endTime
             ? `${startTime}-${endTime}`
             : SLOT_TIMES[assignmentSlot],
