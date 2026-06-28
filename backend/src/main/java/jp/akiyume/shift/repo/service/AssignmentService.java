@@ -57,6 +57,21 @@ public class AssignmentService {
                        List<String> tasks, List<BreakInput> breaks, String workMemo,
                        String changedBy) {
         WorkSlot slot = WorkSlot.fromCode(slotCode);
+        // 同じ (store, date, staff) で他の slot の割当が残っていたら削除する。
+        // モーダルで早番→遅番（または逆）に切り替えたとき、古い slot の割当が
+        // 二重に残ることを防ぐ。スタッフ1人=1日1コマの運用想定。
+        for (WorkSlot other : WorkSlot.values()) {
+            if (other == slot) continue;
+            assignmentRepository
+                    .findByStore_IdAndDateAndSlotAndStaff_Id(storeId, date, other, staffId)
+                    .ifPresent(stale -> {
+                        Store store = stale.getStore();
+                        Staff staff = stale.getStaff();
+                        assignmentRepository.delete(stale);
+                        recordChangeIfApplicable(store, date, other, staff,
+                                ShiftChangeHistory.Action.UNASSIGN, changedBy);
+                    });
+        }
         var existing = assignmentRepository.findByStore_IdAndDateAndSlotAndStaff_Id(storeId, date, slot, staffId);
         ShiftAssignment a;
         boolean isNew;
