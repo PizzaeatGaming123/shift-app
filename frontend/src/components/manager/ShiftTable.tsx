@@ -184,13 +184,15 @@ export function ShiftTable({
       setEditTarget(null);
       return;
     }
-    if (onSaveAssignmentDetails && data.slot && data.startTime && data.endTime) {
+    if (onSaveAssignmentDetails && data.slot) {
+      // preset モード（早番/遅番ボタン選択のみ）は startTime/endTime=null で送る → チップは早番/遅番ラベル。
+      // time モードは startTime/endTime を実値で送る → チップは時間ラベル。
       onSaveAssignmentDetails({
         date: editTarget.date,
         slot: data.slot,
         staffId: editTarget.staffId,
-        startTime: data.startTime,
-        endTime: data.endTime,
+        startTime: data.startTime ?? null,
+        endTime: data.endTime ?? null,
         tasks: data.tasks,
         breaks: data.breaks,
         workMemo: data.workMemo,

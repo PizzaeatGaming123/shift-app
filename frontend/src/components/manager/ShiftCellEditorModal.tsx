@@ -5,11 +5,12 @@ import type { AssignmentBreak, EmploymentType, WorkSlot } from '../../types';
 
 /** 「らくしふ」風シフトセル編集モーダル。点線セル（空セル）押下で開き、勤務時間/休憩/タスク/メモを保存する。 */
 export interface ShiftCellSaveData {
-  /** 'off' のとき割当は削除される（バックエンドは unassign）。それ以外は時間 + 詳細で assign。 */
-  mode: 'time' | 'pattern' | 'off';
+  /** 'off' は割当解除（unassign）。'preset' は時間未指定（チップは早番/遅番ラベル）。'time' は任意時間（チップは時間表示）。 */
+  mode: 'time' | 'preset' | 'off';
   slot?: WorkSlot;
-  startTime?: string;
-  endTime?: string;
+  /** mode='time' のときのみ非 null。mode='preset' は null で送信して slot 既定で運用。 */
+  startTime?: string | null;
+  endTime?: string | null;
   tasks: string[];
   breaks: AssignmentBreak[];
   workMemo: string;
@@ -43,7 +44,7 @@ interface ShiftCellEditorModalProps {
   onClose: () => void;
 }
 
-type Tab = 'time' | 'pattern' | 'off';
+type Tab = 'time' | 'off';
 
 const TIME_PATTERN = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 
@@ -87,6 +88,12 @@ export function ShiftCellEditorModal({
   const [tab, setTab] = useState<Tab>('time');
   const [startTime, setStartTime] = useState('10:00');
   const [endTime, setEndTime] = useState('18:00');
+  /**
+   * 早番/遅番のプリセットが選ばれているかどうか。
+   * セットされていれば保存時に startTime/endTime を null で送り、チップは早番/遅番ラベルになる。
+   * 勤務時間入力欄を手動で変更すると null に戻り、チップは時間ラベルになる。
+   */
+  const [presetSlot, setPresetSlot] = useState<WorkSlot | null>(null);
   const [tasks, setTasks] = useState<string[]>([]);
   const [breaks, setBreaks] = useState<AssignmentBreak[]>([]);
   const [workMemo, setWorkMemo] = useState('');
@@ -98,6 +105,7 @@ export function ShiftCellEditorModal({
     setTab('time');
     setStartTime(initial?.startTime ?? '10:00');
     setEndTime(initial?.endTime ?? '18:00');
+    setPresetSlot(null);
     setTasks(initial?.tasks ?? []);
     setBreaks(initial?.breaks ?? []);
     setWorkMemo(initial?.workMemo ?? '');
@@ -113,6 +121,22 @@ export function ShiftCellEditorModal({
   const breakTotal = totalBreakMinutes(breaks);
   const timeValid = isValidTime(startTime) && isValidTime(endTime)
     && startTime < endTime;
+
+  function selectPreset(slot: WorkSlot) {
+    setPresetSlot(slot);
+    setStartTime(patterns[slot].start);
+    setEndTime(patterns[slot].end);
+  }
+
+  function onChangeStartTime(value: string) {
+    setStartTime(value);
+    setPresetSlot(null);
+  }
+
+  function onChangeEndTime(value: string) {
+    setEndTime(value);
+    setPresetSlot(null);
+  }
 
   function toggleTask(name: string) {
     setTasks((current) => (
@@ -137,14 +161,13 @@ export function ShiftCellEditorModal({
       onSave({ mode: 'off', tasks: [], breaks: [], workMemo: '' });
       return;
     }
-    if (tab === 'pattern') {
-      // 「シフトパターン入力」では現在の startTime/endTime をそのまま使う（パターンボタンで埋めた想定）。
-      if (!timeValid) return;
+    if (presetSlot) {
+      // 早番/遅番プリセット → チップは「早番」「遅番」ラベル。時間は slot 既定を採用するため null で送る。
       onSave({
-        mode: 'pattern',
-        slot: inferSlot(startTime),
-        startTime,
-        endTime,
+        mode: 'preset',
+        slot: presetSlot,
+        startTime: null,
+        endTime: null,
         tasks,
         breaks: breaks.filter((b) => isValidTime(b.startTime) && isValidTime(b.endTime)),
         workMemo,
@@ -200,17 +223,6 @@ export function ShiftCellEditorModal({
             >
               勤務時間入力
             </button>
-            {employmentType === '正社員' && (
-              <button
-                type="button"
-                role="tab"
-                aria-selected={tab === 'pattern'}
-                className={`rk-cell-editor__tab${tab === 'pattern' ? ' is-active' : ''}`}
-                onClick={() => setTab('pattern')}
-              >
-                シフトパターン入力
-              </button>
-            )}
             <button
               type="button"
               role="tab"
@@ -225,26 +237,34 @@ export function ShiftCellEditorModal({
 
         {tab !== 'off' && (
           <>
-            {tab === 'pattern' && (
-              <div className="rk-cell-editor__patterns">
+            <div className="rk-cell-editor__section">
+              <p className="rk-cell-editor__heading">
+                シフト種別
+                <span className="rk-cell-editor__hint">
+                  {employmentType === 'パート' ? '（時間入力が中心。早番/遅番は任意）' : '（早番/遅番を選ぶか、時間で指定）'}
+                </span>
+              </p>
+              <div className="rk-cell-editor__presets">
                 <button
                   type="button"
-                  className="rk-cell-editor__pattern"
-                  onClick={() => { setStartTime(patterns.early.start); setEndTime(patterns.early.end); }}
+                  className={`rk-cell-editor__preset${presetSlot === 'early' ? ' is-active' : ''}`}
+                  aria-pressed={presetSlot === 'early'}
+                  onClick={() => selectPreset('early')}
                 >
                   <strong>{patterns.early.label}</strong>
                   <small>{patterns.early.start} 〜 {patterns.early.end}</small>
                 </button>
                 <button
                   type="button"
-                  className="rk-cell-editor__pattern"
-                  onClick={() => { setStartTime(patterns.late.start); setEndTime(patterns.late.end); }}
+                  className={`rk-cell-editor__preset${presetSlot === 'late' ? ' is-active' : ''}`}
+                  aria-pressed={presetSlot === 'late'}
+                  onClick={() => selectPreset('late')}
                 >
                   <strong>{patterns.late.label}</strong>
                   <small>{patterns.late.start} 〜 {patterns.late.end}</small>
                 </button>
               </div>
-            )}
+            </div>
 
             <div className="rk-cell-editor__section">
               <p className="rk-cell-editor__heading">勤務時間</p>
@@ -253,14 +273,14 @@ export function ShiftCellEditorModal({
                   type="time"
                   aria-label="勤務開始時刻"
                   value={startTime}
-                  onChange={(event) => setStartTime(event.target.value)}
+                  onChange={(event) => onChangeStartTime(event.target.value)}
                 />
                 <span>〜</span>
                 <input
                   type="time"
                   aria-label="勤務終了時刻"
                   value={endTime}
-                  onChange={(event) => setEndTime(event.target.value)}
+                  onChange={(event) => onChangeEndTime(event.target.value)}
                 />
               </div>
             </div>
@@ -364,7 +384,7 @@ export function ShiftCellEditorModal({
             type="button"
             className="rk-cell-editor__save"
             onClick={handleSave}
-            disabled={tab !== 'off' && !timeValid}
+            disabled={tab !== 'off' && !presetSlot && !timeValid}
           >
             保存
           </button>

@@ -53,14 +53,13 @@ describe('ShiftCellEditorModal', () => {
     expect(onSave).toHaveBeenCalledWith({ mode: 'off', tasks: [], breaks: [], workMemo: '' });
   });
 
-  it('正社員には「シフトパターン入力」タブが出る', () => {
-    render(<ShiftCellEditorModal {...defaultProps} employmentType="正社員" />);
-    expect(screen.getByRole('tab', { name: 'シフトパターン入力' })).toBeInTheDocument();
-  });
-
-  it('パートには「シフトパターン入力」タブが出ない', () => {
-    render(<ShiftCellEditorModal {...defaultProps} employmentType="パート" />);
-    expect(screen.queryByRole('tab', { name: 'シフトパターン入力' })).not.toBeInTheDocument();
+  it('早番/遅番プリセットボタンが正社員にもパートにも表示される', () => {
+    const { rerender } = render(<ShiftCellEditorModal {...defaultProps} employmentType="正社員" />);
+    expect(screen.getByRole('button', { name: /早番/, pressed: false })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /遅番/, pressed: false })).toBeInTheDocument();
+    rerender(<ShiftCellEditorModal {...defaultProps} employmentType="パート" />);
+    expect(screen.getByRole('button', { name: /早番/, pressed: false })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /遅番/, pressed: false })).toBeInTheDocument();
   });
 
   it('isEditing=true かつ onDelete 指定で「削除」ボタンが出る', () => {
@@ -78,6 +77,35 @@ describe('ShiftCellEditorModal', () => {
       slot: 'early',
       startTime: '10:00',
       endTime: '18:00',
+    }));
+  });
+
+  it('早番ボタンを押して保存すると mode=preset で時間 null の onSave が呼ばれる', async () => {
+    const onSave = vi.fn();
+    const user = userEvent.setup();
+    render(<ShiftCellEditorModal {...defaultProps} onSave={onSave} />);
+    await user.click(screen.getByRole('button', { name: /早番/, pressed: false }));
+    await user.click(screen.getByRole('button', { name: '保存' }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
+      mode: 'preset',
+      slot: 'early',
+      startTime: null,
+      endTime: null,
+    }));
+  });
+
+  it('早番ボタンを押した後に勤務時間を手動変更するとプリセットが解除され time モードで保存される', async () => {
+    const onSave = vi.fn();
+    const user = userEvent.setup();
+    render(<ShiftCellEditorModal {...defaultProps} onSave={onSave} />);
+    await user.click(screen.getByRole('button', { name: /早番/, pressed: false }));
+    await user.clear(screen.getByLabelText('勤務開始時刻'));
+    await user.type(screen.getByLabelText('勤務開始時刻'), '09:00');
+    await user.click(screen.getByRole('button', { name: '保存' }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
+      mode: 'time',
+      slot: 'early',
+      startTime: '09:00',
     }));
   });
 });

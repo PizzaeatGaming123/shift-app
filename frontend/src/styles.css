@@ -5519,39 +5519,50 @@ button.rk-shift-chip:focus-visible {
   cursor: not-allowed;
 }
 
-/* パターン（正社員のシフトパターン入力タブ） */
-.rk-cell-editor__patterns {
+/* シフト種別の早番/遅番プリセットボタン（勤務時間入力タブの上部に常時表示） */
+.rk-cell-editor__presets {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
-  margin-bottom: 16px;
 }
 
-.rk-cell-editor__pattern {
+.rk-cell-editor__preset {
   border: 1px solid #d7dce0;
   background: #fff;
-  padding: 12px;
+  padding: 12px 14px;
   border-radius: 2px;
   cursor: pointer;
   text-align: left;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  transition: background 120ms ease, border-color 120ms ease;
 }
 
-.rk-cell-editor__pattern strong {
+.rk-cell-editor__preset strong {
   font-size: 14px;
   font-weight: 700;
+  color: var(--rk-text);
 }
 
-.rk-cell-editor__pattern small {
+.rk-cell-editor__preset small {
   font-size: 12px;
   color: var(--rk-text-muted);
 }
 
-.rk-cell-editor__pattern:hover {
+.rk-cell-editor__preset:hover {
   border-color: #2773d6;
   background: #f0f7ff;
+}
+
+.rk-cell-editor__preset.is-active {
+  border-color: #2773d6;
+  background: #2773d6;
+}
+
+.rk-cell-editor__preset.is-active strong,
+.rk-cell-editor__preset.is-active small {
+  color: #fff;
 }
 
 /* このモーダル専用に、Modal の最大幅を広げる。 */
