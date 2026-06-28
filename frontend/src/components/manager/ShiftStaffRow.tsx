@@ -133,8 +133,13 @@ export function ShiftStaffRow({
         // （= 編集結果がすぐ反映される）。assignment が無ければ希望（request）を点線で表示する。
         // 'confirmed' / 'readonly' では、希望（点線）と確定（ベタ塗り）の両方を上下に積んで表示する。
         const inAssignment = shiftMode === 'assignment';
+        const inConfirmed = shiftMode === 'confirmed';
         const assignmentVisible = cell.assignment && layers.visibleSlots[cell.assignment.slot];
-        const requestVisible = cell.request && layers.showRequests && layers.visibleSlots[cell.request.slot];
+        // 確定モードでは layers.showRequests を無視して必ず希望（点線）も表示する
+        // （古い localStorage が false のまま残っていても点線が隠れないように）。
+        const requestVisible = cell.request
+          && (inConfirmed || layers.showRequests)
+          && layers.visibleSlots[cell.request.slot];
         // assignment モード: 既存割当があればそれを点線で描画
         const showAssignmentDraft = inAssignment && assignmentVisible;
         // confirmed / readonly: 確定（ベタ塗り）を描画
