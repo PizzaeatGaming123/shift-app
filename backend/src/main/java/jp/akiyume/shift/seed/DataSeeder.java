@@ -14,9 +14,8 @@ import java.util.List;
 @Component
 public class DataSeeder implements CommandLineRunner {
 
-    /** デモ用の月。フロントの初期表示月（2026-07）に合わせる。 */
+    /** デモ用の年。希望シフトは 7〜9 月に投入する（フロント既定の翌月＝7月に合わせる）。 */
     private static final int DEMO_YEAR = 2026;
-    private static final int DEMO_MONTH = 7;
 
     private final StoreRepository storeRepository;
     private final StaffRepository staffRepository;
@@ -111,8 +110,9 @@ public class DataSeeder implements CommandLineRunner {
             });
             saved.add(staffRepository.save(staff));
         }
-        LocalDate from = LocalDate.of(DEMO_YEAR, DEMO_MONTH, 1);
-        LocalDate to = from.withDayOfMonth(from.lengthOfMonth());
+        // 希望は 7〜9 月の3か月分を投入対象にする（割当はゼロのまま）。
+        LocalDate from = LocalDate.of(DEMO_YEAR, 7, 1);
+        LocalDate to = LocalDate.of(DEMO_YEAR, 9, 30);
         boolean hasDemoShifts = !requestRepository.findByStaff_Store_IdAndDateBetween(store.getId(), from, to).isEmpty()
                 || !assignmentRepository.findByStore_IdAndDateBetween(store.getId(), from, to).isEmpty();
         if (seedDemoShifts && !hasDemoShifts) {
@@ -120,57 +120,43 @@ public class DataSeeder implements CommandLineRunner {
         }
     }
 
-    /** デモ表示用に当月の希望・割り当て・メモを投入する。 */
+    /** デモ表示用に 7〜9 月分の希望（全員提出済み）とメモを投入する。割当は作らない。 */
     private void seedDemoShifts(Store store, List<Staff> staff) {
-        // staff[0] は店長。希望はスタッフ4名（index 1..4）に割り当てる。
-        // 各スタッフに曜日パターンで早番/遅番/休みをばらまく。
-        RequestSlot[] pattern1 = { RequestSlot.EARLY, RequestSlot.EARLY, RequestSlot.OFF, RequestSlot.EARLY };
-        RequestSlot[] pattern2 = { RequestSlot.LATE, RequestSlot.LATE, RequestSlot.EARLY, RequestSlot.OFF };
-        RequestSlot[] pattern3 = { RequestSlot.EARLY, RequestSlot.LATE, RequestSlot.OFF, RequestSlot.LATE };
-        RequestSlot[] pattern4 = { RequestSlot.OFF, RequestSlot.EARLY, RequestSlot.LATE, RequestSlot.LATE };
+        // 7日サイクルの曜日パターンを4種類用意し、staff index でローテートして
+        // 「全員違うけど現実的な希望分布」になるようにする。
+        RequestSlot[] pattern1 = { RequestSlot.EARLY, RequestSlot.EARLY, RequestSlot.OFF, RequestSlot.EARLY, RequestSlot.EARLY, RequestSlot.LATE, RequestSlot.OFF };
+        RequestSlot[] pattern2 = { RequestSlot.LATE, RequestSlot.LATE, RequestSlot.EARLY, RequestSlot.OFF, RequestSlot.EARLY, RequestSlot.EARLY, RequestSlot.OFF };
+        RequestSlot[] pattern3 = { RequestSlot.EARLY, RequestSlot.LATE, RequestSlot.OFF, RequestSlot.LATE, RequestSlot.OFF, RequestSlot.EARLY, RequestSlot.EARLY };
+        RequestSlot[] pattern4 = { RequestSlot.OFF, RequestSlot.EARLY, RequestSlot.LATE, RequestSlot.LATE, RequestSlot.EARLY, RequestSlot.OFF, RequestSlot.LATE };
         List<RequestSlot[]> patterns = List.of(pattern1, pattern2, pattern3, pattern4);
 
-        for (int day = 1; day <= 12; day++) {
-            LocalDate date = LocalDate.of(DEMO_YEAR, DEMO_MONTH, day);
-            for (int i = 1; i < staff.size(); i++) {
-                Staff person = staff.get(i);
-                RequestSlot slot = patterns.get(i - 1)[(day - 1) % 4];
-                requestRepository.save(new ShiftRequest(person, date, slot));
-                // 第1週（1..7日）は店長が希望どおりに割り当て済みにしておく
-                if (day <= 7 && slot != RequestSlot.OFF) {
-                    ShiftAssignment assignment =
-                            new ShiftAssignment(store, date, toWorkSlot(slot), person);
-                    // パート × 早番のサンプルでは「9:00-13:00」の任意時間を設定し、
-                    // 時間メイン UI が機能していることを確認できるようにする。
-                    if (person.getEmploymentType() == EmploymentType.PART_TIME
-                            && toWorkSlot(slot) == WorkSlot.EARLY) {
-                        assignment.setStartTime("09:00");
-                        assignment.setEndTime("13:00");
-                    }
-                    assignmentRepository.save(assignment);
+        for (int month = 7; month <= 9; month++) {
+            int lengthOfMonth = LocalDate.of(DEMO_YEAR, month, 1).lengthOfMonth();
+            for (int day = 1; day <= lengthOfMonth; day++) {
+                LocalDate date = LocalDate.of(DEMO_YEAR, month, day);
+                // index 0 は店長（MANAGER）。1 以降がスタッフ。
+                for (int i = 1; i < staff.size(); i++) {
+                    Staff person = staff.get(i);
+                    RequestSlot[] pattern = patterns.get((i - 1) % patterns.size());
+                    RequestSlot slot = pattern[(day - 1) % pattern.length];
+                    requestRepository.save(new ShiftRequest(person, date, slot));
                 }
             }
         }
 
-        // スタッフのひとことメモ（交代・応援依頼など）
-        Staff s1 = staff.get(1);
-        Staff s2 = staff.get(2);
-        Staff s3 = staff.get(3);
-        dayNoteRepository.save(new DayNote(s1, LocalDate.of(DEMO_YEAR, DEMO_MONTH, 3), "早番大丈夫です！"));
-        dayNoteRepository.save(new DayNote(s2, LocalDate.of(DEMO_YEAR, DEMO_MONTH, 2), "この日、応援お願いします"));
-        dayNoteRepository.save(new DayNote(s3, LocalDate.of(DEMO_YEAR, DEMO_MONTH, 4), "変わってくれませんか？"));
+        // スタッフのひとことメモ（雰囲気付け。7 月のみ）
+        if (staff.size() > 3) {
+            Staff s1 = staff.get(1);
+            Staff s2 = staff.get(2);
+            Staff s3 = staff.get(3);
+            dayNoteRepository.save(new DayNote(s1, LocalDate.of(DEMO_YEAR, 7, 3), "早番大丈夫です！"));
+            dayNoteRepository.save(new DayNote(s2, LocalDate.of(DEMO_YEAR, 7, 2), "この日、応援お願いします"));
+            dayNoteRepository.save(new DayNote(s3, LocalDate.of(DEMO_YEAR, 7, 4), "変わってくれませんか？"));
+        }
 
         // 店舗メモ
-        storeNoteRepository.save(new StoreNote(store, LocalDate.of(DEMO_YEAR, DEMO_MONTH, 1), "ポイント2倍デー"));
-        storeNoteRepository.save(new StoreNote(store, LocalDate.of(DEMO_YEAR, DEMO_MONTH, 8), "週末は混雑予想"));
+        storeNoteRepository.save(new StoreNote(store, LocalDate.of(DEMO_YEAR, 7, 1), "ポイント2倍デー"));
+        storeNoteRepository.save(new StoreNote(store, LocalDate.of(DEMO_YEAR, 7, 8), "週末は混雑予想"));
     }
 
-    private static WorkSlot toWorkSlot(RequestSlot slot) {
-        return switch (slot) {
-            case EARLY -> WorkSlot.EARLY;
-            case LATE -> WorkSlot.LATE;
-            case ANY -> WorkSlot.EARLY;
-            case OFF -> throw new IllegalArgumentException("OFF は割り当てできません");
-        };
-    }
 }
