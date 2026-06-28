@@ -103,13 +103,31 @@ public class StaffService {
         return saved;
     }
 
+    /** パート用の任意時間レンジ（早番側）。曜日と人で組み合わせをローテート。 */
+    private static final String[][] PART_EARLY = {
+            {"09:00", "13:00"},
+            {"08:00", "12:00"},
+            {"07:00", "11:00"},
+            {"10:00", "14:00"},
+    };
+
+    /** パート用の任意時間レンジ（遅番側）。 */
+    private static final String[][] PART_LATE = {
+            {"17:00", "21:00"},
+            {"18:00", "22:00"},
+            {"16:00", "20:00"},
+            {"19:00", "23:00"},
+    };
+
     /** 新規スタッフに 7〜9 月の希望を 1 か月分ずつ投入する。既存があればその月は飛ばす。 */
     private void seedDemoRequestsFor(Staff person, Long storeId) {
         // 同じ店舗の既存スタッフ数で曜日パターンをローテートし、毎回違うパターンになるようにする。
         long staffCount = staffRepository.findByStoreId(storeId).stream()
                 .filter(s -> s.getRole() == Role.STAFF)
                 .count();
-        RequestSlot[] pattern = PATTERNS.get((int) ((staffCount - 1 + PATTERNS.size()) % PATTERNS.size()));
+        int patternIndex = (int) ((staffCount - 1 + PATTERNS.size()) % PATTERNS.size());
+        RequestSlot[] pattern = PATTERNS.get(patternIndex);
+        boolean isPart = person.getEmploymentType() == EmploymentType.PART_TIME;
         for (int month = 7; month <= 9; month++) {
             LocalDate firstOfMonth = LocalDate.of(DEMO_YEAR, month, 1);
             LocalDate lastOfMonth = firstOfMonth.withDayOfMonth(firstOfMonth.lengthOfMonth());
@@ -122,7 +140,13 @@ public class StaffService {
             for (int day = 1; day <= lengthOfMonth; day++) {
                 LocalDate date = LocalDate.of(DEMO_YEAR, month, day);
                 RequestSlot slot = pattern[(day - 1) % pattern.length];
-                requestRepository.save(new ShiftRequest(person, date, slot));
+                if (!isPart || slot == RequestSlot.OFF || slot == RequestSlot.ANY) {
+                    requestRepository.save(new ShiftRequest(person, date, slot));
+                } else {
+                    String[] range = (slot == RequestSlot.EARLY ? PART_EARLY : PART_LATE)
+                            [(patternIndex + day) % 4];
+                    requestRepository.save(new ShiftRequest(person, date, slot, range[0], range[1]));
+                }
             }
         }
     }
