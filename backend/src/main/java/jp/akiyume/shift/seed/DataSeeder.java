@@ -111,11 +111,9 @@ public class DataSeeder implements CommandLineRunner {
             saved.add(staffRepository.save(staff));
         }
         // 希望は 7〜9 月の3か月分を投入対象にする（割当はゼロのまま）。
-        LocalDate from = LocalDate.of(DEMO_YEAR, 7, 1);
-        LocalDate to = LocalDate.of(DEMO_YEAR, 9, 30);
-        boolean hasDemoShifts = !requestRepository.findByStaff_Store_IdAndDateBetween(store.getId(), from, to).isEmpty()
-                || !assignmentRepository.findByStore_IdAndDateBetween(store.getId(), from, to).isEmpty();
-        if (seedDemoShifts && !hasDemoShifts) {
+        // 永続 DB なので、既に希望が入っているスタッフ×月はスキップする
+        // → 新しく追加したスタッフだけ後から差分投入できる。
+        if (seedDemoShifts) {
             seedDemoShifts(store, saved);
         }
     }
@@ -130,14 +128,24 @@ public class DataSeeder implements CommandLineRunner {
         RequestSlot[] pattern4 = { RequestSlot.OFF, RequestSlot.EARLY, RequestSlot.LATE, RequestSlot.LATE, RequestSlot.EARLY, RequestSlot.OFF, RequestSlot.LATE };
         List<RequestSlot[]> patterns = List.of(pattern1, pattern2, pattern3, pattern4);
 
-        for (int month = 7; month <= 9; month++) {
-            int lengthOfMonth = LocalDate.of(DEMO_YEAR, month, 1).lengthOfMonth();
-            for (int day = 1; day <= lengthOfMonth; day++) {
-                LocalDate date = LocalDate.of(DEMO_YEAR, month, day);
-                // index 0 は店長（MANAGER）。1 以降がスタッフ。
-                for (int i = 1; i < staff.size(); i++) {
-                    Staff person = staff.get(i);
-                    RequestSlot[] pattern = patterns.get((i - 1) % patterns.size());
+        // index 0 は店長（MANAGER）。1 以降がスタッフ。
+        for (int i = 1; i < staff.size(); i++) {
+            Staff person = staff.get(i);
+            RequestSlot[] pattern = patterns.get((i - 1) % patterns.size());
+            for (int month = 7; month <= 9; month++) {
+                LocalDate firstOfMonth = LocalDate.of(DEMO_YEAR, month, 1);
+                LocalDate lastOfMonth = firstOfMonth.withDayOfMonth(firstOfMonth.lengthOfMonth());
+                // すでにその月にそのスタッフの希望があれば、その月だけスキップ（重複防止）。
+                boolean monthAlreadySeeded = !requestRepository
+                        .findByStaff_Store_IdAndDateBetween(store.getId(), firstOfMonth, lastOfMonth)
+                        .stream()
+                        .filter(r -> r.getStaff().getId().equals(person.getId()))
+                        .toList()
+                        .isEmpty();
+                if (monthAlreadySeeded) continue;
+                int lengthOfMonth = firstOfMonth.lengthOfMonth();
+                for (int day = 1; day <= lengthOfMonth; day++) {
+                    LocalDate date = LocalDate.of(DEMO_YEAR, month, day);
                     RequestSlot slot = pattern[(day - 1) % pattern.length];
                     requestRepository.save(new ShiftRequest(person, date, slot));
                 }
@@ -145,18 +153,20 @@ public class DataSeeder implements CommandLineRunner {
         }
 
         // スタッフのひとことメモ（雰囲気付け。7 月のみ）
-        if (staff.size() > 3) {
+        // 重複防止のため、店舗の 7 月のメモが空のときだけ投入する。
+        LocalDate julyFirst = LocalDate.of(DEMO_YEAR, 7, 1);
+        LocalDate julyLast = LocalDate.of(DEMO_YEAR, 7, 31);
+        if (staff.size() > 3
+                && storeNoteRepository.findByStore_IdAndDateBetween(store.getId(), julyFirst, julyLast).isEmpty()) {
             Staff s1 = staff.get(1);
             Staff s2 = staff.get(2);
             Staff s3 = staff.get(3);
             dayNoteRepository.save(new DayNote(s1, LocalDate.of(DEMO_YEAR, 7, 3), "早番大丈夫です！"));
             dayNoteRepository.save(new DayNote(s2, LocalDate.of(DEMO_YEAR, 7, 2), "この日、応援お願いします"));
             dayNoteRepository.save(new DayNote(s3, LocalDate.of(DEMO_YEAR, 7, 4), "変わってくれませんか？"));
+            storeNoteRepository.save(new StoreNote(store, LocalDate.of(DEMO_YEAR, 7, 1), "ポイント2倍デー"));
+            storeNoteRepository.save(new StoreNote(store, LocalDate.of(DEMO_YEAR, 7, 8), "週末は混雑予想"));
         }
-
-        // 店舗メモ
-        storeNoteRepository.save(new StoreNote(store, LocalDate.of(DEMO_YEAR, 7, 1), "ポイント2倍デー"));
-        storeNoteRepository.save(new StoreNote(store, LocalDate.of(DEMO_YEAR, 7, 8), "週末は混雑予想"));
     }
 
 }
