@@ -59,6 +59,57 @@ function inferSlot(startTime: string): WorkSlot {
   return hour >= 12 ? 'late' : 'early';
 }
 
+const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+const MINUTES = ['00', '15', '30', '45'];
+
+function splitTime(value: string): { hour: string; minute: string } {
+  const [h = '00', m = '00'] = value.split(':');
+  return {
+    hour: HOURS.includes(h) ? h : '00',
+    minute: MINUTES.includes(m) ? m : '00',
+  };
+}
+
+function joinTime(hour: string, minute: string): string {
+  return `${hour}:${minute}`;
+}
+
+/** HH と MM を別セレクトで入力するコンポーネント。参考UI参照画像と同じ見た目。 */
+function HourMinutePicker({
+  value,
+  onChange,
+  label,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  label: string;
+}) {
+  const { hour, minute } = splitTime(value);
+  return (
+    <span className="rk-cell-editor__hm">
+      <select
+        aria-label={`${label} 時`}
+        value={hour}
+        onChange={(event) => onChange(joinTime(event.target.value, minute))}
+      >
+        {HOURS.map((h) => (
+          <option key={h} value={h}>{h}</option>
+        ))}
+      </select>
+      <span className="rk-cell-editor__hm-sep">:</span>
+      <select
+        aria-label={`${label} 分`}
+        value={minute}
+        onChange={(event) => onChange(joinTime(hour, event.target.value))}
+      >
+        {MINUTES.map((m) => (
+          <option key={m} value={m}>{m}</option>
+        ))}
+      </select>
+    </span>
+  );
+}
+
 /** 休憩の合計分を計算。invalid な行は無視する。 */
 function totalBreakMinutes(breaks: AssignmentBreak[]): number {
   let total = 0;
@@ -279,18 +330,16 @@ export function ShiftCellEditorModal({
             <div className="rk-cell-editor__section">
               <p className="rk-cell-editor__heading">勤務時間</p>
               <div className="rk-cell-editor__time-row">
-                <input
-                  type="time"
-                  aria-label="勤務開始時刻"
+                <HourMinutePicker
                   value={startTime}
-                  onChange={(event) => onChangeStartTime(event.target.value)}
+                  onChange={onChangeStartTime}
+                  label="勤務開始時刻"
                 />
-                <span>〜</span>
-                <input
-                  type="time"
-                  aria-label="勤務終了時刻"
+                <span className="rk-cell-editor__time-sep">〜</span>
+                <HourMinutePicker
                   value={endTime}
-                  onChange={(event) => onChangeEndTime(event.target.value)}
+                  onChange={onChangeEndTime}
+                  label="勤務終了時刻"
                 />
               </div>
             </div>
