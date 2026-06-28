@@ -47,6 +47,7 @@ public class StoreController {
     public StaffDto createStaff(@PathVariable Long storeId, @RequestBody CreateStaffBody body,
                                 Authentication auth) {
         guard.requireStoreAccess(auth, storeId);
-        return StaffDto.forManager(staffService.create(storeId, body.name(), body.employmentType(), body.role()));
+        return StaffDto.forManager(staffService.create(storeId, body.name(), body.employmentType(),
+                body.role(), body.username()));
     }
 }

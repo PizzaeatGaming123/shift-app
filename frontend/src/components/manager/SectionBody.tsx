@@ -45,7 +45,6 @@ export const SECTION_TITLES: Partial<Record<ManagerSection, string>> = {
   messages: 'メッセージ',
   'staff-list': 'スタッフ一覧',
   'staff-registration': 'スタッフ登録',
-  'manager-registration': '管理者登録',
   'fixed-shifts': '固定シフト',
   'model-shift': 'モデルシフト',
   'labor-status': '労務状況',
@@ -153,6 +152,7 @@ export function SectionBody({ section }: { section: ManagerSection }) {
 
   const [importInfo, setImportInfo] = useState<{ count: number; sample: string[] } | null>(null);
   const [regName, setRegName] = useState('');
+  const [regUsername, setRegUsername] = useState('');
   const [regType, setRegType] = useState('パート');
   const [staffSearch, setStaffSearch] = useState('');
   const [staffRoleFilter, setStaffRoleFilter] = useState<'all' | 'STAFF' | 'MANAGER'>('all');
@@ -350,10 +350,24 @@ export function SectionBody({ section }: { section: ManagerSection }) {
 
   async function submitRegister(role: 'STAFF' | 'MANAGER') {
     const name = regName.trim();
+    const username = regUsername.trim();
     if (!name) { showToast('氏名を入力してください'); return; }
-    await createStaff(name, regType, role);
-    showToast(`${role === 'MANAGER' ? '管理者' : 'スタッフ'}「${name}」を登録しました ✓`);
-    setRegName('');
+    if (!username) { showToast('ユーザー名（ログインID）を入力してください'); return; }
+    if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+      showToast('ユーザー名は半角英数字・ハイフン・アンダースコアのみ使えます');
+      return;
+    }
+    try {
+      await createStaff(name, regType, role, username);
+      showToast(`${role === 'MANAGER' ? '管理者' : 'スタッフ'}「${name}」を登録しました ✓`);
+      setRegName('');
+      setRegUsername('');
+    } catch (error) {
+      const message = error instanceof Error && error.message.includes('duplicate')
+        ? 'そのユーザー名は既に使われています'
+        : '登録に失敗しました。もう一度お試しください';
+      showToast(message);
+    }
   }
 
   async function addRecruit() {
@@ -582,6 +596,18 @@ export function SectionBody({ section }: { section: ManagerSection }) {
             />
           </label>
 
+          <label className="rk-registration-form__wide">
+            <span>ユーザー名（ログインID）</span>
+            <input
+              aria-label="登録するユーザー名"
+              value={regUsername}
+              placeholder="例：yamada-taro"
+              onChange={(event) => setRegUsername(event.target.value)}
+              autoComplete="username"
+              pattern="[a-zA-Z0-9_-]+"
+            />
+          </label>
+
           <button type="submit" className="tb-btn rk-registration-form__submit">
             {role === 'MANAGER' ? '管理者を登録' : 'スタッフを登録'}
           </button>
@@ -606,9 +632,6 @@ export function SectionBody({ section }: { section: ManagerSection }) {
 
     case 'staff-registration':
       return renderStaffRegistration('STAFF');
-
-    case 'manager-registration':
-      return renderStaffRegistration('MANAGER');
 
     case 'labor-status':
       return (
