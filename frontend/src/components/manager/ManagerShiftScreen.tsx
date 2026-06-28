@@ -441,12 +441,9 @@ export function ManagerShiftScreen({
         onOpenDisplayItems={() => setDisplayItemsOpen(true)}
         onOpenRecruitment={() => setRecruitmentOpen(true)}
         onShiftModeChange={(nextMode) => {
+          // 確定シフトでも希望（点線）と確定（ベタ塗り）の両方を見せたいので、
+          // showRequests / showNotes はモード切替で自動的に変更しない。
           setShiftMode(nextMode);
-          setLayers((current) => ({
-            ...current,
-            showRequests: nextMode === 'assignment',
-            showNotes: nextMode === 'assignment',
-          }));
         }}
       />
 
