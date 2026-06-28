@@ -6,6 +6,26 @@ dist/
 dist-ssr/
 build/
 
+# Backend (Spring Boot / Maven)
+backend/target/
+backend/.gradle/
+backend/build/
+data/
+*.mv.db
+*.trace.db
+
+# Frontend nested
+frontend/node_modules/
+frontend/dist/
+
+# Static bundle copied into Spring Boot for同梱配信（deploy/bundle-static.* で再生成）
+backend/src/main/resources/static/
+
+# TypeScript build artifacts (from `tsc -b`)
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
+
 # Vite / dev
 *.local
 .vite/
@@ -22,6 +42,9 @@ pnpm-debug.log*
 .vscode/*
 !.vscode/extensions.json
 .idea/
+.worktrees/
+.cl*de/
+.c*dex/
 .DS_Store
 Thumbs.db
 
@@ -29,3 +52,14 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+
+# 参考UI公式由来（著作権保護のためリポジトリには含めない）
+要件定義/300.pdf
+要件定義/start_manual.pdf
+要件定義/参考UI*.png
+要件定義/参考UI*.PNG
+要件定義/モデルシフト.png
+要件定義/ランク.png
+要件定義/シフト設定.png
+要件定義/シフトパターン.png
+要件定義/画質*.png

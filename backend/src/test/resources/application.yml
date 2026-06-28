@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+# テストではデモのシフト/メモを投入しない（コントローラの件数検証を壊さないため）
+app:
+  seed-demo-shifts: false
+  # ログインテストで使う既知パスワード。
+  seed-password: "password"
+  h2-console-enabled: false
