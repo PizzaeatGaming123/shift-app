@@ -68,6 +68,7 @@ export function SharedView({ year, month }: SharedViewProps) {
         salesTarget={0}
         requiredByBand={(date) => requiredForDate(DEFAULT_WEEKDAY_REQUIRED, date)}
         visibleSummaryItems={[]}
+        shiftMode="readonly"
         onToggleAssignment={() => { /* read-only */ }}
         onStoreNoteChange={() => { /* read-only */ }}
         onPositionNoteChange={() => { /* read-only */ }}

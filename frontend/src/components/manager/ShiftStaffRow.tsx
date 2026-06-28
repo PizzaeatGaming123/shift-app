@@ -130,7 +130,7 @@ export function ShiftStaffRow({
         });
         const showRequest = shiftMode !== 'confirmed'
           && cell.request
-          && (shiftMode === 'readonly' || layers.showRequests)
+          && layers.showRequests
           && layers.visibleSlots[cell.request.slot];
         const showAssignment = shiftMode !== 'assignment'
           && cell.assignment

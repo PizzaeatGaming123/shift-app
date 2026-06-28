@@ -53,6 +53,9 @@ const SUMMARY_OPTIONS: { key: SummaryItemKey; label: string }[] = [
   { key: 'positionNote', label: 'ポジションメモ' },
 ];
 
+/** ShiftCellEditorModal で表示するタスクの暫定リスト（タスクマスタ実装まで定数で運用）。 */
+const DEFAULT_TASK_OPTIONS = ['開店作業', '閉店作業', 'レジ', '清掃', '発注', '研修'];
+
 function toDate(date: string): Date {
   return new Date(`${date}T00:00:00`);
 }
@@ -124,6 +127,7 @@ export function ManagerShiftScreen({
     storeNotes,
     recruitments,
     toggleAssignment,
+    saveAssignmentDetails,
     setStoreNote,
     bulkAssignRequested,
     copyPreviousMonthAssignments,
@@ -480,8 +484,13 @@ export function ManagerShiftScreen({
           salesTarget={salesTarget}
           requiredByBand={requiredByBand}
           visibleSummaryItems={visibleSummaryItems}
+          shiftMode={shiftMode}
+          storeName={stores.find((s) => String(s.id) === String(storeId))?.name ?? '店舗'}
+          position={position}
+          taskOptions={DEFAULT_TASK_OPTIONS}
           onToggleAssignment={(date, slot, staffId, assigned, startTime, endTime) =>
             void toggleAssignment(date, slot, staffId, assigned, startTime, endTime)}
+          onSaveAssignmentDetails={(input) => void saveAssignmentDetails(input)}
           onStoreNoteChange={editStoreNote}
           onPositionNoteChange={editPositionNote}
           onSortChange={setSortMode}
