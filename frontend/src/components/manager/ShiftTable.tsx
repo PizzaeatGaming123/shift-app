@@ -305,6 +305,10 @@ export function ShiftTable({
                 workMemo: '',
               }
             : undefined}
+          /* 既存割当が早番/遅番プリセット（時間 null）で保存されていれば、その slot を初期選択する。 */
+          initialPresetSlot={editTarget.existing && !editTarget.existing.startTime && !editTarget.existing.endTime
+            ? editTarget.existing.slot
+            : undefined}
           isEditing={Boolean(editTarget.existing)}
           onSave={handleSave}
           onDelete={editTarget.existing ? handleDelete : undefined}

@@ -37,6 +37,8 @@ interface ShiftCellEditorModalProps {
     breaks: AssignmentBreak[];
     workMemo: string;
   };
+  /** 既存割当が早番/遅番プリセットのとき、その slot を初期選択にする。 */
+  initialPresetSlot?: WorkSlot;
   /** 既存割当の編集モードなら true（削除ボタンとタイトルが変わる）。 */
   isEditing: boolean;
   onSave: (data: ShiftCellSaveData) => void;
@@ -80,6 +82,7 @@ export function ShiftCellEditorModal({
   patterns,
   taskOptions,
   initial,
+  initialPresetSlot,
   isEditing,
   onSave,
   onDelete,
@@ -103,14 +106,21 @@ export function ShiftCellEditorModal({
   useEffect(() => {
     if (!open) return;
     setTab('time');
-    setStartTime(initial?.startTime ?? '10:00');
-    setEndTime(initial?.endTime ?? '18:00');
-    setPresetSlot(null);
+    if (initialPresetSlot) {
+      // 既存が早番/遅番プリセットなら、その slot を選択しつつ既定時間を入れる。
+      setStartTime(patterns[initialPresetSlot].start);
+      setEndTime(patterns[initialPresetSlot].end);
+      setPresetSlot(initialPresetSlot);
+    } else {
+      setStartTime(initial?.startTime ?? '10:00');
+      setEndTime(initial?.endTime ?? '18:00');
+      setPresetSlot(null);
+    }
     setTasks(initial?.tasks ?? []);
     setBreaks(initial?.breaks ?? []);
     setWorkMemo(initial?.workMemo ?? '');
     setTaskQuery('');
-  }, [open, initial?.startTime, initial?.endTime, initial?.tasks, initial?.breaks, initial?.workMemo]);
+  }, [open, initial?.startTime, initial?.endTime, initial?.tasks, initial?.breaks, initial?.workMemo, initialPresetSlot, patterns]);
 
   const filteredTasks = useMemo(() => {
     const q = taskQuery.trim();
