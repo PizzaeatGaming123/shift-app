@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useApp } from '../store/AppContext';
 import { Modal } from './ui/Modal';
 import { AccountSettingsForm } from './AccountSettingsForm';
@@ -10,20 +10,13 @@ type Tab = 'main' | 'shared' | 'messages';
 
 /** スタッフ向けのスマホシェル。資料の提出画面と同じ単一カラムで表示する。 */
 export function StaffApp() {
-  const { logout, month, setMonth } = useApp();
+  const { logout, month } = useApp();
   const [tab, setTab] = useState<Tab>('main');
   const [accountOpen, setAccountOpen] = useState(false);
 
   const [yearStr, monthStr] = month.split('-');
   const year = Number(yearStr);
   const monthNum = Number(monthStr);
-  const allowedYear = new Date().getFullYear();
-
-  useEffect(() => {
-    if (year === allowedYear) return;
-    const safeMonth = Number.isFinite(monthNum) ? Math.min(12, Math.max(1, monthNum)) : new Date().getMonth() + 1;
-    setMonth(`${allowedYear}-${String(safeMonth).padStart(2, '0')}`);
-  }, [allowedYear, monthNum, setMonth, year]);
 
   return (
     <div className="line-stage">

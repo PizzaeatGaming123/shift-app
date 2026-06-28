@@ -12,9 +12,13 @@ import { getSetting, setSetting } from '../lib/settings';
 
 /** 月選択をブラウザ間で持続させる localStorage キー。 */
 const MONTH_STORAGE_KEY = 'akiyume-month';
-function currentMonthIso(): string {
+
+/** 実機の翌月を 'YYYY-MM' で返す（12 月の翌は翌年 1 月）。 */
+export function nextMonthIso(): string {
   const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const year = now.getMonth() === 11 ? now.getFullYear() + 1 : now.getFullYear();
+  const month = now.getMonth() === 11 ? 1 : now.getMonth() + 2;
+  return `${year}-${String(month).padStart(2, '0')}`;
 }
 
 interface AppContextValue {
@@ -166,7 +170,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const reloadSeq = useRef(0);
   // 月の選択は localStorage に保持し、リロードやロゴクリックでもリセットしない。
   // 初回かつ保存値が無い場合だけ実機の現在月を入れる。
-  const [month, setMonthState] = useState<string>(() => getSetting(MONTH_STORAGE_KEY, currentMonthIso()));
+  const [month, setMonthState] = useState<string>(() => getSetting(MONTH_STORAGE_KEY, nextMonthIso()));
   const setMonth = useCallback((next: string) => {
     setMonthState(next);
     setSetting(MONTH_STORAGE_KEY, next);
