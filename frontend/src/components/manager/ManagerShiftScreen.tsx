@@ -203,10 +203,11 @@ export function ManagerShiftScreen({
   );
   const dates = getManagerDateWindow({ monthDates, view, anchorDate });
   const visibleStaff = staff.filter((person) => person.role === 'STAFF');
+  // 未確定件数は確定対象（その月全体）を基準に出す。
   const unconfirmedCount = countUnconfirmedAssignments(
     requests,
     assignments,
-    dates,
+    monthDates,
   );
   const recruitmentCount = countActiveRecruitments(recruitments, dates);
   const shiftColorStyle = {
@@ -507,7 +508,8 @@ export function ManagerShiftScreen({
         open={confirmOpen}
         storeName={stores.find((s) => String(s.id) === String(storeId))?.name ?? '店舗'}
         positions={['ホール', 'キッチン']}
-        dates={dates}
+        /* 表示単位（月/半月/週/日）に関わらず確定は常にその月全体を対象にする。 */
+        dates={monthDates}
         onClose={() => setConfirmOpen(false)}
         onConfirm={(selection) => void confirmShift(selection)}
       />
