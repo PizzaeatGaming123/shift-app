@@ -290,12 +290,18 @@ export function ManagerShiftScreen({
     }
   }
 
-  function confirmShift(selection: { positions: string[]; dates: string[] }) {
+  async function confirmShift(selection: { positions: string[]; dates: string[] }) {
+    // 希望（点線）を一括で割当（ベタ塗り）に昇格してから確定状態にする。
+    // これで「シフト確定」を押すだけで点線の下にベタ塗りが現れる。
+    const assignedCount = await bulkAssignRequested(selection.dates);
     setShiftStatus('CONFIRMED');
+    // 確定後は確定モードに切り替えて、点線（希望）とベタ塗り（確定）の両方が見える状態にする。
+    setShiftMode('confirmed');
     const positionsLabel = selection.positions.length === 0
       ? 'すべてのポジション'
       : selection.positions.join('・');
-    showToast(`${positionsLabel}・${selection.dates.length}日分を確定しました`);
+    const detail = assignedCount > 0 ? `（自動割当 ${assignedCount}件）` : '';
+    showToast(`${positionsLabel}・${selection.dates.length}日分を確定しました${detail}`);
   }
 
   function publishShift() {
@@ -503,7 +509,7 @@ export function ManagerShiftScreen({
         positions={['ホール', 'キッチン']}
         dates={dates}
         onClose={() => setConfirmOpen(false)}
-        onConfirm={confirmShift}
+        onConfirm={(selection) => void confirmShift(selection)}
       />
 
       <Modal
