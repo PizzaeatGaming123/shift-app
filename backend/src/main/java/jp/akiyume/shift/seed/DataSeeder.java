@@ -28,6 +28,9 @@ public class DataSeeder implements CommandLineRunner {
     /** テストでは false にしてデモのシフト/メモを投入しない（件数検証を壊さないため）。 */
     private final boolean seedDemoShifts;
 
+    /** true にすると起動時に全ての ShiftAssignment を削除する。ローカルでの「確定リセット」用。 */
+    private final boolean resetAssignments;
+
     /** シード時の初期パスワード。application.yml から注入し、本番では必ず環境変数で上書きする。 */
     private final String seedPassword;
 
@@ -36,6 +39,7 @@ public class DataSeeder implements CommandLineRunner {
                       DayNoteRepository dayNoteRepository, StoreNoteRepository storeNoteRepository,
                       PasswordEncoder passwordEncoder,
                       @Value("${app.seed-demo-shifts:false}") boolean seedDemoShifts,
+                      @Value("${app.reset-assignments:false}") boolean resetAssignments,
                       @Value("${app.seed-password:change-me-on-deploy}") String seedPassword) {
         this.storeRepository = storeRepository;
         this.staffRepository = staffRepository;
@@ -45,6 +49,7 @@ public class DataSeeder implements CommandLineRunner {
         this.storeNoteRepository = storeNoteRepository;
         this.passwordEncoder = passwordEncoder;
         this.seedDemoShifts = seedDemoShifts;
+        this.resetAssignments = resetAssignments;
         this.seedPassword = seedPassword;
     }
 
@@ -52,6 +57,10 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        if (resetAssignments) {
+            // 既存の割当を全削除。希望シフト・スタッフは触らない。
+            assignmentRepository.deleteAllInBatch();
+        }
         seedStore("中島店", List.of(
                 new Person("nakashima-mgr", "西村健一", EmploymentType.FULL_TIME, Role.MANAGER),
                 new Person("nakashima-1", "田中太郎", EmploymentType.FULL_TIME, Role.STAFF),

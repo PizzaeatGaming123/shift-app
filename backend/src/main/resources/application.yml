@@ -29,5 +29,8 @@ server:
 #   APP_SEED_DEMO_SHIFTS=false APP_SEED_PASSWORD=<secret> APP_H2_CONSOLE_ENABLED=false
 app:
   seed-demo-shifts: true
+  # 一時的に true: 次回起動で全ての ShiftAssignment（確定済み）を削除する。
+  # リセット後は false に戻すこと（毎回消える挙動になる）。
+  reset-assignments: true
   seed-password: "${APP_SEED_PASSWORD:password}"
   h2-console-enabled: true
