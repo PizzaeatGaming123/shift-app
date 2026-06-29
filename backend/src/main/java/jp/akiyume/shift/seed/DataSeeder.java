@@ -108,6 +108,16 @@ public class DataSeeder implements CommandLineRunner {
                 new Person("hayashima-2", "小早川彩", EmploymentType.PART_TIME, Role.STAFF),
                 new Person("hayashima-3", "横山健司", EmploymentType.PART_TIME, Role.STAFF),
                 new Person("hayashima-4", "福田直樹", EmploymentType.PART_TIME, Role.STAFF)));
+
+        // デモ準備: 過去シードした希望が DRAFT のまま残っているとマネージャー画面の
+        // 「提出状況」で「未提出」表示になってしまうので、起動時に DRAFT → SUBMITTED へ
+        // 一括正規化する。テストでは seedDemoShifts=false のため呼ばない。
+        if (seedDemoShifts) {
+            int normalized = requestRepository.markAllDraftAsSubmitted();
+            if (normalized > 0) {
+                System.out.println("[seed] normalized " + normalized + " DRAFT requests to SUBMITTED");
+            }
+        }
     }
 
     private void seedStore(String storeName, List<Person> people) {
@@ -168,7 +178,8 @@ public class DataSeeder implements CommandLineRunner {
             Staff person = staff.get(i);
             RequestSlot[] pattern = patterns.get((i - 1) % patterns.size());
             boolean isPart = person.getEmploymentType() == EmploymentType.PART_TIME;
-            for (int month = 7; month <= 9; month++) {
+            // 7〜12月（半年分）をデモ範囲に。10/11/12 月もスタッフ提出済みで埋める。
+            for (int month = 7; month <= 12; month++) {
                 LocalDate firstOfMonth = LocalDate.of(DEMO_YEAR, month, 1);
                 LocalDate lastOfMonth = firstOfMonth.withDayOfMonth(firstOfMonth.lengthOfMonth());
                 // すでにその月にそのスタッフの希望があれば、その月だけスキップ（重複防止）。
@@ -185,13 +196,18 @@ public class DataSeeder implements CommandLineRunner {
                     RequestSlot slot = pattern[(day - 1) % pattern.length];
                     // 正社員は時間指定なし（チップは「早番」「遅番」ラベル）。
                     // パートは時間指定（チップは「09:00-13:00」のような数字ラベル）。
+                    ShiftRequest request;
                     if (!isPart || slot == RequestSlot.OFF || slot == RequestSlot.ANY) {
-                        requestRepository.save(new ShiftRequest(person, date, slot));
+                        request = new ShiftRequest(person, date, slot);
                     } else {
                         String[] range = (slot == RequestSlot.EARLY ? partEarly : partLate)
                                 [(i - 1 + day) % 4];
-                        requestRepository.save(new ShiftRequest(person, date, slot, range[0], range[1]));
+                        request = new ShiftRequest(person, date, slot, range[0], range[1]);
                     }
+                    // デモ表示の都合上、希望は最初から「提出済み」状態で投入する
+                    // （マネージャー画面の「提出状況」を提出済みカウントにするため）。
+                    request.setStatus(jp.akiyume.shift.domain.RequestStatus.SUBMITTED);
+                    requestRepository.save(request);
                 }
             }
         }
