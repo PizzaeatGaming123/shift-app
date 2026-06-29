@@ -14,4 +14,7 @@ public interface ShiftAssignmentRepository extends JpaRepository<ShiftAssignment
             Long storeId, LocalDate date, WorkSlot slot, Long staffId);
     /** 指定スタッフのその日の割当（早番/遅番どちらも）。希望「休み」連動の解除に使う。 */
     List<ShiftAssignment> findByStaff_IdAndDate(Long staffId, LocalDate date);
+
+    /** 店舗・月（[from, to] の閉区間）の全割当を一括削除。確定解除フローで使用。 */
+    void deleteByStore_IdAndDateBetween(Long storeId, LocalDate from, LocalDate to);
 }

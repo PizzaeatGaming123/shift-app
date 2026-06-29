@@ -61,6 +61,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/stores/*/staff").hasRole("MANAGER")
                 .requestMatchers(HttpMethod.PUT, "/api/stores/*/recruitments").hasRole("MANAGER")
                 .requestMatchers(HttpMethod.PUT, "/api/stores/*/shift-plans/*/status").hasRole("MANAGER")
+                .requestMatchers(HttpMethod.POST, "/api/stores/*/shift-plans/*/release").hasRole("MANAGER")
+                .requestMatchers(HttpMethod.PUT, "/api/stores/*/staff/*/requests").hasRole("MANAGER")
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll())
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))

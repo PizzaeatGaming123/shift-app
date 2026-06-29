@@ -3,23 +3,29 @@ package jp.akiyume.shift.repo.service;
 import jp.akiyume.shift.domain.ShiftPlan;
 import jp.akiyume.shift.domain.ShiftPlanStatus;
 import jp.akiyume.shift.domain.Store;
+import jp.akiyume.shift.repo.ShiftAssignmentRepository;
 import jp.akiyume.shift.repo.ShiftPlanRepository;
 import jp.akiyume.shift.repo.StoreRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.YearMonth;
 
 @Service
 public class ShiftPlanService {
 
     private final ShiftPlanRepository shiftPlanRepository;
     private final StoreRepository storeRepository;
+    private final ShiftAssignmentRepository assignmentRepository;
     private final NotificationService notificationService;
 
     public ShiftPlanService(ShiftPlanRepository shiftPlanRepository,
                             StoreRepository storeRepository,
+                            ShiftAssignmentRepository assignmentRepository,
                             NotificationService notificationService) {
         this.shiftPlanRepository = shiftPlanRepository;
         this.storeRepository = storeRepository;
+        this.assignmentRepository = assignmentRepository;
         this.notificationService = notificationService;
     }
 
@@ -52,6 +58,21 @@ public class ShiftPlanService {
                     month + " のシフトが再公開されました。");
         }
         return saved;
+    }
+
+    /**
+     * 「確定解除」：店舗・対象月の全 ShiftAssignment を削除し、ShiftPlan を ADJUSTING に戻す。
+     * 1 トランザクションで実行し、状態遷移ルールは経由せず direct で書き換える
+     * （PUBLISHED→ADJUSTING など本来は不可の遷移も「やり直しのため強制リセット」として許可）。
+     * 通知は出さない（再公開の際にあらためて発火する）。
+     */
+    @Transactional
+    public ShiftPlan release(Long storeId, String month) {
+        YearMonth ym = YearMonth.parse(month);
+        assignmentRepository.deleteByStore_IdAndDateBetween(storeId, ym.atDay(1), ym.atEndOfMonth());
+        ShiftPlan plan = getOrCreate(storeId, month);
+        plan.setStatus(ShiftPlanStatus.ADJUSTING);
+        return shiftPlanRepository.save(plan);
     }
 
     private static boolean isAllowedTransition(ShiftPlanStatus current, ShiftPlanStatus next) {
