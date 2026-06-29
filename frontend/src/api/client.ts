@@ -137,6 +137,20 @@ export const api = {
     return json<ApiRequest[]>(res);
   },
 
+  /** マネージャーが指定スタッフの希望を書き換える（確定モードの「休み変更」用）。 */
+  async setStaffRequest(
+    storeId: number,
+    staffId: number,
+    date: string,
+    value: DayRequestValue,
+  ): Promise<ApiRequest[]> {
+    const res = await mutate(`/api/stores/${storeId}/staff/${staffId}/requests`, {
+      method: 'PUT',
+      body: JSON.stringify({ date, value }),
+    });
+    return json<ApiRequest[]>(res);
+  },
+
   async submitRequests(entries: RequestSubmissionEntry[]): Promise<void> {
     const res = await mutate('/api/requests/submission', {
       method: 'PUT',
@@ -225,6 +239,14 @@ export const api = {
     const res = await mutate(`/api/stores/${storeId}/shift-plans/${month}/status`, {
       method: 'PUT',
       body: JSON.stringify({ status }),
+    });
+    return json<ApiShiftPlan>(res);
+  },
+
+  /** 確定解除: 月内の全割当を削除して計画状態を ADJUSTING に戻す。 */
+  async releaseShiftPlan(storeId: number, month: string): Promise<ApiShiftPlan> {
+    const res = await mutate(`/api/stores/${storeId}/shift-plans/${month}/release`, {
+      method: 'POST',
     });
     return json<ApiShiftPlan>(res);
   },

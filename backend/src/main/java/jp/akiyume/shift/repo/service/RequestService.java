@@ -47,6 +47,25 @@ public class RequestService {
     @Transactional
     public List<ShiftRequest> setDayRequest(String username, LocalDate date, String value) {
         Staff staff = staffRepository.findByUsername(username).orElseThrow();
+        return replaceDayRequest(staff, date, value);
+    }
+
+    /**
+     * マネージャー操作で指定スタッフの希望を書き換える。setDayRequest と中身は同じだが、
+     * 認証ユーザー名ではなく staffId 直指定。マネージャー画面の確定モードで点線（希望）チップを
+     * 「休み」に変えるフロー用。マネージャーの確定行為とみなし、希望は SUBMITTED 状態で作る。
+     */
+    @Transactional
+    public List<ShiftRequest> setDayRequestForStaff(Long staffId, LocalDate date, String value) {
+        Staff staff = staffRepository.findById(staffId).orElseThrow();
+        List<ShiftRequest> saved = replaceDayRequest(staff, date, value);
+        for (ShiftRequest r : saved) {
+            r.setStatus(jp.akiyume.shift.domain.RequestStatus.SUBMITTED);
+        }
+        return requestRepository.saveAll(saved);
+    }
+
+    private List<ShiftRequest> replaceDayRequest(Staff staff, LocalDate date, String value) {
         requestRepository.deleteByStaff_IdAndDate(staff.getId(), date);
         // Hibernate のアクション順序は既定で INSERT → DELETE のため、同じ (staff_id, date, slot)
         // を続けて save すると先に INSERT が走って一意制約に衝突する。明示 flush で DELETE を先に流す。

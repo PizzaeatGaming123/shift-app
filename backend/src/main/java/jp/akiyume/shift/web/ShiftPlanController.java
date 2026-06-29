@@ -34,4 +34,12 @@ public class ShiftPlanController {
         ShiftPlanStatus next = ShiftPlanStatus.valueOf(body.status());
         return ShiftPlanDto.from(shiftPlanService.setStatus(storeId, month, next));
     }
+
+    /** 確定解除：割当を全削除して計画を ADJUSTING に戻す。MANAGER 専用。 */
+    @PostMapping("/{month}/release")
+    public ShiftPlanDto release(@PathVariable Long storeId, @PathVariable String month,
+                                Authentication auth) {
+        guard.requireStoreAccess(auth, storeId);
+        return ShiftPlanDto.from(shiftPlanService.release(storeId, month));
+    }
 }
