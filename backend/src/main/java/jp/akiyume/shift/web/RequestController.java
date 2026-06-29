@@ -31,6 +31,19 @@ public class RequestController {
                 .stream().map(RequestDto::from).toList();
     }
 
+    /** マネージャーが指定スタッフの希望を直接書き換える。確定モードの「休み変更」用。 */
+    @PutMapping("/stores/{storeId}/staff/{staffId}/requests")
+    public List<RequestDto> setStaffRequest(@PathVariable Long storeId,
+                                            @PathVariable Long staffId,
+                                            @RequestBody SetRequestBody body,
+                                            Authentication auth) {
+        guard.requireStoreAccess(auth, storeId);
+        guard.requireStaffInStore(staffId, storeId);
+        LocalDate date = LocalDate.parse(body.date());
+        return requestService.setDayRequestForStaff(staffId, date, body.value())
+                .stream().map(RequestDto::from).toList();
+    }
+
     @PutMapping("/requests/submission")
     public void submit(@RequestBody SubmitRequestsBody body, Authentication auth) {
         requestService.submit(guard.requireSelf(auth).getUsername(), body.entries());

@@ -75,6 +75,11 @@ interface ShiftTableProps {
   shiftPatterns?: ShiftPatterns;
   /** 指定スタッフを並び替え後も常に最上段に固定する（SharedView の「自分」用）。 */
   pinnedFirstStaffId?: string;
+  /**
+   * 「希望を休みに変更」する操作。確定モードで点線（希望）チップを開いて
+   * 休みタブで保存したとき呼ばれる。マネージャー画面のみが渡す（SharedView は readonly）。
+   */
+  onSetRequestToOff?: (staffId: string, date: string) => void;
 }
 
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
@@ -144,6 +149,7 @@ export function ShiftTable({
   slotHours,
   shiftPatterns,
   pinnedFirstStaffId,
+  onSetRequestToOff,
 }: ShiftTableProps) {
   const visibleDates = new Set(dates);
   const assignedStaffIds = new Set(
@@ -176,6 +182,7 @@ export function ShiftTable({
     if (!editTarget) return;
     if (data.mode === 'off') {
       if (editTarget.existing) {
+        // 既存割当があるなら割当解除（unassign）。
         onToggleAssignment(
           editTarget.date,
           editTarget.existing.slot,
@@ -184,6 +191,10 @@ export function ShiftTable({
           editTarget.existing.startTime,
           editTarget.existing.endTime,
         );
+      } else if (onSetRequestToOff) {
+        // 確定モードで希望（点線）チップから開いた場合は割当が無いので、
+        // 希望そのものを「休み」に書き換える（マネージャー操作）。
+        onSetRequestToOff(editTarget.staffId, editTarget.date);
       }
       setEditTarget(null);
       return;

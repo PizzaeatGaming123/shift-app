@@ -36,11 +36,15 @@ interface AppContextValue {
   /** AGENTS.md §必須機能9 のシフト計画状態。backend 永続化済み。 */
   shiftPlanStatus: ShiftPlanStatus;
   setShiftPlanStatus: (status: ShiftPlanStatus) => Promise<void>;
+  /** 確定解除: 現在の店舗・月の全割当を削除して計画を ADJUSTING に戻す。 */
+  releaseShiftPlan: () => Promise<void>;
   setStoreId: (id: number) => void;
   setMonth: (month: string) => void;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   setDayRequest: (date: string, value: DayRequestValue) => Promise<void>;
+  /** マネージャー操作で指定スタッフの希望を直接書き換える（確定モードの「休み変更」用）。 */
+  setStaffRequest: (staffId: string, date: string, value: DayRequestValue) => Promise<void>;
   bulkSetRequests: (entries: { date: string; value: DayRequestValue }[]) => Promise<void>;
   submitRequests: (entries: {
     date: string;
@@ -255,6 +259,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await reloadStoreData();
   }, [reloadStoreData]);
 
+  const setStaffRequest = useCallback(async (staffId: string, date: string, value: DayRequestValue) => {
+    if (!storeId) return;
+    await api.setStaffRequest(storeId, Number(staffId), date, value);
+    await reloadStoreData();
+  }, [storeId, reloadStoreData]);
+
   const bulkSetRequests = useCallback(async (entries: { date: string; value: DayRequestValue }[]) => {
     if (entries.length === 0) return;
     // 1 件失敗しても残りはサーバ側に書かれている可能性があるため、片方失敗時は必ず reload して
@@ -410,6 +420,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setShiftPlanStatusState(plan.status as ShiftPlanStatus);
   }, [storeId, month]);
 
+  /** 確定解除: 月内全割当を削除して計画を ADJUSTING に戻す。リロードでフロント状態も整合させる。 */
+  const releaseShiftPlan = useCallback(async () => {
+    if (!storeId) return;
+    const plan = await api.releaseShiftPlan(storeId, month);
+    setShiftPlanStatusState(plan.status as ShiftPlanStatus);
+    await reloadStoreData();
+  }, [storeId, month, reloadStoreData]);
+
   /**
    * 「先月と同じ」を実装する。動作:
    *   1) 先月の自分の割当を取得（バックエンドの 1 スタッフ 1 レコード形をそのまま使う）。
@@ -493,11 +511,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AppContextValue>(() => ({
     me, loading, stores, staff, requests, assignments, dayNotes, storeNotes, recruitments, storeId, month,
-    shiftPlanStatus, setShiftPlanStatus,
-    setStoreId, setMonth, login, logout, setDayRequest, bulkSetRequests, submitRequests, toggleAssignment, saveAssignmentDetails, setDayNote, setStoreNote, setRecruitment, updateStaff, createStaff, bulkAssignRequested, copyPreviousMonthAssignments,
+    shiftPlanStatus, setShiftPlanStatus, releaseShiftPlan,
+    setStoreId, setMonth, login, logout, setDayRequest, setStaffRequest, bulkSetRequests, submitRequests, toggleAssignment, saveAssignmentDetails, setDayNote, setStoreNote, setRecruitment, updateStaff, createStaff, bulkAssignRequested, copyPreviousMonthAssignments,
   }), [me, loading, stores, staff, requests, assignments, dayNotes, storeNotes, recruitments, storeId, month,
-       shiftPlanStatus, setShiftPlanStatus,
-       login, logout, setDayRequest, bulkSetRequests, submitRequests, toggleAssignment, saveAssignmentDetails, setDayNote, setStoreNote, setRecruitment, updateStaff, createStaff, bulkAssignRequested, copyPreviousMonthAssignments]);
+       shiftPlanStatus, setShiftPlanStatus, releaseShiftPlan,
+       login, logout, setDayRequest, setStaffRequest, bulkSetRequests, submitRequests, toggleAssignment, saveAssignmentDetails, setDayNote, setStoreNote, setRecruitment, updateStaff, createStaff, bulkAssignRequested, copyPreviousMonthAssignments]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
