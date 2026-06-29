@@ -301,7 +301,13 @@ export function ManagerShiftScreen({
     // 希望（点線）を一括で割当（ベタ塗り）に昇格してから確定状態にする。
     // これで「シフト確定」を押すだけで点線の下にベタ塗りが現れる。
     const assignedCount = await bulkAssignRequested(selection.dates);
-    setShiftStatus('CONFIRMED');
+    try {
+      await setShiftStatus('CONFIRMED');
+    } catch (error) {
+      console.error('confirmShift status update failed', error);
+      showToast('シフトを確定できませんでした。状態を確認してください');
+      return;
+    }
     // 確定後は確定モードに切り替えて、点線（希望）とベタ塗り（確定）の両方が見える状態にする。
     setShiftMode('confirmed');
     const positionsLabel = selection.positions.length === 0
@@ -311,8 +317,14 @@ export function ManagerShiftScreen({
     showToast(`${positionsLabel}・${selection.dates.length}日分を確定しました${detail}`);
   }
 
-  function publishShift() {
-    setShiftStatus(effectiveShiftStatus === 'PUBLISHED' ? 'REPUBLISHED' : 'PUBLISHED');
+  async function publishShift() {
+    try {
+      await setShiftStatus(effectiveShiftStatus === 'PUBLISHED' ? 'REPUBLISHED' : 'PUBLISHED');
+    } catch (error) {
+      console.error('publishShift status update failed', error);
+      showToast('公開できませんでした。状態を確認してください');
+      return;
+    }
     setPublishOpen(false);
     showToast('シフトをスタッフへ公開しました');
   }

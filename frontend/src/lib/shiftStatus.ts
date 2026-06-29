@@ -27,10 +27,8 @@ export function useEffectiveShiftStatus(
   _storeId: string | number | null,
   _month: string,
   _assignments: unknown[],
-): [ShiftPlanStatus, (next: ShiftPlanStatus) => void] {
+): [ShiftPlanStatus, (next: ShiftPlanStatus) => Promise<void>] {
   const { shiftPlanStatus, setShiftPlanStatus } = useApp();
-  const set = (next: ShiftPlanStatus) => {
-    void setShiftPlanStatus(next);
-  };
-  return [shiftPlanStatus, set];
+  // setter は Promise を返すので、呼び出し側は await してエラーをトーストで通知できる。
+  return [shiftPlanStatus, setShiftPlanStatus];
 }

@@ -60,8 +60,15 @@ public class ShiftPlanService {
             case DRAFT -> next == ShiftPlanStatus.ADJUSTING || next == ShiftPlanStatus.CONFIRMED;
             case ADJUSTING -> next == ShiftPlanStatus.DRAFT || next == ShiftPlanStatus.CONFIRMED;
             case CONFIRMED -> next == ShiftPlanStatus.ADJUSTING || next == ShiftPlanStatus.PUBLISHED;
-            case PUBLISHED -> next == ShiftPlanStatus.CHANGING;
-            case CHANGING -> next == ShiftPlanStatus.REPUBLISHED || next == ShiftPlanStatus.PUBLISHED;
+            // 公開済みからは「修正を始める（CHANGING）」のほか、再公開（REPUBLISHED）への
+            // 直接遷移も認める。CHANGING を経由しない簡易再公開を想定。
+            case PUBLISHED -> next == ShiftPlanStatus.CHANGING || next == ShiftPlanStatus.REPUBLISHED;
+            // CHANGING は本来「公開済み → 再公開」のための一時状態だが、現場ニーズに合わせ
+            // 「もう一度確定し直す（CONFIRMED）」「公開を取り下げて下書きに戻す（ADJUSTING/DRAFT）」
+            // も認める。確定→公開のボタン操作だけで一連の流れが完結するようにするため。
+            case CHANGING -> next == ShiftPlanStatus.REPUBLISHED || next == ShiftPlanStatus.PUBLISHED
+                    || next == ShiftPlanStatus.CONFIRMED
+                    || next == ShiftPlanStatus.ADJUSTING || next == ShiftPlanStatus.DRAFT;
             case REPUBLISHED -> next == ShiftPlanStatus.CHANGING;
         };
     }

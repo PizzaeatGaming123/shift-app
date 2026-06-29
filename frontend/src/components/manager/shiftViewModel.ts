@@ -30,6 +30,11 @@ export interface SortShiftStaffInput {
   mode: StaffSortMode;
   /** 店舗ごとの slot あたりの時間。未指定なら既定の早9h・遅9h で集計する。 */
   slotHours?: Record<WorkSlot, number>;
+  /**
+   * 指定スタッフを並び替え後も常に先頭に固定する。
+   * スタッフ向け SharedView で「自分」を最上段に残すために使う。
+   */
+  pinnedFirstId?: string;
 }
 
 function mondayIndex(date: string): number {
@@ -67,24 +72,33 @@ export function sortShiftStaff({
   dates,
   mode,
   slotHours,
+  pinnedFirstId,
 }: SortShiftStaffInput): Staff[] {
   const next = [...staff];
   if (mode === 'default') {
-    return next.sort((a, b) => {
+    next.sort((a, b) => {
       const orderA = EMPLOYMENT_ORDER[a.employmentType] ?? 99;
       const orderB = EMPLOYMENT_ORDER[b.employmentType] ?? 99;
       if (orderA !== orderB) return orderA - orderB;
       return a.name.localeCompare(b.name, 'ja');
     });
+  } else if (mode === 'name') {
+    next.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+  } else {
+    next.sort(
+      (a, b) =>
+        staffMonthlyHours(assignments, b.id, dates, slotHours)
+        - staffMonthlyHours(assignments, a.id, dates, slotHours),
+    );
   }
-  if (mode === 'name') {
-    return next.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+  if (pinnedFirstId) {
+    const idx = next.findIndex((p) => p.id === pinnedFirstId);
+    if (idx > 0) {
+      const [pinned] = next.splice(idx, 1);
+      next.unshift(pinned);
+    }
   }
-  return next.sort(
-    (a, b) =>
-      staffMonthlyHours(assignments, b.id, dates, slotHours)
-      - staffMonthlyHours(assignments, a.id, dates, slotHours),
-  );
+  return next;
 }
 
 export function formatDuration(hours: number): string {
