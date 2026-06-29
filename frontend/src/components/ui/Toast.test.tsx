@@ -27,8 +27,9 @@ describe('Toast', () => {
 
     expect(screen.getByText('保存しました ✓')).toBeInTheDocument();
 
+    // 2500ms 表示 + 180ms 退場アニメで unmount される
     act(() => {
-      vi.advanceTimersByTime(2600);
+      vi.advanceTimersByTime(2700);
     });
 
     expect(screen.queryByText('保存しました ✓')).not.toBeInTheDocument();

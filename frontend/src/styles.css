@@ -27,9 +27,29 @@
   --r-lg: 16px;
   --sh-sm: 0 1px 2px rgba(15, 23, 42, .06), 0 1px 3px rgba(15, 23, 42, .08);
   --sh-md: 0 4px 12px rgba(15, 23, 42, .08), 0 2px 4px rgba(15, 23, 42, .04);
+  --sh-lift: 0 6px 18px rgba(15, 23, 42, .12), 0 2px 6px rgba(15, 23, 42, .06);
   --t: 160ms cubic-bezier(.2, .7, .3, 1);
+  /* マイクロインタラクション用のモーション変数。出入りで別カーブを使う。 */
+  --rk-dur-fast: 120ms;
+  --rk-dur-normal: 160ms;
+  --rk-dur-slow: 220ms;
+  --rk-ease-out: cubic-bezier(.2, .8, .2, 1);
+  --rk-ease-in: cubic-bezier(.4, 0, .6, 1);
   font-family: system-ui, -apple-system, 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
   color: var(--text);
+}
+
+/* アクセシビリティ: 動きを抑制したいユーザーには全アニメ/トランジションを実質無効化。
+   完全に 0 にしないのは、状態同期に依存する箇所が突然飛ぶのを避けるため。 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 * { box-sizing: border-box; }
@@ -1315,7 +1335,14 @@ button.cal-cell:active {
   align-items: center;
   justify-content: center;
   padding: 24px 16px;
-  animation: fade var(--t);
+  opacity: 1;
+  transition: opacity 150ms var(--rk-ease-out);
+}
+.modal-backdrop[data-state="entering"] { opacity: 0; }
+.modal-backdrop[data-state="visible"] { opacity: 1; }
+.modal-backdrop[data-state="leaving"] {
+  opacity: 0;
+  transition: opacity 140ms var(--rk-ease-in);
 }
 
 .modal {
@@ -1328,8 +1355,29 @@ button.cal-cell:active {
   max-height: 86vh;
   display: flex;
   flex-direction: column;
-  animation: rise var(--t);
   text-align: left;
+  transform: scale(1);
+  opacity: 1;
+  transform-origin: center center;
+  will-change: transform, opacity;
+}
+.modal[data-state="entering"] {
+  transform: scale(.96);
+  opacity: 0;
+}
+.modal[data-state="visible"] {
+  transform: scale(1);
+  opacity: 1;
+  transition:
+    transform 200ms var(--rk-ease-out),
+    opacity 200ms var(--rk-ease-out);
+}
+.modal[data-state="leaving"] {
+  transform: scale(.97);
+  opacity: 0;
+  transition:
+    transform 140ms var(--rk-ease-in),
+    opacity 140ms var(--rk-ease-in);
 }
 
 .modal-head {
@@ -1633,7 +1681,6 @@ button.cal-cell:active {
   position: fixed;
   left: 50%;
   bottom: 88px;
-  transform: translateX(-50%);
   z-index: 60;
   background: var(--text);
   color: #fff;
@@ -1641,7 +1688,28 @@ button.cal-cell:active {
   border-radius: 999px;
   font-size: 14px;
   box-shadow: var(--sh-md);
-  animation: toast-rise var(--t);
+  /* 状態に応じて入場/退場アニメを切り替える。data-state は Toast.tsx が付与。 */
+  transform: translate(-50%, 0);
+  opacity: 1;
+  will-change: transform, opacity;
+}
+.toast[data-state="entering"] {
+  transform: translate(-50%, 12px);
+  opacity: 0;
+}
+.toast[data-state="visible"] {
+  transform: translate(-50%, 0);
+  opacity: 1;
+  transition:
+    transform 220ms var(--rk-ease-out),
+    opacity 220ms var(--rk-ease-out);
+}
+.toast[data-state="leaving"] {
+  transform: translate(-50%, 8px);
+  opacity: 0;
+  transition:
+    transform 160ms var(--rk-ease-in),
+    opacity 160ms var(--rk-ease-in);
 }
 
 /* ---- skeleton / loading ---- */
@@ -3356,8 +3424,12 @@ button.cal-cell:active {
   color: var(--rk-text);
   font-size: 12px;
   cursor: pointer;
-  transition: background 120ms ease, border-color 120ms ease,
-    box-shadow 120ms ease;
+  transition:
+    background var(--rk-dur-fast) var(--rk-ease-out),
+    border-color var(--rk-dur-fast) var(--rk-ease-out),
+    box-shadow var(--rk-dur-fast) var(--rk-ease-out),
+    transform var(--rk-dur-fast) var(--rk-ease-out),
+    color var(--rk-dur-fast) var(--rk-ease-out);
 }
 
 .rk-shift-toolbar select {
@@ -3371,7 +3443,20 @@ button.cal-cell:active {
   border-color: #b9c2c9;
   background: #f7f9fa;
   box-shadow: 0 2px 7px rgba(41, 57, 70, .12);
-  transform: none;
+  transform: translateY(-1px);
+}
+
+.rk-shift-toolbar button:active,
+.rk-shift-display-controls button:active {
+  transform: translateY(0) scale(.98);
+  box-shadow: 0 1px 2px rgba(41, 57, 70, .12);
+  transition-duration: 60ms;
+}
+
+.rk-shift-toolbar button:disabled,
+.rk-shift-display-controls button:disabled {
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 .rk-shift-toolbar__confirm {
@@ -3404,6 +3489,16 @@ button.cal-cell:active {
 .rk-shift-mode-switch button,
 .rk-view-switch button {
   margin-left: -1px;
+}
+
+.rk-shift-mode-switch button,
+.rk-view-switch button {
+  /* aria-pressed の色変化を transition でなめらかに */
+  transition:
+    background var(--rk-dur-normal) var(--rk-ease-out),
+    border-color var(--rk-dur-normal) var(--rk-ease-out),
+    color var(--rk-dur-normal) var(--rk-ease-out),
+    transform var(--rk-dur-fast) var(--rk-ease-out);
 }
 
 .rk-shift-mode-switch button[aria-pressed="true"],
@@ -3935,6 +4030,12 @@ button.cal-cell:active {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition:
+    transform var(--rk-dur-fast) var(--rk-ease-out),
+    box-shadow var(--rk-dur-fast) var(--rk-ease-out),
+    background var(--rk-dur-fast) var(--rk-ease-out),
+    border-color var(--rk-dur-fast) var(--rk-ease-out),
+    filter var(--rk-dur-fast) var(--rk-ease-out);
 }
 
 button.rk-shift-chip {
@@ -3944,8 +4045,14 @@ button.rk-shift-chip {
 button.rk-shift-chip:hover,
 button.rk-shift-chip:focus-visible {
   filter: brightness(.98);
-  box-shadow: 0 1px 3px rgba(30, 46, 58, .14);
-  transform: none;
+  box-shadow: 0 2px 6px rgba(30, 46, 58, .16);
+  transform: translateY(-1px);
+}
+
+button.rk-shift-chip:active {
+  transform: translateY(0) scale(.97);
+  box-shadow: 0 1px 2px rgba(30, 46, 58, .14);
+  transition-duration: 60ms;
 }
 
 .rk-shift-chip--request {
@@ -3972,6 +4079,19 @@ button.rk-shift-chip:focus-visible {
 .rk-shift-chip--assigned {
   border-width: 1px;
   border-style: solid;
+  /* マウント時にチップが軽くポップして現れる（割当追加の視覚フィードバック） */
+  animation: rk-cell-pop 180ms var(--rk-ease-out) both;
+}
+
+@keyframes rk-cell-pop {
+  from {
+    transform: scale(.92);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .rk-shift-chip--early {
@@ -4282,6 +4402,7 @@ button.rk-shift-chip:focus-visible {
 }
 
 .line-staff-nav button {
+  position: relative;
   min-height: 38px;
   border: 0;
   border-right: 1px solid #e2e6eb;
@@ -4290,7 +4411,26 @@ button.rk-shift-chip:focus-visible {
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
-  transition: background var(--t), color var(--t), box-shadow var(--t);
+  transition:
+    background var(--rk-dur-normal) var(--rk-ease-out),
+    color var(--rk-dur-normal) var(--rk-ease-out);
+}
+/* aria-current="true" のとき下線が左右に scaleX で広がるアニメ */
+.line-staff-nav button::after {
+  content: '';
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 0;
+  height: 2px;
+  background: #6c91b0;
+  transform: scaleX(0);
+  transform-origin: center center;
+  transition: transform var(--rk-dur-normal) var(--rk-ease-out);
+  pointer-events: none;
+}
+.line-staff-nav button[aria-current="true"]::after {
+  transform: scaleX(1);
 }
 
 .line-staff-nav button:last-child { border-right: 0; }
@@ -4298,7 +4438,10 @@ button.rk-shift-chip:focus-visible {
 .line-staff-nav button[aria-current="true"] {
   color: #244f73;
   background: #eef4f9;
-  box-shadow: inset 0 -2px 0 #6c91b0;
+}
+.line-staff-nav button:active {
+  background: #e6edf3;
+  transition-duration: 60ms;
 }
 
 .line-confirmed-link {
@@ -4381,6 +4524,20 @@ button.rk-shift-chip:focus-visible {
   padding: 0;
   font-size: 18px;
   cursor: pointer;
+  transition:
+    background var(--rk-dur-fast) var(--rk-ease-out),
+    border-color var(--rk-dur-fast) var(--rk-ease-out),
+    color var(--rk-dur-fast) var(--rk-ease-out),
+    transform var(--rk-dur-fast) var(--rk-ease-out);
+}
+.rk-period-arrow:hover:not(:disabled) {
+  background: #f3f6f9;
+  border-color: #b9c2c9;
+  color: var(--rk-blue);
+}
+.rk-period-arrow:active:not(:disabled) {
+  transform: scale(.94);
+  transition-duration: 60ms;
 }
 .rk-period-card {
   position: relative;
@@ -4393,6 +4550,22 @@ button.rk-shift-chip:focus-visible {
   color: #555;
   padding: 6px 2px 4px;
   cursor: pointer;
+  transition:
+    background var(--rk-dur-normal) var(--rk-ease-out),
+    border-color var(--rk-dur-normal) var(--rk-ease-out),
+    color var(--rk-dur-normal) var(--rk-ease-out),
+    transform var(--rk-dur-fast) var(--rk-ease-out),
+    box-shadow var(--rk-dur-fast) var(--rk-ease-out);
+}
+.rk-period-card:hover:not(:disabled):not(.is-disabled) {
+  border-color: var(--rk-blue);
+  background: #f3f9ff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(47, 128, 216, .14);
+}
+.rk-period-card:active:not(:disabled):not(.is-disabled) {
+  transform: translateY(0) scale(.99);
+  transition-duration: 60ms;
 }
 .rk-period-card strong { font-size: 11px; }
 .rk-period-card small { font-size: 9px; color: #777; }
@@ -4708,6 +4881,21 @@ button.rk-shift-chip:focus-visible {
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
+  transition:
+    background var(--rk-dur-fast) var(--rk-ease-out),
+    transform var(--rk-dur-fast) var(--rk-ease-out),
+    box-shadow var(--rk-dur-fast) var(--rk-ease-out),
+    opacity var(--rk-dur-fast) var(--rk-ease-out);
+}
+.rk-staff-submit__go:hover:not(:disabled) {
+  background: #2972c0;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(47, 128, 216, .28);
+}
+.rk-staff-submit__go:active:not(:disabled) {
+  transform: translateY(0) scale(.98);
+  box-shadow: 0 1px 3px rgba(47, 128, 216, .26);
+  transition-duration: 60ms;
 }
 .rk-staff-submit__go:disabled { opacity: .58; cursor: wait; }
 
@@ -4721,7 +4909,13 @@ button.rk-shift-chip:focus-visible {
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
+  transition:
+    background var(--rk-dur-fast) var(--rk-ease-out),
+    border-color var(--rk-dur-fast) var(--rk-ease-out),
+    color var(--rk-dur-fast) var(--rk-ease-out),
+    transform var(--rk-dur-fast) var(--rk-ease-out);
 }
+.rk-attend__btn:active { transform: scale(.97); transition-duration: 60ms; }
 .rk-attend__btn.is-on { border-color: #2f80d8; background: #2f80d8; color: #fff; }
 .rk-attend__off.is-on { border-color: #8c8c8c; background: #8c8c8c; color: #fff; }
 .rk-attend__slots { display: flex; flex-direction: column; gap: 7px; }
@@ -4757,10 +4951,15 @@ button.rk-shift-chip:focus-visible {
   padding: 8px 10px;
   cursor: pointer;
   text-align: left;
+  transition:
+    background var(--rk-dur-fast) var(--rk-ease-out),
+    border-color var(--rk-dur-fast) var(--rk-ease-out),
+    transform var(--rk-dur-fast) var(--rk-ease-out);
 }
 .rk-attend__slot strong { font-size: 11px; }
 .rk-attend__slot small { font-size: 9px; color: #777; }
 .rk-attend__slot:hover { border-color: #2f80d8; background: #eef6ff; }
+.rk-attend__slot:active { transform: scale(.99); transition-duration: 60ms; }
 .rk-attend__any { border-style: dashed; }
 .rk-attend__any.is-on { border-color: #2f80d8; background: #eaf3ff; color: #1f5d9e; }
 .rk-attend__save {
@@ -4772,7 +4971,13 @@ button.rk-shift-chip:focus-visible {
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
+  transition:
+    background var(--rk-dur-fast) var(--rk-ease-out),
+    transform var(--rk-dur-fast) var(--rk-ease-out),
+    box-shadow var(--rk-dur-fast) var(--rk-ease-out);
 }
+.rk-attend__save:hover { background: #2972c0; box-shadow: 0 4px 10px rgba(47, 128, 216, .28); }
+.rk-attend__save:active { transform: scale(.98); transition-duration: 60ms; }
 
 /* 角丸をやめて四角に統一（スタッフ画面） */
 .line-phone,
