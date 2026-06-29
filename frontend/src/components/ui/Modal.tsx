@@ -12,11 +12,11 @@ const LEAVE_MS = 160;
 
 export function Modal({ open, title, onClose, children }: ModalProps) {
   // open が true になったら mounted=true、false になったら leaving 中だけ mounted=true。
-  // 「entering → visible」の RAF 遷移で入場アニメを発火させる。
+  // 初期 state は常に 'entering' にして、初回 paint を opacity:0/scale:.96 で描画する。
+  // useEffect の RAF で 'visible' へ移ってアニメが走るため、初回マウントで一瞬本体が
+  // 不透明に見える「フラッシュ」を避けられる。
   const [mounted, setMounted] = useState(open);
-  const [state, setState] = useState<'entering' | 'visible' | 'leaving'>(
-    open ? 'visible' : 'entering',
-  );
+  const [state, setState] = useState<'entering' | 'visible' | 'leaving'>('entering');
 
   useEffect(() => {
     if (open) {

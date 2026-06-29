@@ -131,6 +131,8 @@ export function ManagerShiftScreen({
     setStoreNote,
     bulkAssignRequested,
     copyPreviousMonthAssignments,
+    releaseShiftPlan,
+    setStaffRequest,
   } = useApp();
   const { showToast } = useToast();
   const [view, setView] = useState<ManagerView>('half-month');
@@ -240,6 +242,28 @@ export function ManagerShiftScreen({
     setView('half-month');
   }, [homeSignal]);
 
+  // 隠しショートカット: Ctrl/Cmd + Alt + R で表示中の月の確定を解除する（運用上のリセット用）。
+  // UI に出さずキーボードのみで発火。割当を全削除して計画状態を ADJUSTING に戻す。
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (!(event.ctrlKey || event.metaKey)) return;
+      if (!event.altKey) return;
+      if (event.key !== 'r' && event.key !== 'R') return;
+      event.preventDefault();
+      void (async () => {
+        try {
+          await releaseShiftPlan();
+          showToast('シフト確定を解除しました');
+        } catch (error) {
+          console.error('releaseShiftPlan failed', error);
+          showToast('解除に失敗しました');
+        }
+      })();
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [releaseShiftPlan, showToast]);
+
   function moveManagerPeriod(direction: -1 | 1) {
     if (view === 'month') {
       const next = shiftMonth(year, monthNumber, direction);
@@ -298,9 +322,9 @@ export function ManagerShiftScreen({
   }
 
   async function confirmShift(selection: { positions: string[]; dates: string[] }) {
-    // 希望（点線）を一括で割当（ベタ塗り）に昇格してから確定状態にする。
-    // これで「シフト確定」を押すだけで点線の下にベタ塗りが現れる。
-    const assignedCount = await bulkAssignRequested(selection.dates);
+    // 状態遷移を先に試し、許可されていない（CHANGING→CONFIRMED の許可前など）場合は
+    // bulkAssignRequested を呼ばずに早期 return する。これで「確定失敗なのに割当だけ
+    // 大量に追加された」中途半端な状態を防ぐ。
     try {
       await setShiftStatus('CONFIRMED');
     } catch (error) {
@@ -308,6 +332,8 @@ export function ManagerShiftScreen({
       showToast('シフトを確定できませんでした。状態を確認してください');
       return;
     }
+    // 状態遷移が成功したら、希望（点線）を一括で割当（ベタ塗り）に昇格する。
+    const assignedCount = await bulkAssignRequested(selection.dates);
     // 確定後は確定モードに切り替えて、点線（希望）とベタ塗り（確定）の両方が見える状態にする。
     setShiftMode('confirmed');
     const positionsLabel = selection.positions.length === 0
@@ -318,8 +344,16 @@ export function ManagerShiftScreen({
   }
 
   async function publishShift() {
+    // 公開ステータスの選択ルール:
+    //   - 既に PUBLISHED / REPUBLISHED の場合は「再公開」として REPUBLISHED へ
+    //     （REPUBLISHED→REPUBLISHED は state machine の current==next で no-op 許可）
+    //   - それ以外（CONFIRMED など未公開）は PUBLISHED へ
+    // これで REPUBLISHED 中に押下しても 400 にならない。
+    const target = (effectiveShiftStatus === 'PUBLISHED' || effectiveShiftStatus === 'REPUBLISHED')
+      ? 'REPUBLISHED'
+      : 'PUBLISHED';
     try {
-      await setShiftStatus(effectiveShiftStatus === 'PUBLISHED' ? 'REPUBLISHED' : 'PUBLISHED');
+      await setShiftStatus(target);
     } catch (error) {
       console.error('publishShift status update failed', error);
       showToast('公開できませんでした。状態を確認してください');
@@ -517,6 +551,7 @@ export function ManagerShiftScreen({
           onPositionNoteChange={editPositionNote}
           onSortChange={setSortMode}
           onCopyPreviousMonth={(staffId) => void handleCopyPreviousMonth(staffId)}
+          onSetRequestToOff={(staffId, date) => void setStaffRequest(staffId, date, 'off')}
           slotHours={slotHours}
           shiftPatterns={shiftPatterns}
         />

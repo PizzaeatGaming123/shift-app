@@ -1243,9 +1243,7 @@ export function SectionBody({ section }: { section: ManagerSection }) {
                             通知
                           </button>
                         ) : (
-                          <button type="button" className="tb-btn sm" onClick={() => showToast(`${person.name}さんの提出内容を確認しました`)}>
-                            確認
-                          </button>
+                          <span style={{ color: 'var(--muted)' }}>—</span>
                         )}
                       </td>
                     </tr>

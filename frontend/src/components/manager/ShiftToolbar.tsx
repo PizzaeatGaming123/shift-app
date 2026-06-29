@@ -102,10 +102,16 @@ export function ShiftToolbar({
         <button
           type="button"
           className="rk-shift-toolbar__publish"
-          disabled={shiftStatus !== 'CONFIRMED' && shiftStatus !== 'REPUBLISHED'}
+          // CONFIRMED: 新規公開、PUBLISHED/REPUBLISHED: 再公開（REPUBLISHED へ）。
+          // DRAFT/ADJUSTING/CHANGING は確定が先なので無効。
+          disabled={
+            shiftStatus !== 'CONFIRMED'
+            && shiftStatus !== 'PUBLISHED'
+            && shiftStatus !== 'REPUBLISHED'
+          }
           onClick={onPublish}
         >
-          {shiftStatus === 'PUBLISHED' ? '公開済み' : 'スタッフへ公開'}
+          {shiftStatus === 'PUBLISHED' || shiftStatus === 'REPUBLISHED' ? '再公開' : 'スタッフへ公開'}
         </button>
         <button type="button" onClick={onPrint}>印刷</button>
         <button type="button" onClick={onOpenShiftTypes}>シフトの種類</button>
