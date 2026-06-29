@@ -48,6 +48,9 @@ public class RequestService {
     public List<ShiftRequest> setDayRequest(String username, LocalDate date, String value) {
         Staff staff = staffRepository.findByUsername(username).orElseThrow();
         requestRepository.deleteByStaff_IdAndDate(staff.getId(), date);
+        // Hibernate のアクション順序は既定で INSERT → DELETE のため、同じ (staff_id, date, slot)
+        // を続けて save すると先に INSERT が走って一意制約に衝突する。明示 flush で DELETE を先に流す。
+        requestRepository.flush();
 
         List<ShiftRequest> added = new ArrayList<>();
         switch (value) {
@@ -91,6 +94,8 @@ public class RequestService {
             }
 
             requestRepository.deleteByStaff_IdAndDate(staff.getId(), date);
+            // 同上：DELETE を先に確定させてから save しないと一意制約 (staff_id, date, slot) で 500 になる。
+            requestRepository.flush();
             RequestSlot slot = switch (entry.value()) {
                 case "early" -> RequestSlot.EARLY;
                 case "late" -> RequestSlot.LATE;
