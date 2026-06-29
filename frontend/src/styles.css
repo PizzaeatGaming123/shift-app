@@ -952,9 +952,9 @@ button.cal-cell:active {
 .shared-view--self .rk-shift-table tbody tr:first-child {
   background: rgba(47, 128, 196, .06);
 }
-.shared-view--self .rk-shift-table tbody tr:first-child > th {
-  position: relative;
-}
+/* `position: relative` で sticky を打ち消すと最上段だけ横スクロール時に名前が消えるので
+   設定しない。`position: sticky` 自体が absolute 子要素の位置決め文脈になるため
+   `::after` の '自分' バッジは問題なく機能する。 */
 .shared-view--self .rk-shift-table tbody tr:first-child > th::after {
   content: '自分';
   position: absolute;

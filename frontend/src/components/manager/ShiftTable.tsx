@@ -73,6 +73,8 @@ interface ShiftTableProps {
   onCopyPreviousMonth?: (staffId: string) => void;
   slotHours?: Record<WorkSlot, number>;
   shiftPatterns?: ShiftPatterns;
+  /** 指定スタッフを並び替え後も常に最上段に固定する（SharedView の「自分」用）。 */
+  pinnedFirstStaffId?: string;
 }
 
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
@@ -141,6 +143,7 @@ export function ShiftTable({
   onCopyPreviousMonth,
   slotHours,
   shiftPatterns,
+  pinnedFirstStaffId,
 }: ShiftTableProps) {
   const visibleDates = new Set(dates);
   const assignedStaffIds = new Set(
@@ -157,6 +160,7 @@ export function ShiftTable({
     dates,
     mode: sortMode,
     slotHours,
+    pinnedFirstId: pinnedFirstStaffId,
   });
   const wide = dates.length > 16;
 

@@ -48,6 +48,7 @@ export function SharedView({ year, month }: SharedViewProps) {
       <ShiftTable
         dates={dates}
         staff={[mySelf, ...others]}
+        pinnedFirstStaffId={myId}
         requests={requests}
         assignments={assignments}
         notes={dayNotes}
